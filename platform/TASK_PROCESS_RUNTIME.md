@@ -16,7 +16,7 @@ do wyniku `mode: "lab-audit"`. Nie wprowadza to twardej zależności.
 | `task.create`, `manual.task` | `planfile ticket create` → ticket PLF-NNN | `lab-audit` |
 | `process.run`, `workflow.request` | `urirun run <uri> <registry> --execute` | `lab-audit` |
 
-Most żyje w `shared/task-runtime.mjs` (klasa `TaskRuntime`) i jest instancjonowany
+Most żyje w `@subactor/runtime/task-runtime` (klasa `TaskRuntime`) i jest instancjonowany
 w `services/bridge`. Zwraca ustrukturyzowane koperty i **nigdy nie rzuca** przy
 braku binarki lub martwym node — zwraca
 `{ok:false, available:false, source:"lab-audit-fallback", reason:...}`, a bridge
@@ -44,7 +44,7 @@ URIRUN_ALLOW=proc://**          # polityka allow deny-by-default dla wykonania
 
 ## Weryfikacja
 
-Test jednostkowy: `npm run test` uruchamia `tests/task-runtime.test.mjs`
+Test jednostkowy: `npm run test` uruchamia `components/testkit/tests/task-runtime.test.mjs`
 (fallback przy wyłączeniu, budowa komend, degradacja przy braku binarki,
 parsowanie JSON/loose i ID ticketu).
 
@@ -52,7 +52,7 @@ Sprawdzenie na żywo wobec prawdziwego CLI planfile:
 
 ```bash
 node --input-type=module -e '
-import {TaskRuntime} from "./shared/task-runtime.mjs";
+import {TaskRuntime} from "@subactor/runtime/task-runtime";
 const rt = new TaskRuntime({enabled:true, planfileProject:"/tmp/pf"});
 console.log(await rt.createTicket({name:"Relcom onboarding", priority:"high", labels:["subactor"]}));
 console.log(await rt.listTickets());
