@@ -30,21 +30,23 @@
       "observed_origin": {
         "ip": "217.160.250.222",
         "probe": "curl --resolve docs.subactor.com:443:217.160.250.222",
-        "https_root": "200 probe index.html on subdomain docroot (not prototypowanie.pl)",
-        "release_marker": "200 /__subactor_release.json (SFTP probe release_id=rel_docs_probe_20260718T084757Z)",
-        "plesk_object": "subdomain id 308 under webspace subactor.com; www_root=/var/www/vhosts/subactor.com/docs.subactor.com",
-        "interpretation": "Origin Host ready for fingerprint rehearsal. Public DNS still Pages — do not flip.",
-        "observed_at": "2026-07-18"
+        "https_root": "200 Subactor Docs index.html (formal release, not probe)",
+        "release_marker": "200 /__subactor_release.json release_id=rel_20260718T085927Z_a7f1328e Cache-Control=no-store",
+        "artifact_sha256": "18189fe064ca0ea39f7460d81711093c0d5b7d971aa49762624c2afd9901ddc3",
+        "plesk_object": "subdomain id 308; www_root=/var/www/vhosts/subactor.com/docs.subactor.com/current (symlink activate)",
+        "origin_tls": "self-signed CN=Plesk (no docs SAN yet)",
+        "interpretation": "Origin content + marker ready. Public DNS still Pages — do not flip until cert HITL.",
+        "observed_at": "2026-07-18T09:01Z"
       },
-      "observed_note": "Public docs.subactor.com still GitHub Pages. Origin subdomain+probe marker exist. No production DNS flip until G0–G6 incl. cert HITL.",
+      "observed_note": "Public docs.subactor.com still GitHub Pages. Formal origin release active. No production DNS flip until G0–G6 incl. cert HITL.",
       "staging": {
         "hostname": "docs-stage.subactor.com",
         "purpose": "Recommended origin/public rehearsal path before production cutover.",
         "observed_public": {
           "cname": ["subactor.github.io."],
-          "interpretation": "Public still Pages; Plesk subdomain id 309 exists on origin (default page until content uploaded)."
+          "interpretation": "Public still Pages; Plesk subdomain id 309 exists on origin."
         },
-        "blocker": "Upload rehearsal release to docs-stage origin; public staging DNS still HITL."
+        "blocker": "Optional: upload rehearsal release to docs-stage origin; public staging DNS still HITL."
       },
       "rollback": {
         "dns_emergency": {
@@ -55,7 +57,8 @@
         "content": {
           "mechanism": "plesk://host/site/command/release-rollback",
           "healthy": true,
-          "note": "Only after a prior Plesk release exists; none observed on origin for docs hostname."
+          "current_release_id": "rel_20260718T085927Z_a7f1328e",
+          "note": "Content rollback available after a previous release exists; first formal release has no previous yet."
         }
       }
     }
@@ -66,11 +69,16 @@
     "fields": ["release_id", "artifact_sha256", "source_commit", "built_at", "pack_version"]
   },
   "cutover_runbook": "docs/deployment/PR9-docs-cutover-runbook.md",
+  "dns_provider": {
+    "registrar": "Namecheap",
+    "nameservers": ["addyson.ns.cloudflare.com", "roman.ns.cloudflare.com"],
+    "dns01_ready": false,
+    "blocker": "No Cloudflare API token in platform env — DNS-01 cannot run pre-cutover without HITL credentials."
+  },
   "needs_human": [
-    "Agree cert path (DNS-01 before cutover preferred) / issue LE with SAN docs.subactor.com (origin today: self-signed CN=Plesk).",
-    "HITL boundary DNS mutate Pages CNAME → A 217.160.250.222 only after G0–G6 green.",
-    "Optional: wire connector URI for subdomain/site add (rights already OK on subscription; ad-hoc XML used 2026-07-18).",
-    "Formal release-upload→activate (not only SFTP probe) + Cache-Control no-store on marker."
+    "Provide Cloudflare API token (or panel) for DNS-01 TXT + later A-record cutover, OR accept HTTP-01 only after DNS flip to Plesk.",
+    "Issue LE (or Plesk SSL) with SAN docs.subactor.com (+ optional docs-stage); origin today self-signed CN=Plesk.",
+    "HITL boundary DNS mutate Pages CNAME → A 217.160.250.222 only after G0–G6 green (explicit approval)."
   ],
-  "subscription_rights_note": "Customer subactor_customer on webspace subactor.com: manage_subdomains=true, create_domains=true, max_subdom=-1. Panel login subactor XML auth failed 1001; mailbox agent@subactor.com XML denied 1006. Not a plan-limit blocker."
+  "subscription_rights_note": "Customer subactor_customer on webspace subactor.com: manage_subdomains=true, create_domains=true, max_subdom=-1. Connector subdomain-ensure wired. LE XML ApiRpc not implemented; certificate get-pool denied for subscription."
 }

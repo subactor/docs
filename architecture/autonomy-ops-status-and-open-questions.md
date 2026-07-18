@@ -29,7 +29,7 @@ NL → intent → plan (ticket / recipe) → deploy (urirun) → verify → NL
 | Intent → ticket + plan | **Działa** | Ticket `PLF-353`, plan `proposed` (bez `--execute`) |
 | Plan → AQL | **Działa** (founder) | `founder_admin_bypass` przy `SUBACTOR_ADMIN_TOKEN` |
 | Dry-run deploy | **Działa** | Recipe `docs-httpdocs-sync`: methods + sync plan (~12 plików) |
-| Live apply | **Częściowo** | Brama apply/grant OK; SFTP available; subdomeny docs + probe marker na origin; formalny release-upload + cert HITL |
+| Live apply | **Częściowo** | Brama apply/grant OK; SFTP OK; formalny origin release `rel_20260718T085927Z_a7f1328e` na docs docroot; cert + DNS HITL |
 | Verify HTTPS publiczne | **Fail / mismatch** | `docs.subactor.com` → **GitHub Pages**, nie Plesk; TLS SAN bez `docs.subactor.com` |
 | Zamknięcie pętli NL | **Częściowe** | Intent+plan OK; brak wiarygodnego „opublikowano i widać na HTTPS” |
 
@@ -63,7 +63,7 @@ founder token załadowany z `platform/.env` (wartość **nie** zapisana tutaj).
 | 3 | `subactor ask "…"` (propose) | **PASS** | Ticket `PLF-353`, plan `plan_mrpyf6eq_53aae9b275`, status `proposed` |
 | 4 | Recipe dry-run `docs-httpdocs-sync.urirun.json` | **PASS** | Methods OK; dry-run `files_planned=12`; recommended transport `ftp` |
 | 5 | Recipe `--execute` **bez** `PLESK_SYNC_APPLY` | **PASS (brama)** | Apply step: `plesk_sync_apply_required` — upload zablokowany zgodnie z polityką |
-| 6 | Live apply z `PLESK_SYNC_APPLY=1` | **PARTIAL** | SFTP + docs subdomain docroot OK; formalny recipe/activate + cert nadal HITL — nie publikować do primary httpdocs |
+| 6 | Live apply z `PLESK_SYNC_APPLY=1` | **PASS (origin)** | Formal release-upload→activate na `/docs.subactor.com` (grants+plan_hash); bramy wyczyszczone po apply; cert nadal HITL |
 | 7 | `https://docs.subactor.com/` (strict TLS) | **FAIL** | curl 60: cert `CN=*.github.io`, brak SAN dla `docs.subactor.com` |
 | 8 | Treść / kto serwuje (curl `-k`) | **INFO** | `server: GitHub.com`, Jekyll; CNAME → `subactor.github.io` / `185.199.*` |
 | 9 | Porównanie `subactor.com` | **INFO** | A → `217.160.250.222` (Plesk); docs **nie** wskazuje Pleska |
@@ -139,7 +139,7 @@ Evidence implementacji: [`autonomy-implementation-status.md`](./autonomy-impleme
 - [x] **Timeout / retries (connector budgets):** connect/op/total 15/120/180 (PR6); orchestrator `timeout_ms`/`retry` (PR4).
 - [x] **Release upload / activate / rollback** — **PR7** (`release-upload` / `verify` / `activate` / `current` / `rollback`; strategy `auto|symlink|pointer`).
 - [x] **DNS/TLS + content fingerprint verify** — **PR8** (`publish-verify` ladder; mocks + origin/`--resolve`; staging note `docs-stage.subactor.com`).  
-- [ ] **DNS cutover Pages → Plesk** — **PR9** (**blocked** 2026-07-18: G1 yellow — subdomains+probe marker; G2 cert; G6 HITL). **No production DNS flip.**
+- [ ] **DNS cutover Pages → Plesk** — **PR9** (**blocked** 2026-07-18: G1 green — formal origin release; G2 cert; G6 HITL). **No production DNS flip.**
 - [ ] **Legacy resolver / dual-run cleanup** — **PR10 in progress** (cold FALLBACK removed; `INTENT_PACK_DUAL_RUN=shadow` retained; see `docs/deployment/PR10-legacy-resolver-cleanup.md`).
 
 ### Secrets / vault
