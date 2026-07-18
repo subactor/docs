@@ -31,7 +31,7 @@ Commands run 2026-07-18 (platform workspace):
 | **PR1** canonical paths + drift | ADR-007 docs; gate in platform | `platform` `fbd0692`; drift script | `check-component-drift.mjs` ok | **verified** |
 | **PR2** intent pack registry | `core` `d44fbb2` (pack-first intents earlier in history); packs in `platform/config/intent-packs/` | core pin `d44fbb2`; agents `771053d` | intent-pack-registry 6/6 | **verified** (dual-run retained) |
 | **PR3** phrase/LLM/step dedupe | `agents` `771053d`; sync script on platform | agents pin `771053d` | sync `--check` ok; nlp-uri-pack 4/4 | **partial** — pack SSOT for resolvers + derived artifacts; **Planfile imports still separate**; dual-run until PR10 |
-| **PR4** recipe policy engine | `orchestrator` `d9b4599` | orchestrator not a compose submodule (CLI package) | pipeline 17/17 | **partial** — policy **core** done; `on_fail:rollback` = stub → must surface `rollback_failed`; ticket path needs real escalator (no stub success); compensation → PR7 |
+| **PR4** recipe policy engine | `orchestrator` `9dd8ed5` (policy core `d9b4599` + hardening) | orchestrator not a compose submodule (CLI package) | pipeline 20/20 | **partial→hardened** — `ticket_failed` / `rollback_failed`; retry clamp on mutate; compensation → PR7 |
 | **PR5** grants / manifest | *draft only — uncommitted WIP* | not pinned | n/a for ship | **not shipped** — split **5a→5b→5c**; requires Accepted ADR-003 |
 
 Honesty notes:
