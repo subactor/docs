@@ -45,6 +45,86 @@ function inline(text) {
   return out;
 }
 
+function consumeCodeFence(lines, index, html) {
+  const lang = lines[index].slice(3).trim();
+  const body = [];
+  index += 1;
+  while (index < lines.length && !/^```/.test(lines[index])) {
+    body.push(lines[index]);
+    index += 1;
+  }
+  index += 1; // closing fence
+  const cls = lang ? ` class="language-${escapeHtml(lang)}"` : "";
+  html.push(`<pre><code${cls}>${escapeHtml(body.join("\n"))}</code></pre>`);
+  return index;
+}
+
+function consumeHeading(index, html, heading) {
+  const level = heading[1].length;
+  html.push(`<h${level}>${inline(heading[2].trim())}</h${level}>`);
+  return index + 1;
+}
+
+function tableCells(row) {
+  return row.replace(/^\||\|\s*$/g, "").split("|").map((c) => c.trim());
+}
+
+function consumeTable(lines, index, html) {
+  const rows = [];
+  while (index < lines.length && /^\|.*\|\s*$/.test(lines[index])) {
+    rows.push(lines[index]);
+    index += 1;
+  }
+  const isDivider = rows.length > 1 && tableCells(rows[1]).every((c) => /^:?-{3,}:?$/.test(c));
+  const head = tableCells(rows[0]);
+  const bodyRows = isDivider ? rows.slice(2) : rows.slice(1);
+  html.push("<table>");
+  html.push(`<thead><tr>${head.map((c) => `<th>${inline(c)}</th>`).join("")}</tr></thead>`);
+  html.push("<tbody>");
+  for (const row of bodyRows) {
+    html.push(`<tr>${tableCells(row).map((c) => `<td>${inline(c)}</td>`).join("")}</tr>`);
+  }
+  html.push("</tbody></table>");
+  return index;
+}
+
+function consumeListItem(index, html, listStack, item) {
+  const depth = Math.floor(item[1].length / 2) + 1;
+  const kind = /\d/.test(item[2]) ? "ol" : "ul";
+  while (listStack.length > depth) html.push(`</${listStack.pop()}>`);
+  while (listStack.length < depth) {
+    html.push(`<${kind}>`);
+    listStack.push(kind);
+  }
+  html.push(`<li>${inline(item[3])}</li>`);
+  return index + 1;
+}
+
+function consumeBlockquote(lines, index, html) {
+  const body = [];
+  while (index < lines.length && /^>\s?/.test(lines[index])) {
+    body.push(lines[index].replace(/^>\s?/, ""));
+    index += 1;
+  }
+  html.push(`<blockquote>${body.map((l) => inline(l)).join("<br />")}</blockquote>`);
+  return index;
+}
+
+function consumeParagraph(lines, index, html) {
+  const paragraph = [lines[index]];
+  index += 1;
+  while (
+    index < lines.length
+    && lines[index].trim()
+    && !/^(#{1,6}\s|```|\||\s*([-*+]|\d+\.)\s|>|-{3,}\s*$)/.test(lines[index])
+  ) {
+    paragraph.push(lines[index]);
+    index += 1;
+  }
+  html.push(`<p>${paragraph.map((l) => inline(l.trim())).join(" ")}</p>`);
+  return index;
+}
+
 export function renderMarkdown(source) {
   const lines = String(source).replace(/\r\n/g, "\n").split("\n");
   const html = [];
@@ -60,71 +140,32 @@ export function renderMarkdown(source) {
 
     if (/^```/.test(line)) {
       closeLists();
-      const lang = line.slice(3).trim();
-      const body = [];
-      index += 1;
-      while (index < lines.length && !/^```/.test(lines[index])) {
-        body.push(lines[index]);
-        index += 1;
-      }
-      index += 1; // closing fence
-      const cls = lang ? ` class="language-${escapeHtml(lang)}"` : "";
-      html.push(`<pre><code${cls}>${escapeHtml(body.join("\n"))}</code></pre>`);
+      index = consumeCodeFence(lines, index, html);
       continue;
     }
 
     const heading = /^(#{1,6})\s+(.*)$/.exec(line);
     if (heading) {
       closeLists();
-      const level = heading[1].length;
-      html.push(`<h${level}>${inline(heading[2].trim())}</h${level}>`);
-      index += 1;
+      index = consumeHeading(index, html, heading);
       continue;
     }
 
     if (/^\|.*\|\s*$/.test(line)) {
       closeLists();
-      const rows = [];
-      while (index < lines.length && /^\|.*\|\s*$/.test(lines[index])) {
-        rows.push(lines[index]);
-        index += 1;
-      }
-      const cells = (row) => row.replace(/^\||\|\s*$/g, "").split("|").map((c) => c.trim());
-      const isDivider = rows.length > 1 && cells(rows[1]).every((c) => /^:?-{3,}:?$/.test(c));
-      const head = cells(rows[0]);
-      const bodyRows = isDivider ? rows.slice(2) : rows.slice(1);
-      html.push("<table>");
-      html.push(`<thead><tr>${head.map((c) => `<th>${inline(c)}</th>`).join("")}</tr></thead>`);
-      html.push("<tbody>");
-      for (const row of bodyRows) {
-        html.push(`<tr>${cells(row).map((c) => `<td>${inline(c)}</td>`).join("")}</tr>`);
-      }
-      html.push("</tbody></table>");
+      index = consumeTable(lines, index, html);
       continue;
     }
 
     const item = /^(\s*)([-*+]|\d+\.)\s+(.*)$/.exec(line);
     if (item) {
-      const depth = Math.floor(item[1].length / 2) + 1;
-      const kind = /\d/.test(item[2]) ? "ol" : "ul";
-      while (listStack.length > depth) html.push(`</${listStack.pop()}>`);
-      while (listStack.length < depth) {
-        html.push(`<${kind}>`);
-        listStack.push(kind);
-      }
-      html.push(`<li>${inline(item[3])}</li>`);
-      index += 1;
+      index = consumeListItem(index, html, listStack, item);
       continue;
     }
 
     if (/^>\s?/.test(line)) {
       closeLists();
-      const body = [];
-      while (index < lines.length && /^>\s?/.test(lines[index])) {
-        body.push(lines[index].replace(/^>\s?/, ""));
-        index += 1;
-      }
-      html.push(`<blockquote>${body.map((l) => inline(l)).join("<br />")}</blockquote>`);
+      index = consumeBlockquote(lines, index, html);
       continue;
     }
 
@@ -142,17 +183,7 @@ export function renderMarkdown(source) {
     }
 
     closeLists();
-    const paragraph = [line];
-    index += 1;
-    while (
-      index < lines.length
-      && lines[index].trim()
-      && !/^(#{1,6}\s|```|\||\s*([-*+]|\d+\.)\s|>|-{3,}\s*$)/.test(lines[index])
-    ) {
-      paragraph.push(lines[index]);
-      index += 1;
-    }
-    html.push(`<p>${paragraph.map((l) => inline(l.trim())).join(" ")}</p>`);
+    index = consumeParagraph(lines, index, html);
   }
   closeLists();
   return html.join("\n");
