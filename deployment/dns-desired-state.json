@@ -30,20 +30,21 @@
       "observed_origin": {
         "ip": "217.160.250.222",
         "probe": "curl --resolve docs.subactor.com:443:217.160.250.222",
-        "https_root": "200 but body is prototypowanie.pl WordPress (default/primary vhost) — not docs tree",
-        "release_marker": "404 /__subactor_release.json",
-        "interpretation": "docs.subactor.com addon/docroot missing on Plesk (or not bound). Origin deploy + fingerprint DoD blocked until addon exists.",
+        "https_root": "200 probe index.html on subdomain docroot (not prototypowanie.pl)",
+        "release_marker": "200 /__subactor_release.json (SFTP probe release_id=rel_docs_probe_20260718T084757Z)",
+        "plesk_object": "subdomain id 308 under webspace subactor.com; www_root=/var/www/vhosts/subactor.com/docs.subactor.com",
+        "interpretation": "Origin Host ready for fingerprint rehearsal. Public DNS still Pages — do not flip.",
         "observed_at": "2026-07-18"
       },
-      "observed_note": "As of PR8/PR9 continuation, public docs.subactor.com resolves to GitHub Pages — do not report publish success from public DNS alone. Do not flip DNS while origin Host serves wrong site.",
+      "observed_note": "Public docs.subactor.com still GitHub Pages. Origin subdomain+probe marker exist. No production DNS flip until G0–G6 incl. cert HITL.",
       "staging": {
         "hostname": "docs-stage.subactor.com",
         "purpose": "Recommended origin/public rehearsal path before production cutover.",
         "observed_public": {
           "cname": ["subactor.github.io."],
-          "interpretation": "Also on GitHub Pages today — not a Plesk rehearsal target until addon + DNS created."
+          "interpretation": "Public still Pages; Plesk subdomain id 309 exists on origin (default page until content uploaded)."
         },
-        "blocker": "needs_human: create Plesk addon docs-stage.subactor.com (separate docroot) before staging DNS."
+        "blocker": "Upload rehearsal release to docs-stage origin; public staging DNS still HITL."
       },
       "rollback": {
         "dns_emergency": {
@@ -66,10 +67,10 @@
   },
   "cutover_runbook": "docs/deployment/PR9-docs-cutover-runbook.md",
   "needs_human": [
-    "Create Plesk addon domain docs.subactor.com with dedicated docroot (not primary /httpdocs of prototypowanie.pl).",
-    "Optionally create docs-stage.subactor.com addon for rehearsal.",
-    "Agree cert path (DNS-01 before cutover preferred) for docs.subactor.com SAN.",
+    "Agree cert path (DNS-01 before cutover preferred) / issue LE with SAN docs.subactor.com (origin today: self-signed CN=Plesk).",
     "HITL boundary DNS mutate Pages CNAME → A 217.160.250.222 only after G0–G6 green.",
-    "Rebuild/redeploy urirun-node so paramiko is present (live methods probe 2026-07-18: sftp paramiko_missing; ftp ok) — prod publish requires SFTP."
-  ]
+    "Optional: wire connector URI for subdomain/site add (rights already OK on subscription; ad-hoc XML used 2026-07-18).",
+    "Formal release-upload→activate (not only SFTP probe) + Cache-Control no-store on marker."
+  ],
+  "subscription_rights_note": "Customer subactor_customer on webspace subactor.com: manage_subdomains=true, create_domains=true, max_subdom=-1. Panel login subactor XML auth failed 1001; mailbox agent@subactor.com XML denied 1006. Not a plan-limit blocker."
 }

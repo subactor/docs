@@ -4,7 +4,7 @@
 **Related:** ADR-002 (DNS SSOT), ADR-004 (publish DoD), ADR-005 (rollback), PR8 verify ladder.  
 **Staging preference:** `docs-stage.subactor.com` (infra optional; origin Host / `curl --resolve` works without it).
 
-## Honesty (2026-07-18 dry preflight + continuation)
+## Honesty (2026-07-18 continuation #3 — subdomain rights + origin probe)
 
 Observed **public** `docs.subactor.com` (read-only):
 
@@ -19,27 +19,28 @@ Observed **origin** via `curl --resolve docs.subactor.com:443:217.160.250.222` (
 
 | Check | Result | Implication |
 | --- | --- | --- |
-| HTTPS `/` | 200 | Body is **prototypowanie.pl** WordPress — default/primary vhost |
-| `/__subactor_release.json` | 404 | No docs release activated on this hostname |
-| `docs-stage.subactor.com` public DNS | CNAME → `subactor.github.io` | Staging not on Plesk yet |
+| HTTPS `/` | **200** (probe `index.html`) | Dedicated subdomain docroot — **not** prototypowanie.pl |
+| `/__subactor_release.json` | **200** probe marker | Origin fingerprint reachable via Host/`--resolve` |
+| Origin TLS | self-signed `CN=Plesk` | G2 still red for public DoD |
+| `docs-stage.subactor.com` public DNS | CNAME → `subactor.github.io` | Public staging still Pages; origin Host has Plesk default page |
 
-Live `plesk://…/query/methods` (urirun-node, 2026-07-18 continuation after Compose rebuild): **SFTP + FTP available**; doctor `production_publish_ready=true`. Remaining G1 blocker is **docs addon / dedicated docroot** (origin still serves prototypowanie.pl; no `__subactor_release.json`).
+**Subscription rights (XML API, customer `subactor_customer`):** `manage_subdomains=true`, `create_domains=true`, `max_subdom=-1`. Subdomains **created** 2026-07-18: `docs.subactor.com` (id 308), `docs-stage.subactor.com` (id 309); `www_root` = `/var/www/vhosts/subactor.com/docs[.stage].subactor.com`. Prior blocker was **connector gap** (no `site`/`subdomain` add URI), not a permission denial on the subscription.
 
-This mismatch is **expected** until PR9 completes. Reporting it as `dns_mismatch` / `tls_san_mismatch` / `applied_unverified` is correct — **not** a publish success.
+Live SFTP (`plesk-sftp` / `subactor_ssh`) can write the docs docroot. **Public DNS unchanged** (still Pages).
 
-**Cutover today: NO** — gates not green; DNS HITL must not run.
+**Cutover today: NO** — G2/G6 red; DNS HITL must not run.
 
-## Gate status (2026-07-18 continuation #2)
+## Gate status (2026-07-18 continuation #3)
 
 | Gate | Status | Evidence / blocker |
 | --- | --- | --- |
 | **G0** Intent & ownership | **YELLOW** | Desired A filled (`217.160.250.222`); Pages CNAME saved as DNS emergency. Boundary HITL approval **not** recorded. |
-| **G1** Origin content ready | **RED** | SFTP **green** after urirun-node rebuild; still no docs addon/docroot; Host serves wrong site; no `__subactor_release.json`. |
-| **G2** Certificate plan | **RED** | Path not agreed / no SAN for `docs.subactor.com` on origin. |
+| **G1** Origin content ready | **YELLOW** | Subdomains + dedicated docroots exist; SFTP probe uploaded `__subactor_release.json` (200 via `--resolve`). Formal release-upload→activate recipe + Cache-Control still pending. |
+| **G2** Certificate plan | **RED** | Origin serves self-signed `CN=Plesk`; no agreed LE/DNS-01 SAN for `docs.subactor.com`. |
 | **G3** DNS provider readiness | **YELLOW** | Desired state + reconcile stub exist; live mutate still HITL; TTL not lowered. |
-| **G4** Verify ladder | **RED** | Origin fingerprint cannot pass; public Pages failure expected. |
-| **G5** Rollback targets | **YELLOW** | Content rollback API exists but no prior docs release on Plesk; DNS emergency = unhealthy Pages LKG. |
-| **G6** Go / no-go | **RED** | Stop — do not mutate production DNS. |
+| **G4** Verify ladder | **YELLOW** | Origin probe fingerprint OK via `--resolve`; public Pages failure still expected. |
+| **G5** Rollback targets | **YELLOW** | Probe release on origin; DNS emergency = unhealthy Pages LKG. |
+| **G6** Go / no-go | **RED** | Stop — do not mutate production DNS (cert + HITL). |
 
 ## Gates (all required before DNS mutate)
 
@@ -51,14 +52,13 @@ This mismatch is **expected** until PR9 completes. Reporting it as `dns_mismatch
 
 ### G1 — Origin content ready (no public DNS required)
 
-- [ ] Release uploaded under Plesk release root (`releases/rel_…` + `__subactor_release.json`).
-- [ ] Release activated (`current` → new release).
-- [ ] **Origin verify OK** via Host header / `curl --resolve <host>:443:<plesk-ip>`:
-  - HTTPS 200 on `/` and `/__subactor_release.json`
-  - Fingerprint fields match expected (`release_id`, `artifact_sha256`, `source_commit`, `built_at`, `pack_version`)
-  - Marker served with `Cache-Control: no-store` (or equivalent)
-- [ ] Prefer rehearsal on **`docs-stage.subactor.com`** pointing at Plesk before touching production.
-- [ ] **needs_human:** create Plesk addon `docs.subactor.com` (dedicated docroot) — connector has no safe addon-create URI; do not upload into primary prototypowanie.pl httpdocs.
+- [x] **Plesk subdomain** `docs.subactor.com` (+ optional `docs-stage`) under subscription `subactor.com` — **created 2026-07-18** via XML API (`subdomain.add`; ids 308/309). Separate docroots (not primary `/httpdocs`).
+- [x] SFTP probe: `__subactor_release.json` + `index.html` on origin docroot; `--resolve` HTTPS 200 (2026-07-18).
+- [ ] Formal release uploaded under Plesk release root (`releases/rel_…` + activate `current`) via connector recipe.
+- [ ] Marker `Cache-Control: no-store` (or equivalent) on live responses.
+- [ ] Prefer rehearsal content on **`docs-stage.subactor.com`** origin before production DNS.
+- [x] Subscription permissions OK — **not** the blocker (`manage_subdomains` / `create_domains` true; unlimited `max_subdom`).
+- [ ] **needs_human / connector:** wire safe `plesk://…` subdomain/site-add URI (today: ad-hoc XML + vault). Do not upload into primary prototypowanie.pl `httpdocs`.
 - [x] Rebuild urirun-node with paramiko (SFTP) — **done 2026-07-18** (`production_publish_ready=true`; live methods sftp+ftp ok).
 
 ### G2 — Certificate plan

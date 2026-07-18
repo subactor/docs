@@ -1,7 +1,7 @@
 # PR10 — legacy resolver / dual-run cleanup
 
 **Status:** in progress (2026-07-18 continuation) — cold FALLBACK_PHRASES removed; dual-run stays **shadow** until metrics OK.  
-**Why now:** PR9 production DNS cutover is blocked (G1 addon/docroot + G2/G6). Pack-first for docs/www is stable; SFTP readiness restored via urirun-node rebuild.
+**Why now:** PR9 production DNS cutover is blocked (G2 cert + G6 HITL). G1 largely unblocked: subdomains + origin probe marker exist (2026-07-18). Pack-first for docs/www is stable; SFTP readiness restored via urirun-node rebuild.
 
 ## Goal
 

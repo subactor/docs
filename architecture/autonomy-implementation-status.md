@@ -13,7 +13,7 @@
 | Policy | `on_fail` / retry / timeout / `depends_on` vs `after`; **rollback → release-rollback** (PR7); **verify → `applied_unverified`** (PR8) | Full lifecycle + `try_in_order` | — | Default `halt` |
 | Apply auth | Dual kill switch + signed apply grant + `plan_hash` + **jti replay** (PR5a–5c) | production verify DoD on live DNS | PR9 cutover (blocked) | Founder token ≠ grant (ADR-003) |
 | Transport | **SFTP readiness (PR6)** + **release paths (PR7):** upload→verify→activate; symlink/pointer | Live SFTP apply on Plesk + docroot cutover | PR9 | **Live urirun-node rebuilt 2026-07-18:** paramiko OK, `production_publish_ready=true`; FTP ok; legacy direct `/httpdocs` sync still present |
-| DNS / verify | **PR8:** publish-verify ladder; **PR9 prep:** runbook + desired A=`217.160.250.222` | DNS→Plesk + live public DoD | **PR9 execute when G0–G6 green** | **GitHub Pages unhealthy LKG**; origin Host serves prototypowanie.pl (**needs_human:** docs addon) |
+| DNS / verify | **PR8:** publish-verify ladder; **PR9 prep:** runbook + desired A=`217.160.250.222` | DNS→Plesk + live public DoD | **PR9 execute when G0–G6 green** | **GitHub Pages unhealthy LKG**; origin subdomain+probe marker OK (**needs_human:** cert + DNS HITL) |
 | Vault | Lease via browser-agent vault in recipes; lease error mapping (401→`credential_expired`) | ADR-006 lease/revoke/audit | — | `.env` tokens in lab |
 
 ## PR0–PR8 evidence table
@@ -36,7 +36,7 @@ Commands run 2026-07-18 (PR8):
 | **PR6** SFTP/paramiko readiness | plesk `7d8ab5b`; connectors `cc4c4e5` | platform `0ab75d1` | plesk 42; Dockerfile test | **done** |
 | **PR7** release upload/activate/rollback | plesk `d72e8d8`; orchestrator `2adf375`; connectors `d8895c9` | platform `d302def` | plesk 53; orchestrator 22 | **done** |
 | **PR8** DNS/TLS + fingerprint verify | plesk `530dda9`; orchestrator `9c687f5`; connectors `866cc96` | platform `803aa45` | plesk 64; orchestrator 24 | **done** |
-| **PR9** docs Pages→Plesk cutover | — | docs (this update) | origin/public probes; SFTP green | **prep / blocked** — addon + cert + DNS HITL; no DNS flip |
+| **PR9** docs Pages→Plesk cutover | — | docs (this update) | origin probe 200 + marker; public Pages | **prep / blocked on G2/G6** — subdomains exist; cert + DNS HITL; no DNS flip |
 | **PR10** dual-run reduce | core `f679796`; agents `b8fa969` | platform `f22763c` | control 9/9; agents 5/5; sync `--check` OK | **in progress** (shadow retained) |
 
 Honesty notes:
@@ -89,16 +89,16 @@ Pass returned `grant` as `apply_grant` on mutate. Each `jti` is single-use (repl
 Do **not** treat GitHub Pages as safe DNS/content rollback without noting it is an
 **unhealthy** last_known_good until Plesk cutover + verify (ADR-002/005).
 
-### PR9 dry preflight (public + origin, 2026-07-18 continuation)
+### PR9 dry preflight (public + origin, 2026-07-18 continuation #3)
 
 - CNAME `docs.subactor.com` → `subactor.github.io` (Pages) — **unchanged; no cutover**.
-- TLS SAN = `*.github.io` (does **not** include `docs.subactor.com`).
+- TLS SAN public = `*.github.io` (does **not** include `docs.subactor.com`).
 - Public fingerprint fetch fails TLS verify — expected `applied_unverified` until cutover.
-- Origin `--resolve` → `217.160.250.222`: HTTPS 200 but **prototypowanie.pl** content; `/__subactor_release.json` **404** (docs addon missing).
-- `docs-stage.subactor.com` also CNAME → Pages — not a Plesk rehearsal target yet.
-- Live doctor after urirun-node rebuild: **SFTP + FTP available**; `production_publish_ready=true`.
-- Live methods (vault payload): SFTP + FTP **ok**.
-- **needs_human:** create Plesk addon `docs.subactor.com` / `docs-stage` (no safe connector URI).
-- Origin release via `--resolve` **deferred** until dedicated docroot exists (do not upload into primary httpdocs).
+- **Subscription rights OK** (`manage_subdomains` / `create_domains`; unlimited `max_subdom`) — prior gap was connector, not plan limits.
+- Subdomains created under `subactor.com`: `docs.subactor.com` (308), `docs-stage.subactor.com` (309); dedicated docroots.
+- Origin `--resolve` → `217.160.250.222`: HTTPS **200** probe index + `/__subactor_release.json` **200** (SFTP probe).
+- Origin TLS: self-signed `CN=Plesk` — G2 still red.
+- Live doctor: **SFTP + FTP available**; `production_publish_ready=true`.
+- **needs_human:** LE/cert SAN + DNS HITL (G6). Formal release-upload recipe still preferred over ad-hoc SFTP probe.
 - Runbook: [`../deployment/PR9-docs-cutover-runbook.md`](../deployment/PR9-docs-cutover-runbook.md).
 - PR10 notes: [`../deployment/PR10-legacy-resolver-cleanup.md`](../deployment/PR10-legacy-resolver-cleanup.md).
