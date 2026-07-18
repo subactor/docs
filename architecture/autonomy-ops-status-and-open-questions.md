@@ -39,7 +39,7 @@ NL → intent → plan (ticket / recipe) → deploy (urirun) → verify → NL
 | --- | --- | --- |
 | Founder CLI `subactor` | Health, ask, tickets, plans | Control `:8091` healthy |
 | Orchestrator `subactor-run` | Recipe / topo URI | Dry-run domyślnie |
-| urirun-node | `plesk://…` HOW | SFTP: `paramiko_missing`; FTP: available |
+| urirun-node | `plesk://…` HOW | SFTP: paramiko in image (PR6); FTP: available; prod publish requires SFTP |
 | Vault / credentials | Lease do FTP/SFTP | Nie logowane; apply zależy od vault+transport |
 | DNS / TLS | Prawda „co serwuje domenę” | docs ≠ subactor.com (Plesk `217.160.250.222`) |
 
@@ -81,7 +81,7 @@ transport/timeout). **Nie twierdzimy o udanym live publish.**
 | --- | --- | --- |
 | DNS docs → GitHub Pages | CNAME `subactor.github.io` | Sync do Plesk httpdocs nie zmienia tego, co widzi świat |
 | TLS SAN mismatch | Cert `*.github.io` vs hostname `docs.subactor.com` | Strict verify / automatyczny health check pada |
-| Brak paramiko w urirun-node | `sftp.available=false`, `paramiko_missing` | Tylko FTP; wolniejszy/mniej niezawodny upload |
+| Brak paramiko w urirun-node | ~~`sftp.available=false`~~ → **fixed PR6** (image bake) | FTP-only only with explicit fallback env |
 | Timeout apply (~30s) | Live FTP sync fail | Recipe `--execute` z bramą i tak nie domyka publish |
 | `PLESK_SYNC_APPLY` unset | Domyślnie bezpiecznie | Founder musi świadomie ustawić bramę na nodzie |
 | Docroot `/httpdocs` | Recipe targetuje primary httpdocs | Ryzyko nadpisania złego vhostu; preferowany addon `/docs.subactor.com` (ops) |
