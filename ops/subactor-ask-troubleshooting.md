@@ -35,14 +35,16 @@ Poza TTY bez `--execute`: plan pozostaje bez wykonania (komunikat: użyj `--exec
 
 ## 2. Po edycji `step-catalog.json`
 
-Katalog kroków jest trzymany **w pamięci** przez **hr-control**. Po zmianie `platform/config/step-catalog.json`:
+**hr-control** przeładowuje `platform/config/step-catalog.json` z dysku przy każdym użyciu katalogu (sprawdzenie `mtime`) — restart nie jest wymagany dla nowych planów po zapisie pliku.
+
+W starszych wersjach (przed P0-4) katalog był trzymany w pamięci; po zmianie pliku restart był konieczny:
 
 ```bash
 cd /home/tom/github/subactor/platform
 docker compose restart hr-control
 ```
 
-**Incydent (logo):** pierwszy apply trafił na `/httpdocs` zamiast `/logo.subactor.com`, bo hr-control miał **stale** step-catalog. Po restarcie pack `logo-httpdocs-publish` wiąże poprawny `remote_path`.
+**Incydent (logo):** pierwszy apply trafił na `/httpdocs` zamiast `/logo.subactor.com`, bo hr-control miał **stale** step-catalog. Po restarcie (lub po wdrożeniu reload-on-read) pack `logo-httpdocs-publish` wiąże poprawny `remote_path`.
 
 ---
 
