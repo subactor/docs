@@ -41,6 +41,11 @@ Dwa strumienie (równolegle, E2E dopiero po obu):
 
 - Pola: `on_fail`, `depends_on` / `after`, `timeout_ms`, `retry`, `idempotency_key`, `compensation_step`.
 - Domyślnie legacy `halt`; dopiero później `try_in_order`.
+- **Unit 4 (done):** `@subactor/orchestrator` `normalizeStep` + `runTask` honorują
+  `on_fail` (`halt`|`continue`|`ticket`|`rollback` stub), `optional`/`required`,
+  `timeout_ms`, `retry`, oraz rozróżnienie `depends_on` (sukces) vs `after` (zakończenie).
+  Regresje w `orchestrator/tests/pipeline.test.mjs`. Live publish recipes bez zmian
+  semantyki (fixtures w testach). Compensation/`try_in_order` → PR7 / później.
 
 ## Faza 3 — Apply grants
 
@@ -79,7 +84,7 @@ Szczegóły każdej fazy: dokument rekomendacji §3–§11.
 | 1 | Ustalenie kanonicznych ścieżek oraz kontrola kopii `platform/components` — **done** |
 | 2 | Intent pack schema, registry i migracja docs/www — **done** (dual-run) |
 | 3 | Deduplikacja phrase map, katalogu LLM i step-catalog — **done** (pack SSOT; sync script; dual-run until PR10) |
-| 4 | `on_fail`, retry, timeout i statusy kroków w orchestratorze |
+| 4 | `on_fail`, retry, timeout i statusy kroków w orchestratorze — **done** |
 | 5 | Signed apply grants oraz plan/artifact hash binding |
 | 6 | Paramiko/SFTP, capability readiness i strukturalne błędy |
 | 7 | Release upload, activation i rollback |

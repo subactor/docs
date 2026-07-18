@@ -350,10 +350,10 @@ Ustalenie warstw i non-goals. **Bez** zmian runnera.
 
 ### Faza 2 — Recipe policy w orchestratorze
 
-1. Rozszerzyć `normalizeStep` + semantyka `runTask` (`optional`, `on_fail`).
-2. Test regresji: opcjonalny preflight fail → kolejne kroki nadal biegną.
-3. Domyślnie `halt` — istniejące recipes bez zmian zachowania.
-4. Później: `on_fail: ticket`, potem `strategy: try_in_order`.
+1. Rozszerzyć `normalizeStep` + semantyka `runTask` (`optional`, `on_fail`) — **done (PR4)**.
+2. Test regresji: opcjonalny preflight fail → kolejne kroki nadal biegną — **done**.
+3. Domyślnie `halt` — istniejące recipes bez zmian zachowania — **done**.
+4. `on_fail: ticket` (hook) + timeout/retry — **done**; `strategy: try_in_order` — później.
 
 ### Faza 3 — Deduplikacja planów
 

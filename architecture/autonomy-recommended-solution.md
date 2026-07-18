@@ -241,6 +241,12 @@ core/services/control/src/www-sync-intent.mjs
 
 ## 5. Faza 2 — Recipe Policy Engine
 
+**Status (PR4):** zaimplementowane w `@subactor/orchestrator`
+(`normalizeStep`, `runTask`, `orderSteps`). Domyślnie `on_fail: halt` —
+istniejące recipes bez zmiany zachowania. `on_fail: rollback` zapisuje warning
+i zatrzymuje plan; faktyczna kompensacja (`compensation_step` / release rollback)
+czeka na PR7. `strategy: try_in_order` — poza zakresem PR4.
+
 Dzisiejszy `runTask` zatrzymuje plan przy pierwszym błędzie. Rozszerzyć `UriProcess`, zachowując obecne zachowanie jako domyślne.
 
 ### 5.1 Minimalne pola policy
@@ -273,12 +279,12 @@ Bez tego `on_fail: continue` jest niejednoznaczne.
 
 ### 5.3 Kolejność implementacji
 
-1. `normalizeStep` — nowe pola  
-2. Stare recipes → `on_fail: halt`  
-3. `runTask` zapisuje wynik każdego kroku  
-4. Retry + timeout  
-5. `ticket`  
-6. `rollback`  
+1. `normalizeStep` — nowe pola — **done (PR4)**
+2. Stare recipes → `on_fail: halt` — **done (domyślne)**
+3. `runTask` zapisuje wynik każdego kroku — **done**
+4. Retry + timeout — **done**
+5. `ticket` — **done** (hook `ticketEscalator`; stub gdy brak)
+6. `rollback` — **stub** (halt + warning; kompensacja → PR7)
 7. Na końcu `strategy: try_in_order`  
 
 Nie zaczynać od skomplikowanych grup fallbacków.
@@ -488,7 +494,7 @@ Pełna tabela: [`../plans/autonomy-implementation-roadmap.md`](../plans/autonomy
 | 1 | Kanoniczne ścieżki + kontrola kopii `platform/components` — **done** (ADR-007) |
 | 2 | Intent pack schema, registry, migracja docs/www — **done** (dual-run) |
 | 3 | Deduplikacja phrase map, katalogu LLM, step-catalog — **done** (pack SSOT + sync script; dual-run retained) |
-| 4 | `on_fail`, retry, timeout, statusy kroków |
+| 4 | `on_fail`, retry, timeout, statusy kroków — **done** (`@subactor/orchestrator`) |
 | 5 | Signed apply grants + plan/artifact hash binding |
 | 6 | Paramiko/SFTP, capability readiness, błędy strukturalne |
 | 7 | Release upload, activation, rollback |

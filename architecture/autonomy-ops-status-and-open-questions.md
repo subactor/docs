@@ -102,7 +102,7 @@ Krótko — szczegóły w
 | Intent wiring zduplikowany (frazy, AQL, step-catalog, recipe, Planfile) | Drift; drogi cost nowego celu |
 | Brak intent pack SSOT | Każdy cel = N plików ręcznie |
 | Orchestrator NL stub ≠ pełna multi-step recipe | `--nl` nie zastępuje ticketu z `uri_processes` |
-| Fail-fast `runTask` bez `optional` / `on_fail` | Preflight zabija cały plan |
+| Fail-fast `runTask` bez `optional` / `on_fail` | **Closed (PR4)** — policy w `@subactor/orchestrator` |
 | Kontrakty autonomii w API to głównie TestQL onboarding | Brak produkcyjnego kontraktu „docs publish” |
 | Multi-goal NL (treść + publish) niepełne | Intent trafia w sync; generacja treści nie jest w tym samym łańcuchu |
 | Misroute LLM bez trafienia frazy | Historycznie modele onboardingowe — łata phrase map, nie SSOT |
