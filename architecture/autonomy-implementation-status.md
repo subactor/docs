@@ -100,3 +100,16 @@ Do **not** treat GitHub Pages as safe DNS/content rollback without noting it is 
 - **needs_human:** Cloudflare API (or panel) for production DNS A cutover; explicit HITL (G6). No token in platform env — do not silent-flip.
 - Runbook: [`../deployment/PR9-docs-cutover-runbook.md`](../deployment/PR9-docs-cutover-runbook.md).
 - PR10 notes: [`../deployment/PR10-legacy-resolver-cleanup.md`](../deployment/PR10-legacy-resolver-cleanup.md).
+
+## CLI autonomy (founder ask)
+
+**CURRENT (2026-07-18):** `subactor ask "…docs-stage…" --execute --yes` completes reversible apply without permanent kill switches:
+
+1. pack-first + capability preflight
+2. dry-run (publish-verify skipped on dry-run)
+3. session mutate lease on urirun-node (TTL)
+4. signed apply-grant
+5. apply → `applied`; lease cleared
+
+docs-stage docroot bound to `/docs-stage.subactor.com` (or `…/current`). Production `docs.subactor.com` public DNS cutover remains HITL (Pages → Plesk).
+
