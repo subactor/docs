@@ -10,7 +10,7 @@
 | --- | --- | --- | --- |
 | **tellmesh/touri** | Core import + `validate`/`list` OK; 14 pass / voice+markpact failures unrelated | **Helpful** — capability id + `.uri.capability.yaml` manifest shape | Yes (pattern + local manifests) |
 | **tellmesh/uri2verify** | Unit tests pass; `capability-plan` was broken without hypervisor | **Helpful** — capability verification plan builder | Yes (touri fallback + used as design cue) |
-| **semcod / TestQL** | Installed (`1.2.60`); `testql analyze` on platform OK | **Partial** — good scenario orchestrator, not SSOT for pack⊆doctor | No (documented only; wrap CLI later) |
+| **semcod / TestQL** | Installed (`1.2.60`); `testql analyze` on platform OK | **Partial** — good scenario orchestrator, not SSOT for pack⊆doctor | Thin wrapper scenario only |
 | **wronai/dockfra doctor** | CLI runs; reports wizard offline without dockfra stack | **Not useful** for Plesk capability ⊆ gate | No |
 | **wronai/hypervisor** | Examples = touri capability registry copy; package not importable without install | **Partial** — contract-registry pattern; too heavy as dependency | No (uri2verify still prefers it when present) |
 | **wronai/vdisplay** | Present; display orchestration | **Not useful** for this gap | No |
@@ -33,7 +33,7 @@
 ### TestQL
 
 - Installable from local oqlos tree; CLI works.
-- `testql analyze` discovers platform TestQL scenarios.
+- Thin wrapper: `platform/components/testkit/tests/testql/capability-preflight.testql.toon.yaml` shells the preflight CLI (fixture green + red doctor → exit 1).
 - Ownership (unchanged): TestQL may **call** the preflight CLI and assert exit codes; it must not own capability SSOT ([testing-intents-and-deploy-results.md](./testing-intents-and-deploy-results.md)).
 
 ### dockfra doctor
@@ -49,40 +49,66 @@
 
 ## Integration shipped in Subactor
 
-Minimal local gate (no foreign monorepo rewrite):
-
 | Artefact | Role |
 | --- | --- |
-| `platform/config/connector-capabilities/catalog.v1.json` | Pack capability id ↔ doctor keys / aliases |
-| `platform/config/connector-capabilities/plesk.doctor.fixture.json` | CI doctor readiness fixture (`production_publish_ready` + caps) |
-| `platform/config/connector-capabilities/*.uri.capability.yaml` | Touri-style docs for `plesk.site.sync` / `plesk.transport.sftp` |
-| `platform/config/connector-capabilities/preflight.mjs` | ⊆ check library |
-| `platform/scripts/capability-preflight.mjs` | CLI gate (`capability_unavailable` on miss) |
-| `platform/test/capability-preflight.test.mjs` | Regression (green fixture, red sftp, alias map, CLI exit codes) |
+| `platform/config/connector-capabilities/catalog.v1.json` | Pack id ↔ **live** doctor keys (`sftp`, `tls_san_check`, `ssl_ensure`, …) |
+| `platform/config/connector-capabilities/plesk.doctor.fixture.json` | CI fixture mirroring live short-key + `available` shape |
+| `platform/config/connector-capabilities/*.uri.capability.yaml` | Touri-style docs (sync / sftp / tls / ssl_ensure) |
+| `platform/config/connector-capabilities/preflight.mjs` | ⊆ library + live fetch (urirun `/run`, bridge `/processes/run`) |
+| `platform/scripts/capability-preflight.mjs` | CLI (`--live`, `--via bridge\|urirun`, `capability_unavailable`) |
+| `platform/test/capability-preflight.test.mjs` | Unit/regression |
+| `core/.../capability-preflight-gate.mjs` | Fail-closed gate for control |
+| `core/.../routes/llm.mjs` + `plans.mjs` | Deny before NL success / propose-from-intent |
+| `platform/bin/subactor` | Surfaces `capability_unavailable` / `preflight_failed` on `ask` |
 
 ```bash
+# Fixture (CI)
 node platform/scripts/capability-preflight.mjs --json
 node platform/scripts/capability-preflight.mjs --require-publish-ready
-node platform/scripts/capability-preflight.mjs --doctor /path/to/live-doctor.json
+
+# Live doctor from running urirun-node
+URIRUN_NODE_TOKEN=$SUBACTOR_ADMIN_TOKEN \
+  node platform/scripts/capability-preflight.mjs --live --via urirun --urirun-url http://127.0.0.1:18765 --json
+
+# Live via bridge (in-compose)
+BRIDGE_INTERNAL_URL=http://hr-bridge:8081 BRIDGE_SERVICE_TOKEN=… \
+  node platform/scripts/capability-preflight.mjs --live --via bridge --json
 ```
 
-Live doctor JSON should use the same shape as the fixture (`capabilities.<id>.ready`). Short keys (`sftp`) resolve via catalog aliases.
+**Live doctor URI:** `plesk://host/doctor/query/report`  
+Shape: short keys + `{available|boolean}` + `production_publish_ready`. Pack ids use catalog aliases; `plesk.site.sync` is derived when SFTP is ready.
+
+**Packs (docs/www)** declare: `plesk.site.sync`, `plesk.transport.sftp`, `plesk.tls_san_check`, `plesk.ssl_ensure`.  
+`letsencrypt` stays **not** required — never claim public LE success.
+
+**Control env:** `CAPABILITY_PREFLIGHT=1` (default), `CAPABILITY_PREFLIGHT_LIVE=1` (bridge/urirun when configured; else fixture). Inject `CAPABILITY_DOCTOR_PATH` or test `doctorReport` for red-path smoke.
 
 ## What was refactored
 
-1. **uri2verify** — `capability-plan` CLI: hypervisor when `contracts/` present, else **touri registry**; adapters `touri_manifests_to_capability_records` / `build_capability_test_plan_from_touri`; hypervisor contract test skipped when unavailable.
-2. **platform** — Makefile / `test:meta` include capability-preflight tests; new connector-capabilities config + script.
+1. **uri2verify** — `capability-plan` CLI: hypervisor when `contracts/` present, else **touri registry**.
+2. **platform** — live doctor normalize (`available`↔`ready`), CLI `--live`, pack/catalog SSL+SFTP alignment.
+3. **core/control** — fail-closed on `/api/llm/intent` + `/api/plans/propose-from-intent`.
 
-No dockfra / vdisplay / hypervisor wholesale changes.
+No dockfra / vdisplay / hypervisor wholesale changes. **No production DNS flip / no LE public success claim.**
+
+## Test table (this continuation)
+
+| Check | Result |
+| --- | --- |
+| Unit fixture ⊆ packs | PASS |
+| Unit live-shape normalize (`available` + short keys) | PASS |
+| Unit red sftp → `capability_unavailable` | PASS |
+| CLI fixture exit 0 / red exit 1 | PASS |
+| Gate mocked red → deny (`model_name: null`) | PASS |
+| Live `--via urirun` against stack | PASS (`doctor_source: urirun-live`, both packs ok) |
+| TestQL thin wrapper file | Added (shells CLI) |
 
 ## Remaining gaps
 
-1. **Live doctor producer** — fixture is CI SSOT; wire urirun-node / bridge to emit the same JSON (paramiko, sync OQL, verify probes) and pass `--doctor` in ops preflight.
-2. **Orchestrator hook** — call preflight before NL success promise / grant (deny `capability_unavailable`).
-3. **AQL ⊆ check** — packs declare capabilities; still need CI that every required id is allowed by AQL contracts (separate from doctor readiness).
-4. **TestQL thin wrapper** — optional scenario that shells the preflight CLI (not blocking).
-5. **touri voice/markpact flakes** — unrelated to this gap; leave for tellmesh maintainers.
+1. **AQL ⊆ check** — packs declare capabilities; still need CI that every required id is allowed by AQL contracts (separate from doctor readiness).
+2. **Apply-grant path** — intent/propose gated; optional extra deny on `POST /api/apply-grants` for defense in depth.
+3. **touri voice/markpact flakes** — unrelated; leave for tellmesh maintainers.
 
 ## Polish one-liner
 
-Przetestowano touri, uri2verify, TestQL, dockfra doctor i wzorce hypervisor: **pomocne są touri (manifesty) i uri2verify (plan weryfikacji)**; TestQL częściowo; dockfra/vdisplay nie. Domknięto lukę lokalnym gate’em pack⊆doctor w platformie + małym fallbackiem touri w uri2verify.
+Live `plesk://host/doctor/query/report` feeds capability-preflight; control/`subactor ask` fail-closed on red caps (`capability_unavailable` / `preflight_failed`) — no success promise / no apply expand when SFTP/SSL doctor keys are red.

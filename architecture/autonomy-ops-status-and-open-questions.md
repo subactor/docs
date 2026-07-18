@@ -131,10 +131,12 @@ Evidence implementacji: [`autonomy-implementation-status.md`](./autonomy-impleme
 
 ### Zdolności i connectorzy
 
-- [ ] **Jakie capability muszą być w connectorach zanim NL może obiecać wynik?**
-      Minimum: transport (SFTP lub FTP), vault lease, allowlist source, domain
-      exists, TLS OK, apply gate, post-verify.  
-      **Rekomendacja:** pack deklaruje `required_capabilities`; preflight green przed obietnicą sukcesu.
+- [x] **Jakie capability muszą być w connectorach zanim NL może obiecać wynik?**
+      Pack `required_capabilities` ⊆ live `plesk://host/doctor/query/report`
+      (SFTP/`ssl_ensure`/`tls_san_check`); control + `subactor ask` fail-closed
+      (`capability_unavailable` / `preflight_failed`). See
+      [capability-tooling-evaluation.md](./capability-tooling-evaluation.md).
+      **Nie** wymaga `letsencrypt` (brak claimu publicznego LE).
 - [x] **Paramiko / SFTP w obrazie urirun-node** — paramiko w Dockerfile; FTP tylko fallback (`PLESK_SYNC_ALLOW_FTP_FALLBACK=1`) (PR6).
 - [x] **Timeout / retries (connector budgets):** connect/op/total 15/120/180 (PR6); orchestrator `timeout_ms`/`retry` (PR4).
 - [x] **Release upload / activate / rollback** — **PR7** (`release-upload` / `verify` / `activate` / `current` / `rollback`; strategy `auto|symlink|pointer`).
