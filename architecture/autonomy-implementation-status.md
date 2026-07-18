@@ -50,10 +50,13 @@ Honesty notes:
 
 ## PR5 draft reconciliation
 
-Prior session drafted HMAC grants + grant-required apply in sibling trees (`runtime`/`connectors`/`core`/`urirun-connector-plesk`) **without** Accepted ADR-003. That work is **not** pushed as production behavior.
+Prior session drafted HMAC grants + grant-required apply in sibling trees
+**without** Accepted ADR-003. After course correction:
 
-- **PR5a (next code):** immutable manifest + canonical JSON + `plan_hash`; apply must not free re-scan when hash bound.
-- **PR5b:** signed grant per Accepted ADR-003.
-- **PR5c:** replay / `jti` store.
+1. ADR-003 was filled and **Accepted** (crypto/TTL/replay/rotation/fail-closed).
+2. Draft grant/manifest **code was discarded from working trees** (not pinned, not pushed)
+   so platform drift stays clean and we do not ship grant-required apply prematurely.
+3. Next code: **PR5a** immutable manifest only → **PR5b** grant verify → **PR5c** `jti` replay.
 
-Do **not** treat GitHub Pages as safe DNS/content rollback without noting it is an **unhealthy** last_known_good until Plesk cutover + verify (ADR-002/005).
+Do **not** treat GitHub Pages as safe DNS/content rollback without noting it is an
+**unhealthy** last_known_good until Plesk cutover + verify (ADR-002/005).
