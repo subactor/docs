@@ -1,11 +1,12 @@
 {
   "id": "docs-httpdocs-sync",
   "name": "Sync docs → Plesk httpdocs (docs.subactor.com)",
-  "description": "Dry-run first, then apply via plesk://host/site/command/sync. Safety gate is PLESK_SYNC_APPLY=1 (not human_approval) so founder/admin can run autonomously.",
+  "description": "Dry-run first, then apply via plesk://host/site/command/sync. Optional publish-verify (ADR-004) when verify_public/origin enabled — success requires fingerprint match. Staging rehearsal: docs-stage.subactor.com (infra optional). Production DNS cutover is PR9 — do not claim Pages→Plesk cutover here.",
   "situation": {
     "source_dir": "/home/tom/github/subactor/docs",
     "host": "prototypowanie.pl",
-    "domain": "docs.subactor.com"
+    "domain": "docs.subactor.com",
+    "staging_domain": "docs-stage.subactor.com"
   },
   "uri_processes": [
     {
@@ -64,6 +65,35 @@
       },
       "depends_on": ["docs-httpdocs-sync-dry-run"],
       "human_approval": false
+    },
+    {
+      "id": "docs-publish-verify",
+      "name": "ADR-004 public/origin fingerprint verify (enable when origin ready)",
+      "actor": "bot:project-operator-bot",
+      "uri": "plesk://host/site/command/publish-verify",
+      "payload": {
+        "hostname": "docs.subactor.com",
+        "release_id": "${release_id}",
+        "artifact_sha256": "${artifact_sha256}",
+        "source_commit": "${source_commit}",
+        "pack_version": "1",
+        "origin_ip": "",
+        "verify_origin": false,
+        "verify_public": false,
+        "check_dns": false,
+        "check_tls": false,
+        "note": "Set verify_public/origin true + fingerprint fields after release-upload. Prefer docs-stage.subactor.com or curl --resolve origin preflight before PR9 DNS cutover."
+      },
+      "depends_on": ["docs-httpdocs-sync-apply"],
+      "required": false,
+      "on_fail": "rollback",
+      "compensation_step": "release-rollback",
+      "compensation_payload": {
+        "release_root": "/httpdocs",
+        "host": "prototypowanie.pl"
+      },
+      "human_approval": false,
+      "verify": true
     }
   ]
 }

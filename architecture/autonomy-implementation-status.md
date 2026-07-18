@@ -10,19 +10,19 @@
 | Layer | CURRENT (implemented) | TARGET | PLANNED | LEGACY (still present) |
 | --- | --- | --- | --- | --- |
 | Intent | Pack registry + pack-first resolvers; derived phrases/LLM/step-catalog sync | Single pack SSOT end-to-end | Dual-run remove (PR10); Planfile auto from pack | Planfile imports hand-maintained; some dual-run compare |
-| Policy | `on_fail` / retry / timeout / `depends_on` vs `after`; **rollback → release-rollback** (PR7) | Full lifecycle + `try_in_order` | PR8 verify hooks on rollback | Default `halt` |
-| Apply auth | Dual kill switch + signed apply grant + `plan_hash` + **jti replay** (PR5a–5c) | production verify DoD | PR8 public fingerprint | Founder token ≠ grant (ADR-003); dual-run retained |
-| Transport | **SFTP readiness (PR6)** + **release paths (PR7):** upload→verify→activate; symlink/pointer | Live SFTP apply on Plesk + docroot cutover | PR8–9 | Lab may set `PLESK_SYNC_ALLOW_FTP_FALLBACK=1`; legacy direct `/httpdocs` sync still present |
-| DNS / verify | Desired state documented; Pages still serves docs | DNS→Plesk + fingerprint DoD | PR8–9 | **GitHub Pages is not healthy last_known_good** for content rollback |
+| Policy | `on_fail` / retry / timeout / `depends_on` vs `after`; **rollback → release-rollback** (PR7); **verify → `applied_unverified`** (PR8) | Full lifecycle + `try_in_order` | — | Default `halt` |
+| Apply auth | Dual kill switch + signed apply grant + `plan_hash` + **jti replay** (PR5a–5c) | production verify DoD on live DNS | PR9 cutover | Founder token ≠ grant (ADR-003); dual-run retained |
+| Transport | **SFTP readiness (PR6)** + **release paths (PR7):** upload→verify→activate; symlink/pointer | Live SFTP apply on Plesk + docroot cutover | PR9 | Lab may set `PLESK_SYNC_ALLOW_FTP_FALLBACK=1`; legacy direct `/httpdocs` sync still present |
+| DNS / verify | **PR8:** publish-verify ladder (DNS/TLS/HTTPS/fingerprint) + origin `--resolve`; marker `__subactor_release.json` | DNS→Plesk + live public DoD | **PR9 cutover** | **GitHub Pages is not healthy last_known_good** for content rollback; public docs may still be Pages |
 | Vault | Lease via browser-agent vault in recipes; lease error mapping (401→`credential_expired`) | ADR-006 lease/revoke/audit | — | `.env` tokens in lab |
 
-## PR0–PR7 evidence table
+## PR0–PR8 evidence table
 
-Commands run 2026-07-18 (PR7):
+Commands run 2026-07-18 (PR8):
 
-- `urirun-connector-plesk` `pytest tests/` → **53/53 pass** (release LocalReleaseFs + handlers + prior PR5–6 gates)
-- `orchestrator` `node --test tests/pipeline.test.mjs` → **22/22 pass** (`rolled_back` / `rollback_failed` compensation)
-- No claim of live production publish / DNS cutover
+- `urirun-connector-plesk` `pytest tests/` → **64/64 pass** (verify ladder mocks + prior PR5–7)
+- `orchestrator` `node --test tests/pipeline.test.mjs` → **24/24 pass** (`applied_unverified` + rollback after stale fingerprint)
+- No claim of live production publish / DNS cutover (PR9)
 
 | Unit | Component commit (sibling) | Platform pin | Tests | Status |
 | --- | --- | --- | --- | --- |
@@ -35,14 +35,16 @@ Commands run 2026-07-18 (PR7):
 | **PR5c** jti replay | runtime `c6ba013`; plesk `cecfb36`; core `79d3178`; connectors `c578cc2` | platform `17740cc` | runtime 17; plesk 34 | **done** — single-use jti |
 | **PR6** SFTP/paramiko readiness | plesk `7d8ab5b`; connectors `cc4c4e5` | platform `0ab75d1` | plesk 42; Dockerfile test | **done** |
 | **PR7** release upload/activate/rollback | plesk `d72e8d8`; orchestrator `2adf375`; connectors `d8895c9` | platform `d302def` | plesk 53; orchestrator 22 | **done** |
+| **PR8** DNS/TLS + fingerprint verify | plesk `530dda9`; orchestrator `9c687f5`; connectors `866cc96` | platform pin after docs push | plesk 64; orchestrator 24 | **done** |
 
 Honesty notes:
 
 - **PR3 ≠ full migration.** Resolvers and derived YAML/JSON track packs; Planfile ticket YAML and some recipes remain hand-wired.
-- **PR4+PR7:** Retry/timeout/`on_fail` work; `on_fail:rollback` executes `release-rollback` (or `compensationRunner`) → `rolled_back` / `rollback_failed`. Ticket without hook must not yield `ok: true`.
+- **PR4+PR7+PR8:** Retry/timeout/`on_fail` work; verify failures → `applied_unverified`; `on_fail:rollback` → `rolled_back` / `rollback_failed`. Never fake `ok` / `completed` on stale fingerprint.
 - **PR5c ≠ DNS cutover.** Replay-safe grants in mock.
 - **PR6 ≠ live Plesk publish.** Image + connector readiness.
-- **PR7 ≠ docs.subactor.com cutover.** Release APIs + orchestrator compensation in mock/lab; no public DNS/TLS/fingerprint claim (PR8). Plesk panel docroot API not assumed — `auto` = symlink then pointer.
+- **PR7 ≠ docs.subactor.com cutover.** Release APIs + orchestrator compensation in mock/lab.
+- **PR8 ≠ production DNS switch.** Capability + mocked ladder + optional origin/`curl --resolve`. Staging hostname recommendation: `docs-stage.subactor.com` (infra not required). **Public docs may still be GitHub Pages.**
 
 ## Fail-closed apply gates (CURRENT)
 
@@ -54,6 +56,7 @@ Honesty notes:
 | Manifest | apply `plan_hash` ≠ recomputed dry-run | `plan_hash_mismatch` | **CURRENT (PR5a)** |
 | Replay | reused `jti` | `apply_grant_replay` | **CURRENT (PR5c)** |
 | SFTP required | no paramiko / FTP-only without fallback | `capability_unavailable` | **CURRENT (PR6)** |
+| Publish verify | DNS/TLS/HTTPS/fingerprint mismatch when enabled | `dns_mismatch` / `tls_san_mismatch` / `fingerprint_stale` → stage `applied_unverified` | **CURRENT (PR8)** |
 
 ### Founder / admin grant path
 
@@ -61,20 +64,32 @@ After dry-run: `POST /api/apply-grants` (scope `plans:approve`) with `run_id`, `
 HMAC: `APPLY_GRANT_HMAC_SECRET` (preferred) or `TOKEN_PEPPER`; rotation via `APPLY_GRANT_HMAC_SECRET_NEXT`.  
 Pass returned `grant` as `apply_grant` on mutate. Each `jti` is single-use (replay store; optional `APPLY_GRANT_JTI_STORE` file). Secrets never in tickets/logs.
 
-### Transport policy (PR6) + release (PR7)
+### Transport policy (PR6) + release (PR7) + verify (PR8)
 
-- Doctor: `capabilities.sftp|ftp|release_activation|rollback`, `production_publish_ready`, timeouts 15/120/180.
+- Doctor: `capabilities.sftp|ftp|release_activation|rollback|publish_verify|dns_preflight|tls_san_check|content_fingerprint`, `production_publish_ready`, timeouts 15/120/180.
 - FTP fallback only when `PLESK_SYNC_ALLOW_FTP_FALLBACK=1`.
 - Publish packs list `required_capabilities: ["plesk.site.sync", "plesk.transport.sftp"]`.
 - Release: `PLESK_RELEASE_ACTIVATION=auto|symlink|pointer` (default `auto`).
+- Verify URI: `plesk://host/site/command/publish-verify` (+ `release-verify` with `verify_origin`/`verify_public`).
+- Marker: `/__subactor_release.json` (`Cache-Control: no-store`; fields `release_id`, `artifact_sha256`, `source_commit`, `built_at`, `pack_version`).
+- Desired DNS doc: `docs/deployment/dns-desired-state.json` (staging note `docs-stage.subactor.com`).
 
-## PR5–PR7 split
+## PR5–PR8 split
 
 1. ADR-003 **Accepted** (crypto/TTL/replay/rotation/fail-closed).
 2. **PR5a–5c done:** manifest, grant, jti replay.
 3. **PR6 done:** paramiko in image, capability readiness, structured errors, SFTP-required prod policy.
 4. **PR7 done:** release upload / activate / rollback + orchestrator compensation.
-5. **Next: PR8** DNS/TLS preflight + public content fingerprint verify (no cutover claim yet).
+5. **PR8 done:** DNS/TLS preflight + public content fingerprint verify (mocked; no cutover claim).
+6. **PR9 prep:** cutover runbook + desired/observed DNS + `dns-record-reconcile` stub — **no production DNS flip**.
+7. **Next: PR9 execute** when gates green; then **PR10** legacy resolver / dual-run cleanup.
 
 Do **not** treat GitHub Pages as safe DNS/content rollback without noting it is an
 **unhealthy** last_known_good until Plesk cutover + verify (ADR-002/005).
+
+### PR9 dry preflight (public, 2026-07-18)
+
+- CNAME `docs.subactor.com` → `subactor.github.io` (Pages).
+- TLS SAN = `*.github.io` (does **not** include `docs.subactor.com`).
+- Public fingerprint fetch fails TLS verify — expected `applied_unverified` until cutover.
+- Runbook: [`../deployment/PR9-docs-cutover-runbook.md`](../deployment/PR9-docs-cutover-runbook.md).

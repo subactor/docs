@@ -322,9 +322,15 @@ require `plesk.transport.sftp`.
 (`release-upload` / `release-verify` / `release-activate` / `release-current` /
 `release-rollback`); activation `auto|symlink|pointer` (Plesk docroot API not
 assumed); orchestrator `on_fail:rollback` → real compensation; plan stage
-`rolled_back` (never fake `ok`). Origin/public fingerprint verify → **PR8**.
+`rolled_back` (never fake `ok`).
 
-**Next:** DNS/TLS preflight + public content fingerprint (PR8).
+**CURRENT (PR8):** DNS/TLS/HTTPS + `/__subactor_release.json` fingerprint ladder
+(`plesk://host/site/command/publish-verify`); origin via Host / `--resolve`;
+`200 + stale fingerprint` → `applied_unverified` (rollback or ticket, ≠ `completed`).
+Staging recommendation: `docs-stage.subactor.com` (optional infra).
+**Does not** switch production DNS for `docs.subactor.com`.
+
+**Next:** PR9 cutover **when gates green** — see [`../deployment/PR9-docs-cutover-runbook.md`](../deployment/PR9-docs-cutover-runbook.md). Prep only until then.
 ---
 
 ## 7. Faza 4 — connector capabilities i SFTP
@@ -496,8 +502,8 @@ Pełna tabela: [`../plans/autonomy-implementation-roadmap.md`](../plans/autonomy
 | 5c | Grant replay (`jti`) — **done** |
 | 6 | Paramiko/SFTP, capability readiness, błędy strukturalne |
 | 7 | Release upload, activation, rollback |
-| 8 | DNS/TLS preflight + public content fingerprint verify |
-| 9 | Migracja `docs.subactor.com` Pages → Plesk |
+| 8 | DNS/TLS preflight + public content fingerprint verify — **done** |
+| 9 | Migracja `docs.subactor.com` Pages → Plesk — **next** |
 | 10 | Usunięcie legacy resolverów i starego wiring |
 
 Każdy PR odwracalny; kompatybilność ze starymi recipes do końca migracji.

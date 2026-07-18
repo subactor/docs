@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "note": "Desired DNS state for docs (ADR-002). Observed public DNS may still point at GitHub Pages until PR9 cutover. This file is SSOT for verify ladder expectations — not a claim that cutover has happened.",
+  "observed_at": "2026-07-18",
+  "domains": {
+    "docs.subactor.com": {
+      "desired": {
+        "provider": "plesk",
+        "records": [
+          {
+            "type": "A",
+            "value": "<plesk-public-ipv4>",
+            "comment": "Fill with real Plesk IPv4 before PR9 cutover; used by publish-verify dns_targets"
+          }
+        ]
+      },
+      "observed_public": {
+        "cname": ["subactor.github.io."],
+        "a": [
+          "185.199.108.153",
+          "185.199.109.153",
+          "185.199.110.153",
+          "185.199.111.153"
+        ],
+        "tls_san": ["*.github.io", "*.github.com", "github.io", "github.com"],
+        "tls_covers_hostname": false,
+        "release_marker_reachable": false,
+        "interpretation": "GitHub Pages — expected pre-PR9. Public publish-verify must fail (dns_mismatch / tls_san_mismatch)."
+      },
+      "observed_note": "As of PR8, public docs.subactor.com resolves to GitHub Pages — do not report publish success from public DNS alone.",
+      "staging": {
+        "hostname": "docs-stage.subactor.com",
+        "purpose": "Recommended origin/public rehearsal path before production cutover. Infra need not exist yet; origin_ip + Host header / curl --resolve works without staging DNS."
+      },
+      "rollback": {
+        "dns_emergency": {
+          "cname": "subactor.github.io",
+          "healthy_for_content": false,
+          "note": "HITL only; restores Pages, not previous Plesk release. TLS SAN still wrong for docs.subactor.com."
+        },
+        "content": {
+          "mechanism": "plesk://host/site/command/release-rollback",
+          "healthy": true
+        }
+      }
+    }
+  },
+  "release_marker": {
+    "path": "/__subactor_release.json",
+    "cache_control": "no-store",
+    "fields": ["release_id", "artifact_sha256", "source_commit", "built_at", "pack_version"]
+  },
+  "cutover_runbook": "docs/deployment/PR9-docs-cutover-runbook.md"
+}

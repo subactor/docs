@@ -28,9 +28,9 @@ upload OK + public verify FAIL
 
 | | |
 | --- | --- |
-| CURRENT | Dry-run + kill switch; public HTTPS docs może nadal być Pages |
-| TARGET | Pełny DoD D1–D9 na Plesk origin |
-| Nearest milestone | Mocked mutate + deny gates — **bez** twierdzenia o publicznym publish success |
+| CURRENT (PR8) | Verify ladder + marker + orchestrator `applied_unverified`; public HTTPS docs may nadal być Pages |
+| TARGET | Pełny DoD D1–D9 na Plesk origin po cutoverze |
+| Nearest milestone | PR9 prep runbook + dry preflight (Pages mismatch expected) — **bez** cutover DNS |
 
 ## Konsekwencje
 

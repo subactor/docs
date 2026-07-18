@@ -74,12 +74,14 @@ Dwa strumienie (równolegle, E2E dopiero po obu):
 
 ## Faza 7 — Migracja docs.subactor.com → Plesk
 
-- Desired DNS w repo; vhost; SFTP; origin deploy z `__subactor_release.json`; cutover DNS; TLS; public verify; auto-rollback.
+- Desired DNS w repo (`docs/deployment/dns-desired-state.json`); vhost; SFTP; origin deploy z `__subactor_release.json`; **PR8 verify ladder done** (mocked + origin/`--resolve`); cutover DNS = **PR9**; TLS; public verify; auto-rollback.
+- Staging recommendation: `docs-stage.subactor.com` (infra optional — Host header / `--resolve` works without it).
 - Pages ≠ healthy content last_known_good (ADR-002/005).
 
 ## Faza 8 — Lifecycle stanów
 
 - Pełna maszyna stanów planu; odpowiedź NL ze statusem bogatszym niż `ok`.
+- **PR8:** `applied_unverified` when verify enabled and fingerprint/DNS/TLS fail (≠ `completed`).
 
 Szczegóły każdej fazy: dokument rekomendacji §3–§11.
 
@@ -99,8 +101,8 @@ Szczegóły każdej fazy: dokument rekomendacji §3–§11.
 | 5c | Grant replay (`jti`) — **done** |
 | 6 | Paramiko/SFTP, capability readiness i strukturalne błędy — **done** |
 | 7 | Release upload, activation i rollback — **done** |
-| 8 | DNS/TLS preflight oraz public content fingerprint verify — **next** |
-| 9 | Migracja `docs.subactor.com` z Pages do Pleska |
+| 8 | DNS/TLS preflight oraz public content fingerprint verify — **done** |
+| 9 | Migracja `docs.subactor.com` z Pages do Pleska — **prep** (runbook + dry preflight; execute when gates green) |
 | 10 | Usunięcie legacy resolverów i starych kopii wiring |
 
 Każdy PR odwracalny; kompatybilność ze starymi recipes do końca migracji.
@@ -116,5 +118,5 @@ Pełna lista: rekomendacja §12. Evidence: [`../architecture/autonomy-implementa
 ## Werdykt
 
 Cztery fundamenty: intent pack SSOT · policy engine · connector (transport+rollback) · verify obowiązkowy.  
-Reprezentatywny sukces produkcyjny: autonomiczny release docs na Plesk — **po** PR5–9.  
-Najbliższy kamień: **PR8** public/origin fingerprint verify (bez cutover DNS).
+Reprezentatywny sukces produkcyjny: autonomiczny release docs na Plesk — **po** PR9 cutover.  
+Najbliższy kamień: **PR9 execute** (Pages→Plesk) gdy gates z [`PR9-docs-cutover-runbook.md`](../deployment/PR9-docs-cutover-runbook.md) są zielone; potem **PR10** legacy cleanup.

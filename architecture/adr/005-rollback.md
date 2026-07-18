@@ -10,7 +10,7 @@
 1. **Deploy release-based** — nie destrukcyjny sync do aktywnego `/httpdocs`; aktywacja atomowa (`current` / `previous`) — **CURRENT (PR7)**.
 2. **Recipe policy** (`on_fail`): `halt` (domyślne, legacy) \| `continue` \| `ticket` \| `rollback`.
 3. **Dwa osobne procesy rollbacku:**
-   - **Treść / release:** `activate(previous_release)` → verify (path stub; public → PR8) → `rolled_back` (+ ticket).
+   - **Treść / release:** `activate(previous_release)` → verify (PR8 publish-verify) → `rolled_back` (+ ticket).
    - **DNS / boundary:** przywrócenie poprzedniego *desired* DNS (HITL) — **nie** mylić z content rollback.
 4. Stany planu bogatsze niż boolean: m.in. `applied_unverified`, `rolled_back`, `rollback_failed`, `needs_human`, `ticket_failed`.
 
@@ -37,7 +37,7 @@ Gdy compensation niedostępna, connector niedostępny, lub verify po rollbacku f
 **GitHub Pages nie jest healthy `last_known_good`** dla treści wdrożonej na Plesk:
 
 - DNS→Pages przywraca *inny* origin (często starą/inną treść).
-- Do czasu cutoveru + fingerprint verify na Plesku: traktować Pages wyłącznie jako możliwy **DNS emergency** (boundary HITL), nie jako content rollback.
+- Do czasu cutoveru na Plesku: traktować Pages wyłącznie jako możliwy **DNS emergency** (boundary HITL), nie jako content rollback. Fingerprint verify (PR8) jest dostępny jako capability; live cutover = PR9.
 
 ## Konsekwencje
 

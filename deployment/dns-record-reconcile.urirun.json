@@ -1,0 +1,67 @@
+{
+  "id": "dns-record-reconcile",
+  "name": "Reconcile DNS desired → observed (boundary HITL stub)",
+  "description": "PR9 prep stub only. Boundary-class: does NOT auto-mutate production DNS. Dry-run compares desired state (repo) to public/authoritative answers; apply requires human approval + provider connector. Prefer docs-stage.subactor.com rehearsal before docs.subactor.com.",
+  "situation": {
+    "hostname": "docs.subactor.com",
+    "desired_state_ref": "docs/deployment/dns-desired-state.json",
+    "staging_hostname": "docs-stage.subactor.com",
+    "risk_class": "boundary"
+  },
+  "uri_processes": [
+    {
+      "id": "dns-desired-load",
+      "name": "Load desired DNS from repo SSOT",
+      "actor": "bot:project-operator-bot",
+      "uri": "fs://host/file/query/read",
+      "payload": {
+        "path": "docs/deployment/dns-desired-state.json",
+        "note": "Stub: wire to real fs:// or inline payload when registering pack"
+      },
+      "depends_on": [],
+      "human_approval": false,
+      "required": false
+    },
+    {
+      "id": "dns-observe-public",
+      "name": "Observe public resolvers (read-only)",
+      "actor": "bot:project-operator-bot",
+      "uri": "plesk://host/site/command/publish-verify",
+      "payload": {
+        "hostname": "docs.subactor.com",
+        "release_id": "rel_preflight_placeholder",
+        "artifact_sha256": "preflight_placeholder",
+        "verify_origin": false,
+        "verify_public": false,
+        "check_dns": true,
+        "check_tls": true,
+        "dns_targets": ["<plesk-public-ipv4>"],
+        "note": "Expect dns_mismatch + tls_san_mismatch while CNAME→subactor.github.io (Pages). That is applied_unverified, not success."
+      },
+      "depends_on": [],
+      "on_fail": "halt",
+      "human_approval": false
+    },
+    {
+      "id": "dns-mutate-apply",
+      "name": "Apply DNS reconcile (HITL — provider write)",
+      "actor": "bot:project-operator-bot",
+      "uri": "dns://host/records/command/plan",
+      "payload": {
+        "hostname": "docs.subactor.com",
+        "action": "reconcile_desired",
+        "provider": "namecheap-or-panel",
+        "note": "Stub URI — requires urirun-connector-namecheap-dns (or panel) + AQL ALLOW. Never run without founder HITL."
+      },
+      "depends_on": ["dns-observe-public"],
+      "human_approval": true,
+      "on_fail": "ticket",
+      "required": false
+    }
+  ],
+  "notes": [
+    "Not registered in platform/config/intent-packs yet (registry tests expect docs+www only).",
+    "Register as dns-record-reconcile.v1.json in PR9 when AQL model + connector grants exist.",
+    "Pages TLS/SAN is unhealthy LKG for docs.subactor.com — DNS emergency rollback is HITL-only."
+  ]
+}
