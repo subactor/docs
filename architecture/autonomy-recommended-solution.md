@@ -15,6 +15,7 @@
 | [`../plans/docs-subactor-com-publish.md`](../plans/docs-subactor-com-publish.md) | Plan publish docs.subactor.com |
 | [`../plans/intent-capability-fallbacks.md`](../plans/intent-capability-fallbacks.md) | Skrót intent + fallbacki |
 | [`../autonomy-cli-runbook.md`](../autonomy-cli-runbook.md) | Runbook CLI |
+| [EQL ↔ Subactor/Koru](https://github.com/subactor/eql/blob/main/docs/SUBACTOR_KORU_INTEGRATION.md) | Prototyp 0.2: SemanticPatch (typed) + hash ladder przed apply grant (repo `subactor/eql`) |
 
 ---
 
@@ -26,6 +27,7 @@ Docelowa pętla:
 
 ```text
 NL
+→ (opcjonalnie) EQL: analiza + allowlistowany SemanticPatch → eqlHash / artifactHash
 → wybór named intent pack
 → walidacja parametrów i kontraktu AQL
 → rozwinięcie recipe
@@ -37,6 +39,8 @@ NL
 → verify public HTTPS
 → success albo automatyczny rollback/ticket
 ```
+
+EQL nie zastępuje intent packów ani signed apply grants: LLM może tylko wzbogacić semantykę; URI / transport / vault / approval pozostają poza modelem. Mapowanie `eqlHash`↔`plan_hash` i `artifactHash`↔`artifact_sha256`: [SUBACTOR_KORU_INTEGRATION.md](https://github.com/subactor/eql/blob/main/docs/SUBACTOR_KORU_INTEGRATION.md).
 
 Obecnie pierwsza połowa tej ścieżki działa, ale sukces publikacji nie może być raportowany, ponieważ domena wskazuje GitHub Pages, certyfikat nie obejmuje `docs.subactor.com`, SFTP jest niedostępne, a FTP kończy się timeoutem.
 

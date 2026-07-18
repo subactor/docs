@@ -6,7 +6,8 @@
 **ADR:** [`../architecture/adr/README.md`](../architecture/adr/README.md) (**001–007 Accepted**)  
 **Status ops:** [`../architecture/autonomy-ops-status-and-open-questions.md`](../architecture/autonomy-ops-status-and-open-questions.md)  
 **Intent/fallbacki:** [`../architecture/intent-orchestration-and-fallbacks.md`](../architecture/intent-orchestration-and-fallbacks.md)  
-**Publish docs:** [`docs-subactor-com-publish.md`](./docs-subactor-com-publish.md)
+**Publish docs:** [`docs-subactor-com-publish.md`](./docs-subactor-com-publish.md)  
+**EQL prototype 0.2:** [`subactor/eql` integration note](https://github.com/subactor/eql/blob/main/docs/SUBACTOR_KORU_INTEGRATION.md) — typed SemanticPatch + determinism gates before apply grant (mock CI; no live OpenRouter in CI).
 
 **Baseline diagnostyczny:** docs commit `5894906` — nie mieszać z refaktorem orchestratora.
 
