@@ -56,15 +56,32 @@ control `/status` (404, tylko `/health`), Grafana (dashboardy nie dla LLM), urir
 
 ---
 
+## 2a. Pilot na prawdziwym defekcie (SELFDEV-030) — wynik
+
+Uruchomiono pętlę na realnym, zablokowanym tickecie kolejki development: `agents/services/intent-pack-adapter.mjs` czyta `INTENT_PACKS_DIR`/`INTENT_PACK_DUAL_RUN` bezpośrednio z `process.env` (`direct_process_env_forbidden`). Target: kanoniczny `agents/` (nie submodule platform), izolowany worktree, `main` nietknięty.
+
+**Bieg 1 — eskalacja, przyczyna po stronie verify (nie pętli).** Pętla 3× próbowała patcha, za każdym razem `verify_failed` z **pustym** stdout/stderr, wyczerpała budżet (10 iter, $0.083). Diagnoza: mój GATE miał `>/dev/null 2>&1` + brak setupu środowiska. Reprodukcja potwierdziła: w izolowanym worktree w `/tmp` testy padają, bo rozpoznanie intent-pack registry zależy od ścieżki `../../platform/config` względem lokalizacji repo — prawdziwe `quality_commands` ustawiają symlink `../platform/config`, którego brakowało. **Pętla zachowała się wzorowo: bezpiecznie, bez fałszywego sukcesu, czysty cleanup po 3 porażkach.**
+
+**Bieg 2 — sukces end-to-end.** Z wiernym GATE (symlink `platform/config` + `@subactor/runtime`, output testów ujawniony): pętla przeczytała źródło i test → 1. patch przeszedł testy (dodał regresję 7→9) ale zostawił resztkowy `process.env` w linii 19 → **grep w outpucie verify pokazał to pętli** → 2. patch poprawił → verify pass. Wynik: branch `anomaly/selfdev-030-agents-env-a2`, `main` nietknięty, 6 iteracji, $0.029.
+
+**Jakość fixu (kontrola ręczna):** poprawny, nie „oszukanie gate'a" — wprowadził obiekt `env_contract` z getterami (dokładnie „validated environment helper pattern" z anomalii), przekierował oba odczyty, **zachował domyślne shadow** (`?? "shadow"`), dodał sensowny test regresji (3 tryby, custom/unset, poprawne save/restore `process.env`). Jedna asercja pusta (`compare !== null || true`) — drobiazg. Niezależna reweryfikacja: 9/9 testów, zero bezpośrednich `process.env`.
+
+**Wnioski dla P0:**
+1. **Verify musi mieć wierność środowiska.** Izolowany worktree nie ma zależności ani sibling-ścieżek (`platform/config`, `node_modules/@subactor/runtime`). Executor pętli **musi** uruchamiać ten sam preambuł co `targets.json:quality_commands` (setup symlinków + trap cleanup), inaczej verify zawodzi niezależnie od jakości patcha. To najważniejszy blocker P0.
+2. **Verify nie może dusić outputu** — pusty feedback zagładza pętlę. Dodano strażnik `verify_uninformative` (eskalacja natychmiast zamiast ślepych prób) — commit `19e4321`.
+3. **Ścieżki w anomalii bywają submodule-relative** (`components/agents/...` zamiast `services/...`) — pętla samo-skorygowała przez `repo_tree`, ale enrichment (P1.4) powinien normalizować.
+4. **Pełen łańcuch feedbacku działa** — pętla naprawiła prawie-dobry patch dzięki temu, że *zobaczyła* konkretną linię z grepa. To potwierdza rdzeń projektu.
+
 ## 3. Roadmapa refaktoryzacji — do pełnej autonomii
 
 Priorytety: **P0 = blokuje adopcję produkcyjną**, **P1 = domyka autonomię**, **P2 = odporność/skala**, **P3 = dopracowanie**.
 
 ### P0 — integracja z żywym systemem (dziś pętla to samodzielne CLI)
 
-1. **Executor kolejki `development`.** Zastąp jednostrzałowy `AutonomousRepairExecutor` (`subactor-improvement/src/repair-executor.mjs`, dziś `agent_did_not_commit_repair`) adapterem pętli anomalii. Pętla diagnozuje przed patchowaniem — dokładnie to, czego zabrakło SELFDEV-005/006.
+0. **Wierność środowiska verify** *(nowy P0, z pilota — najwyższy priorytet).* Executor pętli musi uruchamiać komendę verify z tym samym preambułem środowiskowym co `targets.json:quality_commands` (symlinki `platform/config`, `node_modules/@subactor/runtime`, trap cleanup). Bez tego verify w izolowanym worktree zawodzi niezależnie od poprawności patcha (dowiedzione: bieg 1 pilota). Najprościej: `verifyCommands[].argv = ["bash","-lc", <quality_command z targets.json>]` pobierany z konfiguracji targetu, nie ręcznie. Verify NIE jest kontrolowane przez LLM, więc `bash -lc` tu nie narusza zasady no-shell (dotyczy sond).
+1. **Executor kolejki `development`.** Zastąp jednostrzałowy `AutonomousRepairExecutor` (`subactor-improvement/src/repair-executor.mjs`, dziś `agent_did_not_commit_repair`) adapterem pętli anomalii. Pętla diagnozuje przed patchowaniem — dokładnie to, czego zabrakło SELFDEV-005/006. Pilot potwierdził, że przy poprawnym verify pętla naprawia realny defekt end-to-end (SELFDEV-030, 6 iter, $0.029), którego stary executor nie ruszył.
 2. **Wpięcie w `record_improvement_failure`** (`platform/bin/subactor`). Zamiast od razu tworzyć ticket repair, uruchom pętlę; twórz ticket dopiero gdy pętla zwróci `development_defect` lub `escalated`. Kategorie `operational_transient`/`needs_human_input` nie generują wtedy ticketów-śmieci (usuwa klasę problemu z `invalid_inputs`/`urirun_node_unavailable`).
-3. **Automatyczne wzbogacanie zdarzenia o kontekst uruchomieniowy.** Dziś `docker_container`/`health_url` podaję ręcznie w `hints`. Trzeba mapować `component` → kontener/URL/repo z `docker-compose.yml` + `targets.json`, żeby pętla startowała z pełnym kontekstem bez ręcznej ingerencji.
+3. **Automatyczne wzbogacanie zdarzenia o kontekst uruchomieniowy.** Dziś `docker_container`/`health_url` podaję ręcznie w `hints`. Trzeba mapować `component` → kontener/URL/repo z `docker-compose.yml` + `targets.json`, żeby pętla startowała z pełnym kontekstem bez ręcznej ingerencji. Pilot pokazał też, że ścieżki w anomalii bywają submodule-relative i wymagają normalizacji do repo kanonicznego.
 
 ### P1 — domknięcie autonomii kontekstu
 
