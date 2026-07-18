@@ -7,7 +7,11 @@
 **Zakres:** wzorce generyczne dla dowolnej domeny (publish, DNS, vault, HTTP check,
 GitHub, …). Przykład **docs → Plesk httpdocs** jest tylko ilustracją.
 
-**Powiązane:** [`../autonomy-cli-runbook.md`](../autonomy-cli-runbook.md),
+**Powiązane:** [`autonomy-recommended-solution.md`](./autonomy-recommended-solution.md)
+(rekomendacja + ADR), [`adr/README.md`](./adr/README.md),
+[`../plans/autonomy-implementation-roadmap.md`](../plans/autonomy-implementation-roadmap.md),
+[`autonomy-ops-status-and-open-questions.md`](./autonomy-ops-status-and-open-questions.md),
+[`../autonomy-cli-runbook.md`](../autonomy-cli-runbook.md),
 [`../plans/docs-subactor-com-publish.md`](../plans/docs-subactor-com-publish.md),
 [`../../platform/docs/URI_PROCESS_AUTONOMY.md`](../../platform/docs/URI_PROCESS_AUTONOMY.md),
 [`../../orchestrator/README.md`](../../orchestrator/README.md).

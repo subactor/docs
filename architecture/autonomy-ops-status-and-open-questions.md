@@ -5,7 +5,11 @@
 samego siebie).  
 **Kanoniczny runbook:** [`../autonomy-cli-runbook.md`](../autonomy-cli-runbook.md)  
 **Plan publish:** [`../plans/docs-subactor-com-publish.md`](../plans/docs-subactor-com-publish.md)  
-**Architektura intentów:** [`intent-orchestration-and-fallbacks.md`](./intent-orchestration-and-fallbacks.md)
+**Architektura intentów:** [`intent-orchestration-and-fallbacks.md`](./intent-orchestration-and-fallbacks.md)  
+**Rekomendowane rozwiązanie:** [`autonomy-recommended-solution.md`](./autonomy-recommended-solution.md)  
+**ADR (Faza 0):** [`adr/README.md`](./adr/README.md)  
+**Roadmapa:** [`../plans/autonomy-implementation-roadmap.md`](../plans/autonomy-implementation-roadmap.md)  
+**Baseline tego dokumentu:** commit `5894906` (snapshot diagnostyczny; nie mieszać z refaktorem orchestratora).
 
 ---
 
@@ -113,42 +117,55 @@ Checklist decyzji pod **pełną autonomię poza self-evolution**.
 ### Governance / apply
 
 - [ ] **Kto zatwierdza apply?** Founder zawsze bypass (`SUBACTOR_ADMIN_TOKEN` + `*`)
-      vs polityka kontraktu (bot tylko dry-run; apply po human / po nazwanym kontrakcie)?
+      vs polityka kontraktu (bot tylko dry-run; apply po human / po nazwanym kontrakcie)?  
+      **Rekomendacja:** kill switch + podpisany apply grant związany z `plan_hash`/artefaktem/targetem; founder bypass nie zastępuje grantu w docelowym modelu ([ADR-003](./adr/003-approval-hitl-model.md)).
 - [ ] **Dry-run zawsze przed apply?** Czy obowiązkowy w recipe policy, czy wystarczy
-      brama `PLESK_SYNC_APPLY`?
+      brama `PLESK_SYNC_APPLY`?  
+      **Rekomendacja:** obowiązkowy dry-run → immutable manifest; `PLESK_SYNC_APPLY` / `AUTONOMY_MUTATIONS_ENABLED` tylko jako kill switch, nie jedyna autoryzacja.
 - [ ] **Human-in-the-loop when?** Tylko ensure credentials / DNS / TLS, czy też
-      każdy live mutate poza allowlistą?
+      każdy live mutate poza allowlistą?  
+      **Rekomendacja:** HITL dla boundary (domena, DNS, credential) i governance (nowy pack/polityka); reversible mutate (kolejny release) zero-touch po dry-run ([ADR-003](./adr/003-approval-hitl-model.md)).
 
 ### Prawda domeny i weryfikacja
 
 - [ ] **Gdzie żyje prawda DNS/domen?** Repo CNAME, Plesk API, zewnętrzny DNS panel —
-      jeden SSOT + preflight URI przed obietnicą NL?
+      jeden SSOT + preflight URI przed obietnicą NL?  
+      **Rekomendacja:** repo = desired state; provider = observed; connector DNS = reconcile; Plesk nie jest SSOT DNS ([ADR-002](./adr/002-dns-ssot.md)).
 - [ ] **Monitoring / verify obowiązkowe?** Czy plan bez HTTPS/DNS check może być
-      `ok: true`, czy verify jest częścią Definition of Done autonomii?
+      `ok: true`, czy verify jest częścią Definition of Done autonomii?  
+      **Rekomendacja:** verify obowiązkowy; `upload OK + verify FAIL` = `applied_unverified` ≠ sukces ([ADR-004](./adr/004-publish-definition-of-done.md)).
 - [ ] **GitHub Pages vs Plesk:** docs zostaje na Pages, czy migracja DNS→Plesk
-      (wzorzec `subactor.com`)?
+      (wzorzec `subactor.com`)?  
+      **Rekomendacja:** `docs.subactor.com → Plesk`; jeśli Pages — usunąć intent docs→Plesk z procesu publicznego ([ADR-002](./adr/002-dns-ssot.md)).
 
 ### Zdolności i connectorzy
 
 - [ ] **Jakie capability muszą być w connectorach zanim NL może obiecać wynik?**
       Minimum: transport (SFTP lub FTP), vault lease, allowlist source, domain
-      exists, TLS OK, apply gate, post-verify.
+      exists, TLS OK, apply gate, post-verify.  
+      **Rekomendacja:** pack deklaruje `required_capabilities`; preflight musi być green przed obietnicą sukcesu; minimum jak powyżej + release activate/rollback.
 - [ ] **Paramiko / SFTP w obrazie urirun-node** — wymagane przed „autonomicznym
-      publish”, czy FTP + wyższy timeout wystarczy?
-- [ ] **Timeout / retries:** stałe 30s vs per-URI budget; kto ustawia?
+      publish”, czy FTP + wyższy timeout wystarczy?  
+      **Rekomendacja:** paramiko w obrazie; brak SFTP blokuje readiness produkcyjnego publish; FTP tylko jako fallback konektora, nie jedyna ścieżka.
+- [ ] **Timeout / retries:** stałe 30s vs per-URI budget; kto ustawia?  
+      **Rekomendacja:** policy connectora/recipe (np. connect 15s, op 120s, budget 180s, 3× backoff 1/3/9); nie LLM.
 
 ### Secrets / vault
 
 - [ ] **Ownership sekretów?** Kto tworzy, rotuje, lease’uje z CLI/recipe bez wklejania
-      do ticketów?
-- [ ] **Ensure SFTP → vault** zawsze pierwszym krokiem, czy opcjonalny preflight?
+      do ticketów?  
+      **Rekomendacja:** człowiek tworzy/rotuje; vault = SSOT; recipe = `credential_ref`; runtime = krótki lease ([ADR-006](./adr/006-secrets-ownership.md)).
+- [ ] **Ensure SFTP → vault** zawsze pierwszym krokiem, czy opcjonalny preflight?  
+      **Rekomendacja:** brak credential → `needs_human` + ticket bootstrap; bez publikacji i bez pytania LLM o hasło.
 
 ### Scope produktu
 
 - [ ] **Scope „dowolne zadanie” vs katalog intent packs?** Autonomia = zamknięty
-      katalog nazwanych celów, czy free-form LLM z eskalacją?
+      katalog nazwanych celów, czy free-form LLM z eskalacją?  
+      **Rekomendacja:** kontrolowany katalog intent packów; LLM wybiera pack + sloty, nie URI ([ADR-001](./adr/001-autonomy-scope.md)).
 - [ ] **Rollback / failure semantics?** Halt + ticket; partial upload rollback;
-      `on_fail: continue|ticket|halt` w recipe policy?
+      `on_fail: continue|ticket|halt` w recipe policy?  
+      **Rekomendacja:** `on_fail: halt|continue|ticket|rollback`; release-based rollback + stany planu bogatsze niż boolean ([ADR-005](./adr/005-rollback.md)).
 
 ### Poza zakresem (nie rozstrzygamy tu)
 
@@ -192,6 +209,9 @@ publicznego HTTPS).
 | [`../deployment/PLESK.md`](../deployment/PLESK.md) | Ops path docs → httpdocs |
 | [`../deployment/docs-httpdocs-sync.urirun.json`](../deployment/docs-httpdocs-sync.urirun.json) | Recipe dry-run/apply |
 | [`intent-orchestration-and-fallbacks.md`](./intent-orchestration-and-fallbacks.md) | Intent packs, policy, fallbacki |
+| [`autonomy-recommended-solution.md`](./autonomy-recommended-solution.md) | Kanoniczna rekomendacja autonomii |
+| [`adr/README.md`](./adr/README.md) | ADR Phase 0 (do akceptacji) |
+| [`../plans/autonomy-implementation-roadmap.md`](../plans/autonomy-implementation-roadmap.md) | Fazy 0–8 + kolejność zmian |
 | [`../plans/intent-capability-fallbacks.md`](../plans/intent-capability-fallbacks.md) | Krótka nota planowa |
 | [`../../platform/docs/URI_PROCESS_AUTONOMY.md`](../../platform/docs/URI_PROCESS_AUTONOMY.md) | AQL / OQL / URI |
 | [`../../platform/docs/AUTONOMY_CONTRACTS.md`](../../platform/docs/AUTONOMY_CONTRACTS.md) | Kontrakty autonomii |

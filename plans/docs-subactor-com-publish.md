@@ -74,3 +74,10 @@ only shows Plesk content after DNS (and TLS cert) point at the Plesk host
 | `https://docs.subactor.com/` | Serves **GitHub Pages** (Jekyll); TLS SAN mismatch on strict verify |
 
 Ops follow-ups: add `docs.subactor.com` on Plesk + DNS/TLS; raise urirun exec timeout or fix FTP/SFTP (paramiko) for apply; prefer addon docroot `/docs.subactor.com` so primary `/httpdocs` is not overwritten.
+
+## Powiązane (rekomendacja autonomii)
+
+- Kanoniczna rekomendacja: [`../architecture/autonomy-recommended-solution.md`](../architecture/autonomy-recommended-solution.md)
+- Roadmapa (faza 7 migracji + PR 9): [`autonomy-implementation-roadmap.md`](./autonomy-implementation-roadmap.md)
+- Status + pytania: [`../architecture/autonomy-ops-status-and-open-questions.md`](../architecture/autonomy-ops-status-and-open-questions.md)
+- ADR DNS / DoD / rollback: [`../architecture/adr/README.md`](../architecture/adr/README.md)

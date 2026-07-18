@@ -19,5 +19,9 @@ LLM wybiera pack id i sloty, nie URI DAG.
 
 ## Uzupełnienia
 
+- Rekomendacja autonomii: [`../architecture/autonomy-recommended-solution.md`](../architecture/autonomy-recommended-solution.md)
+- Roadmapa faz 0–8: [`autonomy-implementation-roadmap.md`](autonomy-implementation-roadmap.md)
+- ADR: [`../architecture/adr/README.md`](../architecture/adr/README.md)
+- Status ops: [`../architecture/autonomy-ops-status-and-open-questions.md`](../architecture/autonomy-ops-status-and-open-questions.md)
 - Runbook CLI: [`../autonomy-cli-runbook.md`](../autonomy-cli-runbook.md)
 - Przykład publish docs: [`docs-subactor-com-publish.md`](docs-subactor-com-publish.md)

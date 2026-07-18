@@ -6,7 +6,11 @@ Publiczna dokumentacja Subactor.
 
 | Dokument | Opis |
 |----------|------|
-| [architecture/intent-orchestration-and-fallbacks.md](architecture/intent-orchestration-and-fallbacks.md) | **Kanoniczny:** intent packs, recipe policy, capability fallbacki, rola LLM (generycznie; publish tylko jako przykład) |
+| [architecture/autonomy-recommended-solution.md](architecture/autonomy-recommended-solution.md) | **Rekomendacja kanoniczna:** kontrolowany katalog zdolności, strumienie A/B, fazy, werdykt 4 fundamentów |
+| [architecture/adr/README.md](architecture/adr/README.md) | ADR Phase 0: zakres autonomii, DNS SSOT, HITL, DoD publish, rollback, sekrety |
+| [architecture/autonomy-ops-status-and-open-questions.md](architecture/autonomy-ops-status-and-open-questions.md) | Status ops + pytania otwarte (z proponowanymi odpowiedziami); baseline `5894906` |
+| [architecture/intent-orchestration-and-fallbacks.md](architecture/intent-orchestration-and-fallbacks.md) | Intent packs, recipe policy, capability fallbacki, rola LLM (generycznie; publish tylko jako przykład) |
+| [plans/autonomy-implementation-roadmap.md](plans/autonomy-implementation-roadmap.md) | Roadmapa: fazy 0–8 + kolejność jednostek zmian (PR table) |
 | [autonomy-cli-runbook.md](autonomy-cli-runbook.md) | Runbook: NL z shella (`subactor` / `subactor-run`) → AQL/OQL/URI → Plesk sync; current vs target dla docs.subactor.com |
 | [plans/docs-subactor-com-publish.md](plans/docs-subactor-com-publish.md) | Plan implementacji: allowlist `docs/`, recipe, NL → publish na docs.subactor.com |
 | [plans/intent-capability-fallbacks.md](plans/intent-capability-fallbacks.md) | Skrót / pointer do dokumentu architektury intent + fallbacki |
