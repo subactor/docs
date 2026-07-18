@@ -36,6 +36,8 @@ Commands run 2026-07-18 (PR8):
 | **PR6** SFTP/paramiko readiness | plesk `7d8ab5b`; connectors `cc4c4e5` | platform `0ab75d1` | plesk 42; Dockerfile test | **done** |
 | **PR7** release upload/activate/rollback | plesk `d72e8d8`; orchestrator `2adf375`; connectors `d8895c9` | platform `d302def` | plesk 53; orchestrator 22 | **done** |
 | **PR8** DNS/TLS + fingerprint verify | plesk `530dda9`; orchestrator `9c687f5`; connectors `866cc96` | platform `803aa45` | plesk 64; orchestrator 24 | **done** |
+| **PR9** docs Pages→Plesk cutover | — | docs `7bb4f26` | origin/public probes | **prep / blocked** — no DNS flip |
+| **PR10** dual-run reduce | core `6e40051`; agents `b8fa969` | platform `7bd9088` | control 8/8; agents 5/5 | **started** (`INTENT_PACK_DUAL_RUN`) |
 
 Honesty notes:
 
