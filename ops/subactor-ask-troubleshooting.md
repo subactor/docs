@@ -106,6 +106,22 @@ Klasyfikacja: `orchestrator/src/development-defect.mjs` (`STRUCTURAL_DEFECT_CODE
 
 Po zamknięciu SELFDEV-*: resume źródłowego ticketu (`subactor-run --ticket PLF-…`) — nadal wymaga preflight → AQL → dry-run → grant → Y/n.
 
+### Smoke test mostu (kontrakt, bez Plesk / LLM)
+
+Lokalna regresja Subactor → Koru (klasyfikacja, upsert, szablon repair):
+
+```bash
+# Subactor (orchestrator)
+cd /home/tom/github/subactor/orchestrator && npm test
+
+# Koru (cross-repo + render szablonu)
+cd /home/tom/github/semcod/koru
+SUBACTOR_ROOT=/home/tom/github/subactor \
+  python -m pytest tests/test_subactor_bridge_e2e.py tests/test_subactor_development_bridge.py -q
+```
+
+Pokrycie: `plan_hash_mismatch` → `development_defect` + `blocked_by`; `apply_grant_*` → brak ticketu development; render `subactor-development-repair` (`promotion_mode=branch`, `declared_files`, `verify_command` z `acceptance_tests`). Realny patch LLM i live queue intake pozostają poza tym smoke.
+
 ---
 
 ## 6. Czego nie robić

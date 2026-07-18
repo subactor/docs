@@ -77,6 +77,21 @@ subactor-run --ticket PLF-364 --execute   # only after dry-run + grant + Y/n
 Koru closing a development ticket does **not** bypass capability preflight,
 AQL, dry-run, signed apply grant, or interactive confirmation.
 
+## Contract smoke (local, no Plesk / LLM)
+
+Cross-repo pytest in Koru exercises Subactor’s in-memory upsert store and renders
+`subactor-development-repair` from real `development_defect` payloads:
+
+```bash
+cd ~/github/semcod/koru
+SUBACTOR_ROOT=~/github/subactor \
+  python -m pytest tests/test_subactor_bridge_e2e.py -q
+```
+
+Orchestrator unit coverage: `orchestrator/tests/development-defect.test.mjs`
+(`npm test` in `orchestrator/`). Ops runbook link:
+[`docs/ops/subactor-ask-troubleshooting.md`](../ops/subactor-ask-troubleshooting.md).
+
 ## Related
 
 - [`docs/koru.yaml`](../koru.yaml) — ticket iteration; no prod mutation commands
