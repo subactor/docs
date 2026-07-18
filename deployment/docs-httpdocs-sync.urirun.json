@@ -1,0 +1,69 @@
+{
+  "id": "docs-httpdocs-sync",
+  "name": "Sync docs → Plesk httpdocs (docs.subactor.com)",
+  "description": "Dry-run first, then apply via plesk://host/site/command/sync. Safety gate is PLESK_SYNC_APPLY=1 (not human_approval) so founder/admin can run autonomously.",
+  "situation": {
+    "source_dir": "/home/tom/github/subactor/docs",
+    "host": "prototypowanie.pl",
+    "domain": "docs.subactor.com"
+  },
+  "uri_processes": [
+    {
+      "id": "docs-httpdocs-methods",
+      "name": "Detect SFTP/FTP deployment transports",
+      "actor": "bot:project-operator-bot",
+      "uri": "plesk://host/site/query/methods",
+      "payload": {
+        "host": "prototypowanie.pl"
+      },
+      "depends_on": [],
+      "human_approval": false
+    },
+    {
+      "id": "docs-httpdocs-sync-dry-run",
+      "name": "Dry-run docs → httpdocs sync plan",
+      "actor": "bot:project-operator-bot",
+      "uri": "plesk://host/site/command/sync",
+      "payload": {
+        "source_dir": "/home/tom/github/subactor/docs",
+        "remote_path": "/httpdocs",
+        "host": "prototypowanie.pl",
+        "domain": "docs.subactor.com",
+        "apply": false,
+        "exclude": [
+          "Dockerfile",
+          "docker-compose.yml",
+          ".gitignore",
+          "koru.yaml",
+          "deployment",
+          "deployment/*"
+        ]
+      },
+      "depends_on": ["docs-httpdocs-methods"],
+      "human_approval": false
+    },
+    {
+      "id": "docs-httpdocs-sync-apply",
+      "name": "Apply docs → httpdocs sync",
+      "actor": "bot:project-operator-bot",
+      "uri": "plesk://host/site/command/sync",
+      "payload": {
+        "source_dir": "/home/tom/github/subactor/docs",
+        "remote_path": "/httpdocs",
+        "host": "prototypowanie.pl",
+        "domain": "docs.subactor.com",
+        "apply": true,
+        "exclude": [
+          "Dockerfile",
+          "docker-compose.yml",
+          ".gitignore",
+          "koru.yaml",
+          "deployment",
+          "deployment/*"
+        ]
+      },
+      "depends_on": ["docs-httpdocs-sync-dry-run"],
+      "human_approval": false
+    }
+  ]
+}

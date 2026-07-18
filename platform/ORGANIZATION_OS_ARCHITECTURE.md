@@ -1,5 +1,15 @@
 # Architektura Subactor Organization OS
 
+## Workspace i source of truth
+
+Lokalny multi-repo workspace składa się z kanonicznych komponentów
+(`core`, `agents`, `connectors`, `runtime`, `contracts`, …) oraz assembly
+`platform/` z submodułami w `platform/components/*`.
+
+Edycje logiki domenowej: **komponent kanoniczny + mirror submodule** (testy
+platformy importują z `components/`). Indeks code2llm widzi obie kopie — patrz
+[CODEBASE_HEALTH.md](./CODEBASE_HEALTH.md).
+
 ## Warstwy
 
 ### Organization Core
@@ -68,3 +78,22 @@ hr-control
 
 Bridge wykonuje operacje `org.*` oraz `testql.project.run`. Wszystkie działania
 zmieniające organizację pozostają za planem OQL i approval.
+
+## Control service — modularność
+
+Control (`core/services/control/src/`) jest rozbijany z monolitowego `server.mjs`:
+
+| Moduł | Odpowiedzialność |
+|-------|------------------|
+| `delegation-config.mjs` | domyślna konfiguracja + normalizacja ról/reguł |
+| `delegation-coverage.mjs` | match ticketu, pokrycie AQL |
+| `delegation-manager.mjs` | decyzja i preview (public API) |
+| `delegation-summary.mjs` | agregaty UI |
+| `access-registry.mjs` | walidacja aktorów / kontraktów AQL |
+| `integration-records.mjs` | public/secret split integracji |
+| `scenario-editor.mjs` | normalizacja scenariuszy LLM |
+| `system-dashboard.mjs` | read model dashboardu |
+| `server.mjs` | HTTP, store, proxy do bridge/org/llm |
+
+Kolejność dalszego refaktoru: routing HTTP, bridge `execute`, UI `app.js` —
+szczegóły w [CODEBASE_HEALTH.md](./CODEBASE_HEALTH.md).

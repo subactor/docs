@@ -10,3 +10,8 @@ coverage/
 .network-allocation.json
 *.log
 .DS_Store
+
+# koru runtime artefacts (generated)
+.planfile/.koru/
+.koru/
+.planfile/sprints/*.bak-*

@@ -61,9 +61,9 @@ node bin/subactor-run.mjs --nl "zsynchronizuj www"    # phrase stub only
 | Probe SFTP/FTP | `plesk://host/site/query/methods` | Deterministic |
 | Dry-run sync | `plesk://host/site/command/sync` `apply=false` | Default; hashes + file plan |
 | Apply sync | same URI `apply=true` + `PLESK_SYNC_APPLY=1` | Env gate, not LLM |
-| Source allowlist | basename `www` **or** `PLESK_SYNC_ALLOWED_SOURCES` | **docs/** not allowlisted by default |
-| NL phrases (www only) | `agents/nlp-uri-phrases.yaml` | Polish/English sync phrases → dry-run URI |
-| Recipe + Planfile import | `www/deployment/www-httpdocs-sync.*` | Reusable ticket shape |
+| Source allowlist | basename `www` **or** `docs` **or** `PLESK_SYNC_ALLOWED_SOURCES` | docs allowlisted |
+| NL phrases (www + docs) | `agents/nlp-uri-phrases.yaml` | Polish/English sync phrases → dry-run URI |
+| Recipe + Planfile import | `www/deployment/www-httpdocs-sync.*`, `docs/deployment/docs-httpdocs-sync.*` | Reusable ticket shapes |
 | Founder CLI bypass | `SUBACTOR_ADMIN_TOKEN` on `subactor-run` | Allowlist `*`; still respects apply env |
 
 OpenRouter role today: **intent / model selection / plan proposal only**.
