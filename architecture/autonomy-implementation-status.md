@@ -33,7 +33,7 @@ Commands run 2026-07-18 (PR5b):
 | **PR3** phrase/LLM/step dedupe | `agents` `771053d`; sync script on platform | agents pin `771053d` | sync `--check` ok; nlp-uri-pack 4/4 | **partial** — pack SSOT for resolvers + derived artifacts; **Planfile imports still separate**; dual-run until PR10 |
 | **PR4** recipe policy engine | `orchestrator` `9dd8ed5` (policy core `d9b4599` + hardening) | orchestrator not a compose submodule (CLI package) | pipeline 20/20 | **partial→hardened** — `ticket_failed` / `rollback_failed`; retry clamp on mutate; compensation → PR7 |
 | **PR5a** immutable manifest | `urirun-connector-plesk` `63a4fe1`; `connectors` `580ba39`; `testkit` `8675a5d` | connectors/testkit pins updated | plesk pytest; testkit; smoke dry-run | **done** |
-| **PR5b** signed apply grant | runtime + core issuer + connectors/plesk verifiers (this change) | pins bumped with PR5b SHAs | runtime 12; plesk 33; testkit 9 | **done** — grant-required apply |
+| **PR5b** signed apply grant | runtime `31d2cb6`; core `011e763`; connectors `a42dcfc`; plesk `66be5c5`; testkit `531170c` | platform `385b24c` | runtime 12; plesk 33; testkit 9 | **done** — grant-required apply |
 | **PR5c** jti replay | *not started* — `jti` issued in token; store deferred | — | — | **next** |
 
 Honesty notes:
