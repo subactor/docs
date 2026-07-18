@@ -45,7 +45,7 @@ Dwa strumienie (równolegle, E2E dopiero po obu):
 - Domyślnie legacy `halt`; dopiero później `try_in_order`.
 - **Unit 4 (partial / hardening):** policy core w `@subactor/orchestrator` — **done**.
   Retry tylko dla kroków idempotent/query (enforce). `on_fail:ticket` bez stub-success.
-  `on_fail:rollback` → `rollback_failed` aż PR7. Compensation/`try_in_order` → PR7+.
+  `on_fail:rollback` → `rolled_back` / `rollback_failed` (PR7). Compensation/`try_in_order` → PR7+/later.
 
 ## Faza 3 — Apply grants (split)
 
@@ -64,7 +64,9 @@ Dwa strumienie (równolegle, E2E dopiero po obu):
 
 ## Faza 5 — Release deploy + rollback
 
-- `releases/` + `current`/`previous`; `release-upload` / `activate` / `rollback` — **PR7**.
+- `releases/` + `current`/`previous`; `release-upload` / `activate` / `rollback` — **PR7 done**.
+  Strategy: `PLESK_RELEASE_ACTIVATION=auto|symlink|pointer` (Plesk docroot API not assumed).
+  Orchestrator `on_fail:rollback` → `release-rollback`; stage `rolled_back` / `rollback_failed`.
 
 ## Faza 6 — Vault
 
@@ -91,13 +93,13 @@ Szczegóły każdej fazy: dokument rekomendacji §3–§11.
 | 1 | Kanoniczne ścieżki + drift gate — **verified** |
 | 2 | Intent pack schema/registry — **verified** (dual-run) |
 | 3 | Phrase/LLM/step dedupe onto packs — **partial** (Planfile still separate) |
-| 4 | Recipe policy core — **partial** (rollback stub / ticket hardening) |
+| 4 | Recipe policy core — **partial** (ticket hardening; rollback wired in PR7) |
 | 5a | Immutable manifest + plan_hash binding — **done** |
 | 5b | Signed apply grants (ADR-003) — **done** |
 | 5c | Grant replay (`jti`) — **done** |
 | 6 | Paramiko/SFTP, capability readiness i strukturalne błędy — **done** |
-| 7 | Release upload, activation i rollback — **next** |
-| 8 | DNS/TLS preflight oraz public content fingerprint verify |
+| 7 | Release upload, activation i rollback — **done** |
+| 8 | DNS/TLS preflight oraz public content fingerprint verify — **next** |
 | 9 | Migracja `docs.subactor.com` z Pages do Pleska |
 | 10 | Usunięcie legacy resolverów i starych kopii wiring |
 
@@ -115,4 +117,4 @@ Pełna lista: rekomendacja §12. Evidence: [`../architecture/autonomy-implementa
 
 Cztery fundamenty: intent pack SSOT · policy engine · connector (transport+rollback) · verify obowiązkowy.  
 Reprezentatywny sukces produkcyjny: autonomiczny release docs na Plesk — **po** PR5–9.  
-Najbliższy kamień: **safe mutate w mocku** (deny gates + manifest), nie cutover DNS.
+Najbliższy kamień: **PR8** public/origin fingerprint verify (bez cutover DNS).

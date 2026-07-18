@@ -243,9 +243,9 @@ core/services/control/src/www-sync-intent.mjs
 
 **Status (PR4):** zaimplementowane w `@subactor/orchestrator`
 (`normalizeStep`, `runTask`, `orderSteps`). Domyślnie `on_fail: halt` —
-istniejące recipes bez zmiany zachowania. `on_fail: rollback` zapisuje warning
-i zatrzymuje plan; faktyczna kompensacja (`compensation_step` / release rollback)
-czeka na PR7. `strategy: try_in_order` — poza zakresem PR4.
+istniejące recipes bez zmiany zachowania. `on_fail: rollback` uruchamia
+kompensację (`compensation_step` / alias `release-rollback` → PR7).
+`strategy: try_in_order` — poza zakresem PR4.
 
 Dzisiejszy `runTask` zatrzymuje plan przy pierwszym błędzie. Rozszerzyć `UriProcess`, zachowując obecne zachowanie jako domyślne.
 
@@ -284,7 +284,7 @@ Bez tego `on_fail: continue` jest niejednoznaczne.
 3. `runTask` zapisuje wynik każdego kroku — **done**
 4. Retry + timeout — **done**
 5. `ticket` — **done** (hook `ticketEscalator`; stub gdy brak)
-6. `rollback` — **stub** (halt + warning; kompensacja → PR7)
+6. `rollback` — kompensacja release (PR7); `rolled_back` / `rollback_failed`
 7. Na końcu `strategy: try_in_order`  
 
 Nie zaczynać od skomplikowanych grup fallbacków.
@@ -318,8 +318,13 @@ Po dry-run apply weryfikuje `plan_hash` (pliki + target; bez `release_id` w hash
 errors; FTP fallback only with `PLESK_SYNC_ALLOW_FTP_FALLBACK=1`. Publish packs
 require `plesk.transport.sftp`.
 
-**Next:** release upload/activate/rollback (PR7).
+**CURRENT (PR7):** release-based deploy URIs
+(`release-upload` / `release-verify` / `release-activate` / `release-current` /
+`release-rollback`); activation `auto|symlink|pointer` (Plesk docroot API not
+assumed); orchestrator `on_fail:rollback` → real compensation; plan stage
+`rolled_back` (never fake `ok`). Origin/public fingerprint verify → **PR8**.
 
+**Next:** DNS/TLS preflight + public content fingerprint (PR8).
 ---
 
 ## 7. Faza 4 — connector capabilities i SFTP
@@ -380,7 +385,11 @@ Rollback:
 activate(previous_release) → verify → status rolled_back → ticket z przyczyną
 ```
 
-Jeśli Plesk nie pozwala na symlinki, connector udostępnia `release-upload` / `release-activate` / `release-rollback` i ukrywa szczegóły przed recipe.
+Jeśli Plesk nie pozwala na symlinki, connector udostępnia `release-upload` /
+`release-activate` / `release-rollback` i ukrywa szczegóły przed recipe
+(`PLESK_RELEASE_ACTIVATION=auto` → symlink, potem pointer JSON). Plesk REST
+„set docroot” **nie** jest założone na stagingu — potwierdzić na hoście przed
+wymuszeniem `symlink`.
 
 ---
 

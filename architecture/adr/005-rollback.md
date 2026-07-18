@@ -7,18 +7,21 @@
 
 ## Decyzja
 
-1. **Deploy release-based** — nie destrukcyjny sync do aktywnego `/httpdocs`; aktywacja atomowa (`current` / `previous`) — **TARGET (PR7)**.
+1. **Deploy release-based** — nie destrukcyjny sync do aktywnego `/httpdocs`; aktywacja atomowa (`current` / `previous`) — **CURRENT (PR7)**.
 2. **Recipe policy** (`on_fail`): `halt` (domyślne, legacy) \| `continue` \| `ticket` \| `rollback`.
 3. **Dwa osobne procesy rollbacku:**
-   - **Treść / release:** `activate(previous_release)` → verify → `rolled_back` (+ ticket).
+   - **Treść / release:** `activate(previous_release)` → verify (path stub; public → PR8) → `rolled_back` (+ ticket).
    - **DNS / boundary:** przywrócenie poprzedniego *desired* DNS (HITL) — **nie** mylić z content rollback.
 4. Stany planu bogatsze niż boolean: m.in. `applied_unverified`, `rolled_back`, `rollback_failed`, `needs_human`, `ticket_failed`.
 
-### CURRENT (orchestrator PR4)
+### CURRENT (orchestrator PR7)
 
-- `on_fail: rollback` **nie** wykonuje kompensacji — stub.
-- Orchestrator **musi** zwracać `stage: rollback_failed` (nie udawać, że rollback przebiegł).
-- Kompensacja release → PR7.
+- `on_fail: rollback` wykonuje kompensację: alias `release-rollback` →
+  `plesk://host/site/command/release-rollback` (lub `compensationRunner` /
+  `compensation_uri`).
+- Sukces kompensacji → `stage: rolled_back`, **`ok: false`** (nie udawać completed).
+- Brak targetu/runnera lub wyczerpane retry (max 3, backoff 0/1s/3s) → `rollback_failed`.
+- Aktywacja: `PLESK_RELEASE_ACTIVATION=auto|symlink|pointer` (Plesk docroot API nie zakładane).
 
 ### `rollback_failed`
 
@@ -38,5 +41,5 @@ Gdy compensation niedostępna, connector niedostępny, lub verify po rollbacku f
 
 ## Konsekwencje
 
-- Connector = właściciel transportu i rollbacku technicznego (gdy PR7).
+- Connector = właściciel transportu i rollbacku technicznego (PR7).
 - Orchestrator = semantyka `on_fail` / zależności; nie wolno oznaczać planu `completed` po nieudanym ticket/rollback.
