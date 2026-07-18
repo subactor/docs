@@ -427,3 +427,32 @@ nie problem „lepszego OpenRouter”. Istniejący stack (phrase map, AQL, recip
 `runTask`, urirun, connectors) jest właściwym miejscem rozszerzeń: **intent packs**,
 **recipe policy dla zdolności**, **capability fallbacki w konektorach**,
 **LLM wyłącznie named intent + situation slots**.
+
+---
+
+## 10. Braki → język (inventory implementacyjny)
+
+**Werdykt:** nie potrzeba nowego języka ani runtime. Braki to rozszerzenia
+istniejących formatów (JSON pack / recipe) i interpreterów (JS orchestrator,
+JS control/agents, Python konektor). Ops (DNS/TLS) = zero nowego kodu językowego.
+
+| Brak (kod/feature) | Gdzie | Język / format już używany | Dlaczego nie nowy stack |
+| --- | --- | --- | --- |
+| Intent pack SSOT + JSON Schema + loader | `platform/config/intent-packs/` (+ schema) | JSON (+ opcjonalnie YAML jak phrases) | Config platformy już montuje JSON; unika driftu N plików |
+| Loader packów w control (`resolveIntentPack`) | `core/.../routes/llm.mjs`, `*-sync-intent.mjs` → jeden resolver | Node `.mjs` | `subactor ask` już bije w control LLM; zastąpić inline `PHRASES` |
+| Phrase map z packów (nie dual list) | `agents/services/nlp-uri-map.mjs` | JS + generowany YAML lub bezpośredni JSON | Lokalny resolver już istnieje; desktop nlp2uri zostaje stubem |
+| Sync / gen `llm-organization-intents` fields | `platform/config/llm-organization-intents.json` | JSON (generator: Node) | Katalog LLM już JSON; pola z `situation_schema` packa |
+| Cienkie modele AQL per pack | `contracts/models/*.pl.aql` | AQL | WHO/ALLOW już w AQL; pack tylko wskazuje `aql_model` |
+| `UriProcess`: `optional`, `on_fail`, `strategy` | `orchestrator/src/resolve-plan.mjs` `normalizeStep` | JS typedef + pola w JSON recipe | Typedef już tu; brak pól = dzisiejszy halt |
+| Interpreter policy w `runTask` | `orchestrator/src/pipeline.mjs` | JS | Jedyna pętla topo; fail-fast jest tu (L115–117) |
+| Recipe z policy (np. optional httpscheck) | `*.urirun.json` / Planfile inputs | JSON recipe / YAML ticket | Ten sam kształt `uri_processes`; ekspansja → flat dla v1 |
+| Dedup step-catalog / Planfile z recipe | `platform/config/step-catalog.json`, `.planfile/imports/` | JSON / YAML (generator Node) | Katalog i importy już istnieją — generować, nie kopiować ręcznie |
+| NL → pełna recipe (nie jeden URI) | `resolvePlan` NL path + pack→recipe | JS + JSON recipe path z packa | Dziś phrase → jeden URI; pack niesie `recipe` |
+| Capability metadata (opcjonalnie) | `urirun-connector-*` | Python / JS jak dziś | Deklaracja fallbacków wewnątrz URI, nie w recipe |
+| `paramiko` jako dep SFTP na hoście urirun | zewnętrzny `urirun-connector-plesk` (`[project.optional-dependencies] sftp`) | Python packaging (`pyproject.toml`) | Kod SFTP/`_TRANSPORT_ORDER` już jest; brak to instalacja extra, nie nowy język |
+| Timeout apply / exec | urirun-node / host config | config / ops | Nie należy do modelu intentu |
+
+**Nie-kod (ops — bez nowego języka):** DNS cutover `docs.subactor.com` → Plesk,
+cert TLS SAN, addon docroot. Live path docs: intent+recipe dry-run działają;
+apply pada na timeout/transport — to paramiko packaging + timeout + DNS, nie
+nowy planner.
