@@ -66,3 +66,24 @@ tickets:
           depends_on:
             - docs-httpdocs-sync-dry-run
           human_approval: false
+        - id: docs-publish-verify
+          name: ADR-004 public/origin fingerprint verify (enable when origin ready)
+          actor: bot:project-operator-bot
+          uri: plesk://host/site/command/publish-verify
+          payload:
+            hostname: docs.subactor.com
+            release_id: ${release_id}
+            artifact_sha256: ${artifact_sha256}
+            source_commit: ${source_commit}
+            pack_version: "1"
+            origin_ip: "217.160.250.222"
+            verify_origin: false
+            verify_public: false
+            check_dns: false
+            check_tls: false
+          depends_on:
+            - docs-httpdocs-sync-apply
+          required: false
+          on_fail: rollback
+          human_approval: false
+          verify: true

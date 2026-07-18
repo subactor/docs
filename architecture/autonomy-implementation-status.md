@@ -9,11 +9,11 @@
 
 | Layer | CURRENT (implemented) | TARGET | PLANNED | LEGACY (still present) |
 | --- | --- | --- | --- | --- |
-| Intent | Pack registry + pack-first resolvers; derived phrases/LLM/step-catalog sync; **PR10 started:** `INTENT_PACK_DUAL_RUN=shadow` default | Single pack SSOT end-to-end | Finish PR10 (off + remove cold fallbacks); Planfile auto from pack | Planfile imports hand-maintained; cold FALLBACK_PHRASES; dual-run optional |
+| Intent | Pack registry + pack-first resolvers; derived phrases/LLM/step-catalog sync; **PR10:** `INTENT_PACK_DUAL_RUN=shadow` default; **cold FALLBACK_PHRASES removed** (fail closed) | Single pack SSOT end-to-end | Flip dual-run `off` after metrics; full Planfile auto from pack | Planfile ticket body hand-maintained (ids synced); dual-run shadow retained |
 | Policy | `on_fail` / retry / timeout / `depends_on` vs `after`; **rollback → release-rollback** (PR7); **verify → `applied_unverified`** (PR8) | Full lifecycle + `try_in_order` | — | Default `halt` |
 | Apply auth | Dual kill switch + signed apply grant + `plan_hash` + **jti replay** (PR5a–5c) | production verify DoD on live DNS | PR9 cutover (blocked) | Founder token ≠ grant (ADR-003) |
-| Transport | **SFTP readiness (PR6)** + **release paths (PR7):** upload→verify→activate; symlink/pointer | Live SFTP apply on Plesk + docroot cutover | PR9 | **Live urirun-node still `paramiko_missing` (2026-07-18)**; FTP ok; legacy direct `/httpdocs` sync still present |
-| DNS / verify | **PR8:** publish-verify ladder; **PR9 prep:** runbook + desired A=`217.160.250.222` | DNS→Plesk + live public DoD | **PR9 execute when G0–G6 green** | **GitHub Pages unhealthy LKG**; origin Host serves prototypowanie.pl (no docs addon) |
+| Transport | **SFTP readiness (PR6)** + **release paths (PR7):** upload→verify→activate; symlink/pointer | Live SFTP apply on Plesk + docroot cutover | PR9 | **Live urirun-node rebuilt 2026-07-18:** paramiko OK, `production_publish_ready=true`; FTP ok; legacy direct `/httpdocs` sync still present |
+| DNS / verify | **PR8:** publish-verify ladder; **PR9 prep:** runbook + desired A=`217.160.250.222` | DNS→Plesk + live public DoD | **PR9 execute when G0–G6 green** | **GitHub Pages unhealthy LKG**; origin Host serves prototypowanie.pl (**needs_human:** docs addon) |
 | Vault | Lease via browser-agent vault in recipes; lease error mapping (401→`credential_expired`) | ADR-006 lease/revoke/audit | — | `.env` tokens in lab |
 
 ## PR0–PR8 evidence table
@@ -36,8 +36,8 @@ Commands run 2026-07-18 (PR8):
 | **PR6** SFTP/paramiko readiness | plesk `7d8ab5b`; connectors `cc4c4e5` | platform `0ab75d1` | plesk 42; Dockerfile test | **done** |
 | **PR7** release upload/activate/rollback | plesk `d72e8d8`; orchestrator `2adf375`; connectors `d8895c9` | platform `d302def` | plesk 53; orchestrator 22 | **done** |
 | **PR8** DNS/TLS + fingerprint verify | plesk `530dda9`; orchestrator `9c687f5`; connectors `866cc96` | platform `803aa45` | plesk 64; orchestrator 24 | **done** |
-| **PR9** docs Pages→Plesk cutover | — | docs `7bb4f26` | origin/public probes | **prep / blocked** — no DNS flip |
-| **PR10** dual-run reduce | core `6e40051`; agents `b8fa969` | platform `7bd9088` | control 8/8; agents 5/5 | **started** (`INTENT_PACK_DUAL_RUN`) |
+| **PR9** docs Pages→Plesk cutover | — | docs (this update) | origin/public probes; SFTP green | **prep / blocked** — addon + cert + DNS HITL; no DNS flip |
+| **PR10** dual-run reduce | core (FALLBACK removed); agents `b8fa969` | platform (step-catalog + sync) | control 9/9; agents 5/5; sync `--check` OK | **in progress** (shadow retained) |
 
 Honesty notes:
 
@@ -84,18 +84,21 @@ Pass returned `grant` as `apply_grant` on mutate. Each `jti` is single-use (repl
 4. **PR7 done:** release upload / activate / rollback + orchestrator compensation.
 5. **PR8 done:** DNS/TLS preflight + public content fingerprint verify (mocked; no cutover claim).
 6. **PR9 prep:** cutover runbook + desired A=`217.160.250.222` + origin/public dry probes — **no production DNS flip** (G1/G2/G6 red).
-7. **PR10 started:** `INTENT_PACK_DUAL_RUN=shadow|off|on` (default shadow); pack-first retained; cold fallbacks remain until packs always mounted.
+7. **PR10 in progress:** `INTENT_PACK_DUAL_RUN=shadow|off|on` (default shadow); cold FALLBACK_PHRASES removed; dual-run shadow kept until metrics OK.
 
 Do **not** treat GitHub Pages as safe DNS/content rollback without noting it is an
 **unhealthy** last_known_good until Plesk cutover + verify (ADR-002/005).
 
-### PR9 dry preflight (public + origin, 2026-07-18)
+### PR9 dry preflight (public + origin, 2026-07-18 continuation)
 
 - CNAME `docs.subactor.com` → `subactor.github.io` (Pages) — **unchanged; no cutover**.
 - TLS SAN = `*.github.io` (does **not** include `docs.subactor.com`).
 - Public fingerprint fetch fails TLS verify — expected `applied_unverified` until cutover.
 - Origin `--resolve` → `217.160.250.222`: HTTPS 200 but **prototypowanie.pl** content; `/__subactor_release.json` **404** (docs addon missing).
 - `docs-stage.subactor.com` also CNAME → Pages — not a Plesk rehearsal target yet.
-- Live methods: FTP ok; SFTP `paramiko_missing` on running urirun-node.
+- Live doctor after urirun-node rebuild: **SFTP + FTP available**; `production_publish_ready=true`.
+- Live methods (vault payload): SFTP + FTP **ok**.
+- **needs_human:** create Plesk addon `docs.subactor.com` / `docs-stage` (no safe connector URI).
+- Origin release via `--resolve` **deferred** until dedicated docroot exists (do not upload into primary httpdocs).
 - Runbook: [`../deployment/PR9-docs-cutover-runbook.md`](../deployment/PR9-docs-cutover-runbook.md).
 - PR10 notes: [`../deployment/PR10-legacy-resolver-cleanup.md`](../deployment/PR10-legacy-resolver-cleanup.md).

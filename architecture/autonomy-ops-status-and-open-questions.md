@@ -29,7 +29,7 @@ NL → intent → plan (ticket / recipe) → deploy (urirun) → verify → NL
 | Intent → ticket + plan | **Działa** | Ticket `PLF-353`, plan `proposed` (bez `--execute`) |
 | Plan → AQL | **Działa** (founder) | `founder_admin_bypass` przy `SUBACTOR_ADMIN_TOKEN` |
 | Dry-run deploy | **Działa** | Recipe `docs-httpdocs-sync`: methods + sync plan (~12 plików) |
-| Live apply | **Nie działa end-to-end** | Brama `PLESK_SYNC_APPLY` OK; upload wcześniej timeout 30s (FTP) |
+| Live apply | **Nie działa end-to-end** | Brama apply/grant OK; SFTP **available** po rebuild; brak docs addon/docroot |
 | Verify HTTPS publiczne | **Fail / mismatch** | `docs.subactor.com` → **GitHub Pages**, nie Plesk; TLS SAN bez `docs.subactor.com` |
 | Zamknięcie pętli NL | **Częściowe** | Intent+plan OK; brak wiarygodnego „opublikowano i widać na HTTPS” |
 
@@ -63,11 +63,13 @@ founder token załadowany z `platform/.env` (wartość **nie** zapisana tutaj).
 | 3 | `subactor ask "…"` (propose) | **PASS** | Ticket `PLF-353`, plan `plan_mrpyf6eq_53aae9b275`, status `proposed` |
 | 4 | Recipe dry-run `docs-httpdocs-sync.urirun.json` | **PASS** | Methods OK; dry-run `files_planned=12`; recommended transport `ftp` |
 | 5 | Recipe `--execute` **bez** `PLESK_SYNC_APPLY` | **PASS (brama)** | Apply step: `plesk_sync_apply_required` — upload zablokowany zgodnie z polityką |
-| 6 | Live apply z `PLESK_SYNC_APPLY=1` | **FAIL** (wcześniej dziś; nie powtarzane jako sukces) | Timeout ~30s na FTP upload; SFTP niedostępne (`paramiko_missing`) |
+| 6 | Live apply z `PLESK_SYNC_APPLY=1` | **BLOCKED** | SFTP ready; origin brak docs addon — nie publikować do primary httpdocs |
 | 7 | `https://docs.subactor.com/` (strict TLS) | **FAIL** | curl 60: cert `CN=*.github.io`, brak SAN dla `docs.subactor.com` |
 | 8 | Treść / kto serwuje (curl `-k`) | **INFO** | `server: GitHub.com`, Jekyll; CNAME → `subactor.github.io` / `185.199.*` |
 | 9 | Porównanie `subactor.com` | **INFO** | A → `217.160.250.222` (Plesk); docs **nie** wskazuje Pleska |
-| 10 | Kontener urirun: `PLESK_SYNC_APPLY` / paramiko | **INFO** | Apply env **unset**; `paramiko` **no** |
+| 10 | Kontener urirun: paramiko / doctor | **PASS** | paramiko **yes**; doctor `production_publish_ready=true`; methods sftp+ftp ok |
+| 11 | Apply deny bez grant/kill | **PASS** | `--execute` → `autonomy_mutations_disabled` |
+| 12 | Drift + sync `--check` + unit | **PASS*** | sync OK po align step-catalog; core sibling vs pin wymaga bump; orchestrator 24/24; plesk 64/64 |
 
 **Wniosek:** ścieżka **NL → intent → ticket/plan → dry-run** jest żywa.
 Ścieżka **apply → publiczne HTTPS na Plesku** nie jest zamknięta (DNS/TLS +
@@ -81,7 +83,7 @@ transport/timeout). **Nie twierdzimy o udanym live publish.**
 | --- | --- | --- |
 | DNS docs → GitHub Pages | CNAME `subactor.github.io` | Sync do Plesk httpdocs nie zmienia tego, co widzi świat |
 | TLS SAN mismatch | Cert `*.github.io` vs hostname `docs.subactor.com` | Strict verify / automatyczny health check pada |
-| Brak paramiko w urirun-node | ~~`sftp.available=false`~~ → **fixed PR6** (image bake) | FTP-only only with explicit fallback env |
+| Brak paramiko w urirun-node | ~~`sftp.available=false`~~ → **fixed** (Compose rebuild 2026-07-18) | SFTP ready; FTP fallback nadal opt-in |
 | Timeout apply (~30s) | Live FTP sync fail | Recipe `--execute` z bramą i tak nie domyka publish |
 | `PLESK_SYNC_APPLY` unset | Domyślnie bezpiecznie | Founder musi świadomie ustawić bramę na nodzie |
 | Docroot `/httpdocs` | Recipe targetuje primary httpdocs | Ryzyko nadpisania złego vhostu; preferowany addon `/docs.subactor.com` (ops) |
@@ -137,8 +139,8 @@ Evidence implementacji: [`autonomy-implementation-status.md`](./autonomy-impleme
 - [x] **Timeout / retries (connector budgets):** connect/op/total 15/120/180 (PR6); orchestrator `timeout_ms`/`retry` (PR4).
 - [x] **Release upload / activate / rollback** — **PR7** (`release-upload` / `verify` / `activate` / `current` / `rollback`; strategy `auto|symlink|pointer`).
 - [x] **DNS/TLS + content fingerprint verify** — **PR8** (`publish-verify` ladder; mocks + origin/`--resolve`; staging note `docs-stage.subactor.com`).  
-- [ ] **DNS cutover Pages → Plesk** — **PR9** (**blocked** 2026-07-18: G1 no docs addon / no release marker / SFTP paramiko_missing; G2 cert; G6 HITL — see `docs/deployment/PR9-docs-cutover-runbook.md`). **No production DNS flip.**
-- [ ] **Legacy resolver / dual-run cleanup** — **PR10 started** (`INTENT_PACK_DUAL_RUN=shadow` default; see `docs/deployment/PR10-legacy-resolver-cleanup.md`).
+- [ ] **DNS cutover Pages → Plesk** — **PR9** (**blocked** 2026-07-18: G1 no docs addon / no release marker; G2 cert; G6 HITL — SFTP gate cleared). **No production DNS flip.**
+- [ ] **Legacy resolver / dual-run cleanup** — **PR10 in progress** (cold FALLBACK removed; `INTENT_PACK_DUAL_RUN=shadow` retained; see `docs/deployment/PR10-legacy-resolver-cleanup.md`).
 
 ### Secrets / vault
 

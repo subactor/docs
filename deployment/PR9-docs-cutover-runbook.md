@@ -23,18 +23,18 @@ Observed **origin** via `curl --resolve docs.subactor.com:443:217.160.250.222` (
 | `/__subactor_release.json` | 404 | No docs release activated on this hostname |
 | `docs-stage.subactor.com` public DNS | CNAME → `subactor.github.io` | Staging not on Plesk yet |
 
-Live `plesk://…/query/methods` (urirun-node, 2026-07-18): **FTP available**; **SFTP `paramiko_missing`** — production publish path blocked until image rebuilt with paramiko.
+Live `plesk://…/query/methods` (urirun-node, 2026-07-18 continuation after Compose rebuild): **SFTP + FTP available**; doctor `production_publish_ready=true`. Remaining G1 blocker is **docs addon / dedicated docroot** (origin still serves prototypowanie.pl; no `__subactor_release.json`).
 
 This mismatch is **expected** until PR9 completes. Reporting it as `dns_mismatch` / `tls_san_mismatch` / `applied_unverified` is correct — **not** a publish success.
 
 **Cutover today: NO** — gates not green; DNS HITL must not run.
 
-## Gate status (2026-07-18 continuation)
+## Gate status (2026-07-18 continuation #2)
 
 | Gate | Status | Evidence / blocker |
 | --- | --- | --- |
 | **G0** Intent & ownership | **YELLOW** | Desired A filled (`217.160.250.222`); Pages CNAME saved as DNS emergency. Boundary HITL approval **not** recorded. |
-| **G1** Origin content ready | **RED** | No docs addon/docroot; Host serves wrong site; no `__subactor_release.json`; SFTP unavailable (`paramiko_missing`). |
+| **G1** Origin content ready | **RED** | SFTP **green** after urirun-node rebuild; still no docs addon/docroot; Host serves wrong site; no `__subactor_release.json`. |
 | **G2** Certificate plan | **RED** | Path not agreed / no SAN for `docs.subactor.com` on origin. |
 | **G3** DNS provider readiness | **YELLOW** | Desired state + reconcile stub exist; live mutate still HITL; TTL not lowered. |
 | **G4** Verify ladder | **RED** | Origin fingerprint cannot pass; public Pages failure expected. |
@@ -59,7 +59,7 @@ This mismatch is **expected** until PR9 completes. Reporting it as `dns_mismatch
   - Marker served with `Cache-Control: no-store` (or equivalent)
 - [ ] Prefer rehearsal on **`docs-stage.subactor.com`** pointing at Plesk before touching production.
 - [ ] **needs_human:** create Plesk addon `docs.subactor.com` (dedicated docroot) — connector has no safe addon-create URI; do not upload into primary prototypowanie.pl httpdocs.
-- [ ] **needs_human:** rebuild urirun-node with paramiko (SFTP) — FTP-only is not production publish.
+- [x] Rebuild urirun-node with paramiko (SFTP) — **done 2026-07-18** (`production_publish_ready=true`; live methods sftp+ftp ok).
 
 ### G2 — Certificate plan
 

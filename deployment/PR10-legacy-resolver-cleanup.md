@@ -1,15 +1,15 @@
 # PR10 — legacy resolver / dual-run cleanup
 
-**Status:** started (2026-07-18) — safe reduction only; **not** full removal of cold fallbacks.  
-**Why now:** PR9 production DNS cutover is blocked (G1/G2/G6 red). Pack-first for docs/www is already stable; dual-run can move to shadow / opt-out.
+**Status:** in progress (2026-07-18 continuation) — cold FALLBACK_PHRASES removed; dual-run stays **shadow** until metrics OK.  
+**Why now:** PR9 production DNS cutover is blocked (G1 addon/docroot + G2/G6). Pack-first for docs/www is stable; SFTP readiness restored via urirun-node rebuild.
 
 ## Goal
 
 Single pack SSOT end-to-end for docs/www intent resolution:
 
 1. Pack registry resolves phrases (SSOT).
-2. Legacy adapters (`docs-sync-intent` / `www-sync-intent` / YAML phrase map) remain as **cold fallback** when packs dir is missing.
-3. Dual-run compare is no longer mandatory on every request.
+2. Docs/www adapters **fail closed** when packs dir is missing (no cold phrase list).
+3. Dual-run compare remains default **shadow** (metrics / warn); not removed yet.
 
 ## `INTENT_PACK_DUAL_RUN`
 
@@ -26,17 +26,21 @@ Set on **hr-control** / agents runtimes, e.g. `INTENT_PACK_DUAL_RUN=shadow`.
 - [x] Control bridge honors mode (`core` `intent-pack-bridge.mjs` + `routes/llm.mjs`).
 - [x] Agents adapter honors mode (`agents` `intent-pack-adapter.mjs`).
 - [x] Regression tests for `off` + default `shadow` / `on`.
+- [x] **Remove cold FALLBACK_PHRASES** from docs/www adapters (fail closed if packs unmounted).
+- [x] Step-catalog + planfile ticket process ids aligned with docs recipe (incl. `docs-publish-verify`).
+- [x] Sync `--check` verifies planfile ticket uri_processes ids vs recipe.
 - [x] Status docs updated honestly (PR9 still blocked; no DNS flip).
 
 ## Not done yet
 
-- [ ] Remove cold FALLBACK_PHRASES from docs/www adapters (keep until packs always mounted in all envs).
-- [ ] Planfile ticket YAML auto-generated from packs.
-- [ ] Delete YAML dual-run path entirely from agents.
+- [ ] Delete YAML dual-run path entirely from agents (keep shadow dual-run until metrics OK).
+- [ ] Full Planfile YAML auto-generated from packs (ids aligned; body still hand-maintained).
 - [ ] Register `dns-record-reconcile` pack (still deferred — PR9 DNS connector).
+- [ ] Flip default to `INTENT_PACK_DUAL_RUN=off` after shadow metrics stay clean.
 
 ## Safety
 
 - Default `shadow` preserves observability without blocking pack-first.
 - Use `INTENT_PACK_DUAL_RUN=on` temporarily if investigating a mismatch.
 - Do **not** claim production docs publish success from this work.
+- Packs must be mounted (`config/intent-packs` via `CONTROL_CONFIG_DIR`) in all control runtimes.
