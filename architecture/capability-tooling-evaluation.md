@@ -51,19 +51,20 @@
 
 | Artefact | Role |
 | --- | --- |
-| `platform/config/connector-capabilities/catalog.v1.json` | Pack id ↔ **live** doctor keys (`sftp`, `tls_san_check`, `ssl_ensure`, …) |
+| `platform/config/connector-capabilities/catalog.v1.json` | Pack id ↔ doctor keys + `aql.oql` / `aql.uri_processes` |
 | `platform/config/connector-capabilities/plesk.doctor.fixture.json` | CI fixture mirroring live short-key + `available` shape |
 | `platform/config/connector-capabilities/*.uri.capability.yaml` | Touri-style docs (sync / sftp / tls / ssl_ensure) |
-| `platform/config/connector-capabilities/preflight.mjs` | ⊆ library + live fetch (urirun `/run`, bridge `/processes/run`) |
-| `platform/scripts/capability-preflight.mjs` | CLI (`--live`, `--via bridge\|urirun`, `capability_unavailable`) |
-| `platform/test/capability-preflight.test.mjs` | Unit/regression |
+| `platform/config/connector-capabilities/preflight.mjs` | ⊆ doctor library + AQL ⊆ check + live fetch |
+| `platform/scripts/capability-preflight.mjs` | CLI (`--live`, `--aql-only`, `capability_unavailable` / `capability_not_in_aql`) |
+| `platform/test/capability-preflight.test.mjs` | Unit/regression (doctor + AQL) |
 | `core/.../capability-preflight-gate.mjs` | Fail-closed gate for control |
-| `core/.../routes/llm.mjs` + `plans.mjs` | Deny before NL success / propose-from-intent |
+| `core/.../routes/llm.mjs` + `plans.mjs` + `apply-grants.mjs` | Deny before NL success / propose / grant issue |
 | `platform/bin/subactor` | Surfaces `capability_unavailable` / `preflight_failed` on `ask` |
 
 ```bash
-# Fixture (CI)
+# Fixture (CI) — doctor ⊆ + AQL ⊆
 node platform/scripts/capability-preflight.mjs --json
+node platform/scripts/capability-preflight.mjs --aql-only --json
 node platform/scripts/capability-preflight.mjs --require-publish-ready
 
 # Live doctor from running urirun-node
@@ -95,20 +96,30 @@ No dockfra / vdisplay / hypervisor wholesale changes. **No production DNS flip /
 
 | Check | Result |
 | --- | --- |
-| Unit fixture ⊆ packs | PASS |
+| Unit fixture ⊆ packs (doctor) | PASS |
 | Unit live-shape normalize (`available` + short keys) | PASS |
 | Unit red sftp → `capability_unavailable` | PASS |
-| CLI fixture exit 0 / red exit 1 | PASS |
+| Unit pack caps ⊆ AQL (catalog + contracts) | PASS |
+| Unit unmapped / URI-not-allowed → `capability_not_in_aql` | PASS |
+| CLI fixture exit 0 (+ `aql_ok`) / red exit 1 | PASS |
+| CLI `--aql-only` exit 0 | PASS |
 | Gate mocked red → deny (`model_name: null`) | PASS |
-| Live `--via urirun` against stack | PASS (`doctor_source: urirun-live`, both packs ok) |
-| TestQL thin wrapper file | Added (shells CLI) |
+| `POST /api/apply-grants` red doctor → 409 deny | PASS |
+| Live `--via urirun` against stack | PASS when stack up (not claimed in offline CI) |
+| TestQL thin wrapper | Shells CLI |
+| Make / `test:meta` runs CLI doctor+AQL | Wired |
+
+## Closed in this continuation
+
+1. **AQL ⊆ CI** — catalog `aql.oql` / `aql.uri_processes` + actor `*.contract.aql` allows; CLI `--aql-only` / default fixture run fails on `capability_not_in_aql`. Wired into `make test-capability-preflight` / `npm run test:meta`.
+2. **Apply-grants defense in depth** — `POST /api/apply-grants` denies when pack preflight would be red (`capability_unavailable`), audits `apply_grant.denied_capability`.
 
 ## Remaining gaps
 
-1. **AQL ⊆ check** — packs declare capabilities; still need CI that every required id is allowed by AQL contracts (separate from doctor readiness).
-2. **Apply-grant path** — intent/propose gated; optional extra deny on `POST /api/apply-grants` for defense in depth.
-3. **touri voice/markpact flakes** — unrelated; leave for tellmesh maintainers.
+1. **touri voice/markpact flakes** — unrelated; leave for tellmesh maintainers.
+2. **PR9 DNS cutover / public LE** — still blocked; do not claim success.
+3. **logo pack** — registered (pack + AQL + step-catalog); origin dry-run/apply still gated — **no DNS flip**.
 
 ## Polish one-liner
 
-Live `plesk://host/doctor/query/report` feeds capability-preflight; control/`subactor ask` fail-closed on red caps (`capability_unavailable` / `preflight_failed`) — no success promise / no apply expand when SFTP/SSL doctor keys are red.
+Pack caps ⊆ live doctor **and** ⊆ AQL (catalog→URI/OQL + contract allows); control ask/propose/`apply-grants` fail-closed on red (`capability_unavailable` / `capability_not_in_aql`) — no DNS flip, no LE public success claim.
