@@ -120,7 +120,28 @@ SUBACTOR_ROOT=/home/tom/github/subactor \
   python -m pytest tests/test_subactor_bridge_e2e.py tests/test_subactor_development_bridge.py -q
 ```
 
-Pokrycie: `plan_hash_mismatch` → `development_defect` + `blocked_by`; `apply_grant_*` → brak ticketu development; render `subactor-development-repair` (`promotion_mode=branch`, `declared_files`, `verify_command` z `acceptance_tests`). Realny patch LLM i live queue intake pozostają poza tym smoke.
+Pokrycie: `plan_hash_mismatch` → `development_defect` + `blocked_by`; `apply_grant_*` → brak ticketu development; render `subactor-development-repair` (`executor.kind=llm`, `promotion_mode=branch`, `declared_files`, `verify_command` / `acceptance_criteria` z `acceptance_tests`). Realny patch LLM i live queue intake pozostają poza tym smoke.
+
+### Real-LLM repair (Koru queue, izolowany pilot)
+
+Jednorazowa weryfikacja pełnej ścieżki patch (OpenRouter, worktree, branch `koru/run-*`) **bez** Plesk/DNS/`subactor ask --apply`:
+
+```bash
+cd /home/tom/github/semcod/koru
+source .env                    # OPENROUTER_API_KEY, LLM_MODEL — nie commituj sekretów
+export KORU_LLM_SHELL_FALLBACK=0
+python scripts/subactor-development-repair-pilot.py
+# opcjonalnie: --keep /tmp/koru-subactor-pilot-fixture
+```
+
+Skrypt renderuje szablon `subactor-development-repair` (`executor.kind=llm`,
+`inputs.llm_model` z `LLM_MODEL`), importuje ticket do tymczasowego repo git i
+odpala `koru --queue` raz. Po imporcie planfile Koru **hydratuje** politykę
+patch (`patch_mode`, `promotion_mode=branch`, …) z pakietowego szablonu;
+`verify_command` może zostać w `acceptance_criteria`. Dla ticketów bridge
+zwykle **nie** trzeba ustawiać `KORU_QUEUE_*` — wystarczą klucze LLM w `.env`.
+
+Dokumentacja szablonu: [`subactor-development-repair-template.md`](https://github.com/semcod/koru/blob/main/docs/subactor-development-repair-template.md) (lokalnie: `~/github/semcod/koru/docs/subactor-development-repair-template.md`).
 
 ---
 
