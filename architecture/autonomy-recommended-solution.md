@@ -312,8 +312,8 @@ Nie zaczynać od skomplikowanych grup fallbacków.
 Po dry-run apply weryfikuje `plan_hash` (pliki + target; bez `release_id` w hashu).
 **CURRENT:** bridge + `urirun-connector-plesk` require
 `AUTONOMY_MUTATIONS_ENABLED=1` + `PLESK_SYNC_APPLY=1` + signed `apply_grant`
-+ matching `plan_hash`. Control issues grants via `POST /api/apply-grants`.
-**Next:** `jti` replay store (PR5c), potem SFTP readiness (PR6).
++ matching `plan_hash` + single-use `jti` (replay store on mutate). Control issues grants via `POST /api/apply-grants`.
+**Next:** SFTP readiness (PR6).
 
 ---
 
@@ -479,7 +479,7 @@ Pełna tabela: [`../plans/autonomy-implementation-roadmap.md`](../plans/autonomy
 | 4 | `on_fail`, retry, timeout, statusy kroków — **done** (`@subactor/orchestrator`) |
 | 5a | Immutable manifest + plan_hash |
 | 5b | Signed apply grants (ADR-003) |
-| 5c | Grant replay (`jti`) |
+| 5c | Grant replay (`jti`) — **done** |
 | 6 | Paramiko/SFTP, capability readiness, błędy strukturalne |
 | 7 | Release upload, activation, rollback |
 | 8 | DNS/TLS preflight + public content fingerprint verify |

@@ -70,12 +70,12 @@ Opcjonalne w ADR (pełny replay = **PR5c**): `jti`, `iat`.
 | **Clock skew** | verifier: `expires_at` ważny jeśli `now <= expires_at + 60s` (skew); reject jeśli `expires_at < now - 60s` już przy issue |
 | **Expired** | `apply_grant_expired` |
 
-### Replay (PR5c)
+### Replay (PR5c) — **done**
 
-- Każdy grant powinien mieć `jti` (uuid/base64url).
-- Verifier utrzymuje short-TTL store użytych `jti` (redis/sqlite/jsonl) ≥ max TTL.
-- Ponowne użycie → `apply_grant_replay`.
-- Do czasu PR5c: binding `plan_hash`+`run_id`+expiry ogranicza replay; **nie** uważać za kompletne.
+- Każdy grant ma `jti` (uuid/base64url).
+- Verifier (mutate path) utrzymuje short-TTL store użytych `jti` (memory lub plik `APPLY_GRANT_JTI_STORE`) ≥ grant `expires_at` + skew.
+- Ponowne użycie → `apply_grant_replay` (zero drugiej mutacji).
+- Bridge planner: verify bez consume; `urirun-connector-plesk`: consume po `plan_hash`, przed upload.
 
 ### Immutable manifest (PR5a)
 

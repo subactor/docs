@@ -52,7 +52,7 @@ Dwa strumienie (równolegle, E2E dopiero po obu):
 - **PR5a** — immutable manifest + canonical JSON + `plan_hash` (no free re-scan) — **done**
   (`urirun-connector-plesk` + bridge `plesk-httpdocs-sync`; deny `plan_hash_mismatch`).
 - **PR5b** — signed apply grant per ADR-003 (HMAC, issuer control, fail-closed) — **done**.
-- **PR5c** — `jti` replay store (`jti` already issued in PR5b tokens).
+- **PR5c** — `jti` replay store — **done** (consume on mutate; `APPLY_GRANT_JTI_STORE` optional).
 - Dual kill switch: `AUTONOMY_MUTATIONS_ENABLED` + `PLESK_SYNC_APPLY`.
 - Evidence: [`../architecture/autonomy-implementation-status.md`](../architecture/autonomy-implementation-status.md).
 
@@ -92,8 +92,8 @@ Szczegóły każdej fazy: dokument rekomendacji §3–§11.
 | 4 | Recipe policy core — **partial** (rollback stub / ticket hardening) |
 | 5a | Immutable manifest + plan_hash binding — **done** |
 | 5b | Signed apply grants (ADR-003) — **done** |
-| 5c | Grant replay (`jti`) — **next** |
-| 6 | Paramiko/SFTP, capability readiness i strukturalne błędy |
+| 5c | Grant replay (`jti`) — **done** |
+| 6 | Paramiko/SFTP, capability readiness i strukturalne błędy — **next** |
 | 7 | Release upload, activation i rollback |
 | 8 | DNS/TLS preflight oraz public content fingerprint verify |
 | 9 | Migracja `docs.subactor.com` z Pages do Pleska |
