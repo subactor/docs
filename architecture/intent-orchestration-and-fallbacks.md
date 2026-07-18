@@ -108,19 +108,18 @@ flowchart TB
 
 ### 2.3 Co jest zduplikowane
 
-| Warstwa | Lokalizacje (przykład publish) | Objaw |
+| Warstwa | Lokalizacje (przykład publish) | Objaw / stan |
 | --- | --- | --- |
-| Frazy NL | `agents/nlp-uri-phrases.yaml` **oraz** inline `PHRASES` w `core/.../docs-sync-intent.mjs` i `www-sync-intent.mjs` | Drift; komentarz w kodzie: „kept inline” |
-| Katalog LLM | `platform/config/llm-organization-intents.json` (`docs-httpdocs-sync.pl.aql` fields) | Osobny schemat pól vs AQL `WEJŚCIE` |
+| Frazy NL | **SSOT:** `platform/config/intent-packs/*.v1.json`; generated `agents/nlp-uri-phrases.yaml`; cold fallback w `*-sync-intent.mjs` | Unit 3: pack-first; YAML generowany (`sync-intent-pack-derived.mjs`) |
+| Katalog LLM | `llm-organization-intents.json` fields dla docs/www **align** z pack `situation_schema` | Sync/check w skrypcie derived |
 | Model AQL | `contracts/models/docs-httpdocs-sync.pl.aql` | Wskazuje jeden `MODUŁY` |
-| Step catalog | `create_docs_httpdocs_sync_ticket` w `step-catalog.json` | Kopia `uri_processes` z recipe |
+| Step catalog | `create_*_httpdocs_sync_ticket` + pole `recipe` → recipe path | Skeleton check vs recipe; Planfile imports nadal osobna kopia |
 | Recipe | `docs/deployment/docs-httpdocs-sync.urirun.json` | Linearna lista; brak policy |
-| Planfile | `.planfile/imports/*` + `*.planfile-ticket.yaml` | Czwarta kopia kroków |
+| Planfile | `.planfile/imports/*` + `*.planfile-ticket.yaml` | Nadal kopia kroków (nie auto-rewrite w unit 3) |
 | Allow | `ALLOW MODEL` / `ALLOW URI_PROCESS` w contract AQL | Łatwo zapomnieć przy nowym modelu |
 
-Ścieżka kontrolna (`core/.../routes/llm.mjs`): przed OpenRouter wywoływane są
-`resolveDocsSyncIntent` / `resolveWwwSyncIntent` — to świadoma łata na misroute
-do HR/onboarding, nie SSOT.
+Ścieżka kontrolna (`core/.../routes/llm.mjs`): **pack-first** dla docs/www, potem cold
+legacy adapters; `pack_compare` dual-run do PR10. Unika misroute do HR/onboarding.
 
 ### 2.4 Co już działa dobrze
 

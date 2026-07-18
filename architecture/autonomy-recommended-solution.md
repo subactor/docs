@@ -485,9 +485,9 @@ Pełna tabela: [`../plans/autonomy-implementation-roadmap.md`](../plans/autonomy
 | PR | Zakres |
 | -- | --- |
 | 0 | Commit `5894906`, ADR-y i stan początkowy |
-| 1 | Kanoniczne ścieżki + kontrola kopii `platform/components` |
-| 2 | Intent pack schema, registry, migracja docs/www |
-| 3 | Deduplikacja phrase map, katalogu LLM, step-catalog |
+| 1 | Kanoniczne ścieżki + kontrola kopii `platform/components` — **done** (ADR-007) |
+| 2 | Intent pack schema, registry, migracja docs/www — **done** (dual-run) |
+| 3 | Deduplikacja phrase map, katalogu LLM, step-catalog — **done** (pack SSOT + sync script; dual-run retained) |
 | 4 | `on_fail`, retry, timeout, statusy kroków |
 | 5 | Signed apply grants + plan/artifact hash binding |
 | 6 | Paramiko/SFTP, capability readiness, błędy strukturalne |

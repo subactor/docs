@@ -31,6 +31,11 @@ Dwa strumienie (równolegle, E2E dopiero po obu):
 - Pack **bez** `ALLOW`; tylko `required_capabilities` + CI ⊆ AQL.
 - Wspólny loader (control, agents, LLM catalog, ticket generator, recipe validator).
 - Migracja docs/www bez big-bang; dual-run legacy vs registry.
+- **Unit 3 (w toku / done częściowo):** frazy docs/www SSOT w packach; control **pack-first**;
+  `agents/nlp-uri-phrases.yaml` generowany; LLM fields sync z `situation_schema`;
+  step-catalog `create_*_httpdocs_sync_ticket` annotated `recipe` + skeleton check
+  (`platform/scripts/sync-intent-pack-derived.mjs`). Dual-run `pack_compare` zostaje do PR10.
+  Planfile imports **nie** przepisywane automatycznie.
 
 ## Faza 2 — Recipe Policy Engine
 
@@ -71,9 +76,9 @@ Szczegóły każdej fazy: dokument rekomendacji §3–§11.
 | PR | Zakres |
 | -- | --- |
 | 0 | Commit `5894906`, ADR-y i stan początkowy |
-| 1 | Ustalenie kanonicznych ścieżek oraz kontrola kopii `platform/components` |
-| 2 | Intent pack schema, registry i migracja docs/www |
-| 3 | Deduplikacja phrase map, katalogu LLM i step-catalog |
+| 1 | Ustalenie kanonicznych ścieżek oraz kontrola kopii `platform/components` — **done** |
+| 2 | Intent pack schema, registry i migracja docs/www — **done** (dual-run) |
+| 3 | Deduplikacja phrase map, katalogu LLM i step-catalog — **done** (pack SSOT; sync script; dual-run until PR10) |
 | 4 | `on_fail`, retry, timeout i statusy kroków w orchestratorze |
 | 5 | Signed apply grants oraz plan/artifact hash binding |
 | 6 | Paramiko/SFTP, capability readiness i strukturalne błędy |

@@ -25,7 +25,7 @@ NL → intent → plan (ticket / recipe) → deploy (urirun) → verify → NL
 
 | Etap | Stan | Dowód |
 | --- | --- | --- |
-| NL → intent (frazy docs) | **Działa** | `subactor ask … --json` → `nlp-uri-phrase` / `docs-httpdocs-sync.pl.aql` |
+| NL → intent (frazy docs) | **Działa** | `subactor ask … --json` → pack SSOT / `docs-httpdocs-sync.pl.aql` (`source=intent-pack-registry` po unit 3; wcześniej `nlp-uri-phrase`) |
 | Intent → ticket + plan | **Działa** | Ticket `PLF-353`, plan `proposed` (bez `--execute`) |
 | Plan → AQL | **Działa** (founder) | `founder_admin_bypass` przy `SUBACTOR_ADMIN_TOKEN` |
 | Dry-run deploy | **Działa** | Recipe `docs-httpdocs-sync`: methods + sync plan (~12 plików) |
@@ -59,7 +59,7 @@ founder token załadowany z `platform/.env` (wartość **nie** zapisana tutaj).
 | # | Test | Wynik | Fakty (bez sekretów) |
 | --- | --- | --- | --- |
 | 1 | `subactor health` | **PASS** | `{"ok":true,"service":"organization-control"}` |
-| 2 | `subactor ask "…" --json` | **PASS** | `source=nlp-uri-phrase`, model `docs-httpdocs-sync.pl.aql`, situation `docs` → `docs.subactor.com` |
+| 2 | `subactor ask "…" --json` | **PASS** | `source=intent-pack-registry` (unit 3) lub legacy `nlp-uri-phrase`, model `docs-httpdocs-sync.pl.aql`, situation `docs` → `docs.subactor.com` |
 | 3 | `subactor ask "…"` (propose) | **PASS** | Ticket `PLF-353`, plan `plan_mrpyf6eq_53aae9b275`, status `proposed` |
 | 4 | Recipe dry-run `docs-httpdocs-sync.urirun.json` | **PASS** | Methods OK; dry-run `files_planned=12`; recommended transport `ftp` |
 | 5 | Recipe `--execute` **bez** `PLESK_SYNC_APPLY` | **PASS (brama)** | Apply step: `plesk_sync_apply_required` — upload zablokowany zgodnie z polityką |
