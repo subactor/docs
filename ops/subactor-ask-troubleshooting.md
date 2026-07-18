@@ -36,6 +36,8 @@ Poza TTY bez `--execute`: plan pozostaje bez wykonania (komunikat: użyj `--exec
 ## 2. Po edycji `step-catalog.json`
 
 **hr-control** przeładowuje `platform/config/step-catalog.json` z dysku przy każdym użyciu katalogu (sprawdzenie `mtime`) — restart nie jest wymagany dla nowych planów po zapisie pliku.
+Regresja reload-on-read (P0-4): `npm run test:core` w repozytorium platform (w tym `step-catalog-loader.test.mjs`).
+
 
 W starszych wersjach (przed P0-4) katalog był trzymany w pamięci; po zmianie pliku restart był konieczny:
 
