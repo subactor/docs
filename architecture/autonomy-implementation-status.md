@@ -37,7 +37,7 @@ Commands run 2026-07-18 (PR8):
 | **PR7** release upload/activate/rollback | plesk `d72e8d8`; orchestrator `2adf375`; connectors `d8895c9` | platform `d302def` | plesk 53; orchestrator 22 | **done** |
 | **PR8** DNS/TLS + fingerprint verify | plesk `530dda9`; orchestrator `9c687f5`; connectors `866cc96` | platform `803aa45` | plesk 64; orchestrator 24 | **done** |
 | **PR9** docs Pages→Plesk cutover | — | docs (this update) | origin/public probes; SFTP green | **prep / blocked** — addon + cert + DNS HITL; no DNS flip |
-| **PR10** dual-run reduce | core (FALLBACK removed); agents `b8fa969` | platform (step-catalog + sync) | control 9/9; agents 5/5; sync `--check` OK | **in progress** (shadow retained) |
+| **PR10** dual-run reduce | core `f679796`; agents `b8fa969` | platform `f22763c` | control 9/9; agents 5/5; sync `--check` OK | **in progress** (shadow retained) |
 
 Honesty notes:
 
