@@ -34,7 +34,7 @@ Commands run 2026-07-18:
 | **PR2** intent pack registry | `core` `d44fbb2` (pack-first intents earlier in history); packs in `platform/config/intent-packs/` | core pin `d44fbb2`; agents `771053d` | intent-pack-registry 6/6 | **verified** (dual-run retained) |
 | **PR3** phrase/LLM/step dedupe | `agents` `771053d`; sync script on platform | agents pin `771053d` | sync `--check` ok; nlp-uri-pack 4/4 | **partial** — pack SSOT for resolvers + derived artifacts; **Planfile imports still separate**; dual-run until PR10 |
 | **PR4** recipe policy engine | `orchestrator` `9dd8ed5` (policy core `d9b4599` + hardening) | orchestrator not a compose submodule (CLI package) | pipeline 20/20 | **partial→hardened** — `ticket_failed` / `rollback_failed`; retry clamp on mutate; compensation → PR7 |
-| **PR5a** immutable manifest | `urirun-connector-plesk` + `connectors` bridge planner | connectors pin after ship | plesk pytest 28/28; testkit 8/8; smoke dry-run | **done** — apply requires matching `plan_hash` |
+| **PR5a** immutable manifest | `urirun-connector-plesk` `63a4fe1`; `connectors` `580ba39`; `testkit` `8675a5d` | connectors/testkit pins updated | plesk pytest 28/28; testkit 8/8; smoke dry-run | **done** — apply requires matching `plan_hash` |
 | **PR5b** signed apply grant | *not started* | — | — | **next** (ADR-003 crypto) |
 | **PR5c** jti replay | *not started* | — | — | after 5b |
 
