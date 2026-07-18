@@ -60,8 +60,11 @@
     }
   ],
   "notes": [
-    "Not registered in platform/config/intent-packs yet (registry tests expect docs+www only).",
-    "Register as dns-record-reconcile.v1.json in PR9 when AQL model + connector grants exist.",
+    "Not registered in platform/config/intent-packs yet (PR9 DNS connector + AQL ALLOW still required).",
+    "Automated cutover recipe: dry-run = dns-observe-public only (expect applied_unverified while Pages).",
+    "Apply mutate step stays human_approval=true — never zero-touch production DNS.",
+    "2026-07-18 public observe: docs.subactor.com CNAME→subactor.github.io; docs-stage.subactor.com A→217.160.250.222 (Plesk) with LE TLS, marker may still 404 until rehearsal release.",
+    "No Cloudflare/Namecheap API token in platform env — provider write remains HITL panel or vault token.",
     "Pages TLS/SAN is unhealthy LKG for docs.subactor.com — DNS emergency rollback is HITL-only."
   ]
 }

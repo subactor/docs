@@ -89,17 +89,14 @@ Pass returned `grant` as `apply_grant` on mutate. Each `jti` is single-use (repl
 Do **not** treat GitHub Pages as safe DNS/content rollback without noting it is an
 **unhealthy** last_known_good until Plesk cutover + verify (ADR-002/005).
 
-### PR9 dry preflight (public + origin, 2026-07-18 continuation #4)
+### PR9 dry preflight (public + origin, 2026-07-18 continuation #5)
 
 - CNAME `docs.subactor.com` → `subactor.github.io` (Pages) — **unchanged; no cutover**.
 - TLS SAN public = `*.github.io` (does **not** include `docs.subactor.com`).
 - Public fingerprint fetch fails TLS verify — expected `applied_unverified` until cutover.
-- **Subscription rights OK**; connector `plesk://host/site/command/subdomain-ensure` wired.
-- Subdomains: `docs.subactor.com` (308), `docs-stage.subactor.com` (309); `www_root` → `…/docs.subactor.com/current`.
-- **Formal origin release:** `rel_20260718T085927Z_a7f1328e` via release-upload→activate (grants + plan_hash; gates enabled only for apply window, then cleared).
-- Origin `--resolve` → `217.160.250.222`: HTTPS **200** docs index + `/__subactor_release.json` **200** + `Cache-Control: no-store`.
-- Origin TLS: self-signed `CN=Plesk` — G2 still red. DNS-01 blocked (Cloudflare, no API token); HTTP-01 unsafe while DNS→Pages; Plesk LE XML ApiRpc unimplemented.
-- Live doctor: **SFTP + FTP available**; `production_publish_ready=true`.
-- **needs_human:** Cloudflare/DNS-01 or post-flip HTTP-01 LE + explicit DNS HITL (G6).
+- **`docs-stage.subactor.com`:** public A=`217.160.250.222`, LE TLS green, HTTPS `/` 200; `/__subactor_release.json` still **404** (rehearsal release not uploaded).
+- Origin `--resolve` `docs.subactor.com` → marker **200** `rel_20260718T085927Z_a7f1328e` + LE domain cert.
+- **NL lifecycle:** intent/propose/execute surface `status` (`preflight_passed` / `proposed` / `authorized` / `capability_unavailable` / `applied_unverified`) — not bare boolean.
+- **needs_human:** Cloudflare API (or panel) for production DNS A cutover; explicit HITL (G6). No token in platform env — do not silent-flip.
 - Runbook: [`../deployment/PR9-docs-cutover-runbook.md`](../deployment/PR9-docs-cutover-runbook.md).
 - PR10 notes: [`../deployment/PR10-legacy-resolver-cleanup.md`](../deployment/PR10-legacy-resolver-cleanup.md).

@@ -43,10 +43,21 @@
         "hostname": "docs-stage.subactor.com",
         "purpose": "Recommended origin/public rehearsal path before production cutover.",
         "observed_public": {
-          "cname": ["subactor.github.io."],
-          "interpretation": "Public still Pages; Plesk subdomain id 309 exists on origin."
+          "a": ["217.160.250.222"],
+          "tls_san": ["docs-stage.subactor.com"],
+          "tls_covers_hostname": true,
+          "https_root": "200",
+          "release_marker": "404 /__subactor_release.json (rehearsal release not uploaded yet)",
+          "interpretation": "Public DNS already on Plesk origin with LE; content marker missing — not a completed publish DoD."
         },
-        "blocker": "Optional: upload rehearsal release to docs-stage origin; public staging DNS still HITL."
+        "observed_origin": {
+          "ip": "217.160.250.222",
+          "probe": "curl --resolve docs-stage.subactor.com:443:217.160.250.222",
+          "https_root": "200",
+          "release_marker": "404",
+          "observed_at": "2026-07-18T12:27Z"
+        },
+        "blocker": "Upload rehearsal release + marker to docs-stage docroot (same gates as docs); then public fingerprint can pass on stage."
       },
       "rollback": {
         "dns_emergency": {
