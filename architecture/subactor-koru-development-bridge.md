@@ -28,7 +28,12 @@ Subactor task
 ```
 
 Ops / HITL failures (`dns_mismatch`, `credential_missing`, `applied_unverified`,
-apply-grant denials, etc.) stay **out** of the development queue.
+apply-grant denials (`apply_grant_*`, including `apply_grant_plan_hash_mismatch`),
+etc.) stay **out** of the development queue.
+
+**Manifest drift:** `plan_hash_mismatch` (recomputed dry-run manifest ≠ bound
+`plan_hash`) is a **code/manifest defect** — it routes to `development_defect`,
+not silent ops ignore. Grant JWT plan-hash mismatches remain ops/HITL.
 
 ## Hook payload
 
