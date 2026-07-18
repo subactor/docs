@@ -49,12 +49,13 @@ Dwa strumienie (równolegle, E2E dopiero po obu):
 
 ## Faza 3 — Apply grants (split)
 
-- **PR5a** — immutable manifest + canonical JSON + `plan_hash` (no free re-scan).
-- **PR5b** — signed apply grant per ADR-003 (HMAC, issuer control, fail-closed).
+- **PR5a** — immutable manifest + canonical JSON + `plan_hash` (no free re-scan) — **done**
+  (`urirun-connector-plesk` + bridge `plesk-httpdocs-sync`; deny `plan_hash_mismatch`).
+- **PR5b** — signed apply grant per ADR-003 (HMAC, issuer control, fail-closed) — **next**.
 - **PR5c** — `jti` replay store.
 - Dual kill switch: `AUTONOMY_MUTATIONS_ENABLED` + `PLESK_SYNC_APPLY`.
-- **Nie shipować grant-required** bez Accepted ADR-003 (już Accepted) i solidnego 5a.
-- Draft kodu z wcześniejszej sesji = **WIP niepinowany** — patrz status evidence.
+- **Nie shipować grant-required** bez solidnego 5a (już landed) + Accepted ADR-003.
+- Evidence: [`../architecture/autonomy-implementation-status.md`](../architecture/autonomy-implementation-status.md).
 
 ## Faza 4 — Connector / SFTP
 
@@ -90,8 +91,8 @@ Szczegóły każdej fazy: dokument rekomendacji §3–§11.
 | 2 | Intent pack schema/registry — **verified** (dual-run) |
 | 3 | Phrase/LLM/step dedupe onto packs — **partial** (Planfile still separate) |
 | 4 | Recipe policy core — **partial** (rollback stub / ticket hardening) |
-| 5a | Immutable manifest + plan_hash binding |
-| 5b | Signed apply grants (ADR-003) |
+| 5a | Immutable manifest + plan_hash binding — **done** |
+| 5b | Signed apply grants (ADR-003) — **next** |
 | 5c | Grant replay (`jti`) |
 | 6 | Paramiko/SFTP, capability readiness i strukturalne błędy |
 | 7 | Release upload, activation i rollback |

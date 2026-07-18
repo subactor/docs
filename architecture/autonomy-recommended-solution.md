@@ -307,10 +307,11 @@ Nie zaczynać od skomplikowanych grup fallbacków.
 
 **Źródło klucza HMAC:** `APPLY_GRANT_HMAC_SECRET` (preferowane) albo fallback `TOKEN_PEPPER`.
 
-### 6.2 Dry-run → immutable plan — **PR5a**
+### 6.2 Dry-run → immutable plan — **PR5a done**
 
 Po dry-run apply weryfikuje `plan_hash` (pliki + target; bez `release_id` w hashu).
-Ship: najpierw manifest (5a), potem grant-required (5b), potem replay (5c).
+**CURRENT:** bridge + `urirun-connector-plesk` emitują `manifest`/`plan_hash`; apply bez
+pasującego hasha → `plan_hash_mismatch` (zero upload). **Next:** grant-required (5b), potem replay (5c).
 
 ---
 
