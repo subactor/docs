@@ -1,12 +1,14 @@
 {
   "id": "docs-httpdocs-sync",
-  "name": "Sync docs → Plesk httpdocs (docs.subactor.com)",
-  "description": "Dry-run first, then apply via plesk://host/site/command/sync. Optional publish-verify (ADR-004) when verify_public/origin enabled — success requires fingerprint match. Staging rehearsal: docs-stage.subactor.com (infra optional). Production DNS cutover is PR9 — do not claim Pages→Plesk cutover here.",
+  "name": "Sync docs \u2192 Plesk httpdocs (docs.subactor.com)",
+  "description": "Dry-run first, then apply via plesk://host/site/command/sync. Optional publish-verify (ADR-004) when verify_public/origin enabled \u2014 success requires fingerprint match. Staging rehearsal: docs-stage.subactor.com (infra optional). Production DNS cutover is PR9 \u2014 do not claim Pages\u2192Plesk cutover here.",
   "situation": {
     "source_dir": "/home/tom/github/subactor/docs",
     "host": "prototypowanie.pl",
     "domain": "docs.subactor.com",
-    "staging_domain": "docs-stage.subactor.com"
+    "staging_domain": "docs-stage.subactor.com",
+    "remote_path": "/httpdocs",
+    "staging_remote_path": "/docs-stage.subactor.com"
   },
   "uri_processes": [
     {
@@ -22,7 +24,7 @@
     },
     {
       "id": "docs-httpdocs-sync-dry-run",
-      "name": "Dry-run docs → httpdocs sync plan",
+      "name": "Dry-run docs \u2192 httpdocs sync plan",
       "actor": "bot:project-operator-bot",
       "uri": "plesk://host/site/command/sync",
       "payload": {
@@ -40,12 +42,14 @@
           "deployment/*"
         ]
       },
-      "depends_on": ["docs-httpdocs-methods"],
+      "depends_on": [
+        "docs-httpdocs-methods"
+      ],
       "human_approval": false
     },
     {
       "id": "docs-httpdocs-sync-apply",
-      "name": "Apply docs → httpdocs sync",
+      "name": "Apply docs \u2192 httpdocs sync",
       "actor": "bot:project-operator-bot",
       "uri": "plesk://host/site/command/sync",
       "payload": {
@@ -63,7 +67,9 @@
           "deployment/*"
         ]
       },
-      "depends_on": ["docs-httpdocs-sync-dry-run"],
+      "depends_on": [
+        "docs-httpdocs-sync-dry-run"
+      ],
       "human_approval": false
     },
     {
@@ -84,7 +90,9 @@
         "check_tls": false,
         "note": "origin_ip filled for --resolve rehearsal. Keep verify_* false until docs addon serves __subactor_release.json (G1). Do not enable verify_public until PR9 DNS+TLS green."
       },
-      "depends_on": ["docs-httpdocs-sync-apply"],
+      "depends_on": [
+        "docs-httpdocs-sync-apply"
+      ],
       "required": false,
       "on_fail": "rollback",
       "compensation_step": "release-rollback",
