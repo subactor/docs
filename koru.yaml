@@ -41,8 +41,12 @@ when:
       - koru --doctor --project .
 
   ticket_iteration:
-    description: Each coding iteration — claim work, refresh brief, gate.
+    description: >
+      Each coding iteration — prefer the development queue (structural defects
+      from Subactor on_fail:ticket / subactor-improvement), then default work.
+      Koru patches code only; never DNS/Plesk/secrets/prod grant bypass.
     commands:
+      - planfile ticket next --queue development
       - task tickets:next
       - koru --project .
       - task quality:regix:local
@@ -56,18 +60,25 @@ when:
 
   autonomous_outer_loop:
     description: >
-      Unattended cycle (scan → queue → optional autopilot). Tune flags with
-      `koru autonomous up -h` (e.g. --sleep-seconds, --keep-waiting-input). If the queue
-      shows claim_failed, start the planfile HTTP/WebSocket API for your stack. `--agent-lane auto`
-      matches the marker order in the header comments (or pass an explicit lane).
+      Unattended cycle (scan → queue → optional autopilot). Development defects
+      from Subactor land on queue `development` (see architecture note
+      subactor-koru-development-bridge.md). Resume of ops tickets still requires
+      Subactor preflight/AQL/dry-run/grant/Y/n — Koru must not auto-apply.
     commands:
-      - koru autonomous up --project . --max-cycles 1 --agent-lane auto
+      - koru autonomous up --project . --max-cycles 1 --agent-lane auto --queue-name development
 
   before_complete_ticket:
     description: Right before `planfile ticket done` / policy CI hook.
     commands:
       - task quality:regix:local
 
+  after_development_defect_closed:
+    description: >
+      Optional resume hook after a development_defect ticket is done. Does not
+      bypass grants — dry-run first, then human Y/n / --execute.
+    commands:
+      - echo "Resume source ticket with: subactor-run --ticket <SOURCE_ID>"
+      - echo "Execute only after dry-run + apply grant + Y/n"
 autonomy:
   strategy:
     schema: '1.0'

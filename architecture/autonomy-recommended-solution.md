@@ -287,7 +287,7 @@ Bez tego `on_fail: continue` jest niejednoznaczne.
 2. Stare recipes → `on_fail: halt` — **done (domyślne)**
 3. `runTask` zapisuje wynik każdego kroku — **done**
 4. Retry + timeout — **done**
-5. `ticket` — **done** (hook `ticketEscalator`; stub gdy brak)
+5. `ticket` — **done** (hook `ticketEscalator`; CLI → `development_defect` upsert / fingerprint / `blocked_by`; stub lub ops-HITL → `ticket_failed`, nigdy fake `completed`). Zob. [subactor-koru-development-bridge.md](./subactor-koru-development-bridge.md).
 6. `rollback` — kompensacja release (PR7); `rolled_back` / `rollback_failed`
 7. Na końcu `strategy: try_in_order`  
 
