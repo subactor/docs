@@ -9,8 +9,8 @@
         "records": [
           {
             "type": "A",
-            "value": "<plesk-public-ipv4>",
-            "comment": "Fill with real Plesk IPv4 before PR9 cutover; used by publish-verify dns_targets"
+            "value": "217.160.250.222",
+            "comment": "Plesk public IPv4 (same as subactor.com / prototypowanie.pl panel host). Confirmed 2026-07-18 via dig A subactor.com."
           }
         ]
       },
@@ -27,10 +27,23 @@
         "release_marker_reachable": false,
         "interpretation": "GitHub Pages — expected pre-PR9. Public publish-verify must fail (dns_mismatch / tls_san_mismatch)."
       },
-      "observed_note": "As of PR8, public docs.subactor.com resolves to GitHub Pages — do not report publish success from public DNS alone.",
+      "observed_origin": {
+        "ip": "217.160.250.222",
+        "probe": "curl --resolve docs.subactor.com:443:217.160.250.222",
+        "https_root": "200 but body is prototypowanie.pl WordPress (default/primary vhost) — not docs tree",
+        "release_marker": "404 /__subactor_release.json",
+        "interpretation": "docs.subactor.com addon/docroot missing on Plesk (or not bound). Origin deploy + fingerprint DoD blocked until addon exists.",
+        "observed_at": "2026-07-18"
+      },
+      "observed_note": "As of PR8/PR9 continuation, public docs.subactor.com resolves to GitHub Pages — do not report publish success from public DNS alone. Do not flip DNS while origin Host serves wrong site.",
       "staging": {
         "hostname": "docs-stage.subactor.com",
-        "purpose": "Recommended origin/public rehearsal path before production cutover. Infra need not exist yet; origin_ip + Host header / curl --resolve works without staging DNS."
+        "purpose": "Recommended origin/public rehearsal path before production cutover.",
+        "observed_public": {
+          "cname": ["subactor.github.io."],
+          "interpretation": "Also on GitHub Pages today — not a Plesk rehearsal target until addon + DNS created."
+        },
+        "blocker": "needs_human: create Plesk addon docs-stage.subactor.com (separate docroot) before staging DNS."
       },
       "rollback": {
         "dns_emergency": {
@@ -40,7 +53,8 @@
         },
         "content": {
           "mechanism": "plesk://host/site/command/release-rollback",
-          "healthy": true
+          "healthy": true,
+          "note": "Only after a prior Plesk release exists; none observed on origin for docs hostname."
         }
       }
     }
@@ -50,5 +64,12 @@
     "cache_control": "no-store",
     "fields": ["release_id", "artifact_sha256", "source_commit", "built_at", "pack_version"]
   },
-  "cutover_runbook": "docs/deployment/PR9-docs-cutover-runbook.md"
+  "cutover_runbook": "docs/deployment/PR9-docs-cutover-runbook.md",
+  "needs_human": [
+    "Create Plesk addon domain docs.subactor.com with dedicated docroot (not primary /httpdocs of prototypowanie.pl).",
+    "Optionally create docs-stage.subactor.com addon for rehearsal.",
+    "Agree cert path (DNS-01 before cutover preferred) for docs.subactor.com SAN.",
+    "HITL boundary DNS mutate Pages CNAME → A 217.160.250.222 only after G0–G6 green.",
+    "Rebuild/redeploy urirun-node so paramiko is present (live methods probe 2026-07-18: sftp paramiko_missing; ftp ok) — prod publish requires SFTP."
+  ]
 }

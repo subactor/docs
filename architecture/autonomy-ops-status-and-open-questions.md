@@ -137,7 +137,8 @@ Evidence implementacji: [`autonomy-implementation-status.md`](./autonomy-impleme
 - [x] **Timeout / retries (connector budgets):** connect/op/total 15/120/180 (PR6); orchestrator `timeout_ms`/`retry` (PR4).
 - [x] **Release upload / activate / rollback** — **PR7** (`release-upload` / `verify` / `activate` / `current` / `rollback`; strategy `auto|symlink|pointer`).
 - [x] **DNS/TLS + content fingerprint verify** — **PR8** (`publish-verify` ladder; mocks + origin/`--resolve`; staging note `docs-stage.subactor.com`).  
-- [ ] **DNS cutover Pages → Plesk** — **PR9** (runbook + dry preflight done; execute when gates green — see `docs/deployment/PR9-docs-cutover-runbook.md`).
+- [ ] **DNS cutover Pages → Plesk** — **PR9** (**blocked** 2026-07-18: G1 no docs addon / no release marker / SFTP paramiko_missing; G2 cert; G6 HITL — see `docs/deployment/PR9-docs-cutover-runbook.md`). **No production DNS flip.**
+- [ ] **Legacy resolver / dual-run cleanup** — **PR10 started** (`INTENT_PACK_DUAL_RUN=shadow` default; see `docs/deployment/PR10-legacy-resolver-cleanup.md`).
 
 ### Secrets / vault
 

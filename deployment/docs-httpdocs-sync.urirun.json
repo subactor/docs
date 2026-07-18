@@ -77,12 +77,12 @@
         "artifact_sha256": "${artifact_sha256}",
         "source_commit": "${source_commit}",
         "pack_version": "1",
-        "origin_ip": "",
+        "origin_ip": "217.160.250.222",
         "verify_origin": false,
         "verify_public": false,
         "check_dns": false,
         "check_tls": false,
-        "note": "Set verify_public/origin true + fingerprint fields after release-upload. Prefer docs-stage.subactor.com or curl --resolve origin preflight before PR9 DNS cutover."
+        "note": "origin_ip filled for --resolve rehearsal. Keep verify_* false until docs addon serves __subactor_release.json (G1). Do not enable verify_public until PR9 DNS+TLS green."
       },
       "depends_on": ["docs-httpdocs-sync-apply"],
       "required": false,

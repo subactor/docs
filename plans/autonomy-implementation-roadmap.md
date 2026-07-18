@@ -102,8 +102,8 @@ Szczegóły każdej fazy: dokument rekomendacji §3–§11.
 | 6 | Paramiko/SFTP, capability readiness i strukturalne błędy — **done** |
 | 7 | Release upload, activation i rollback — **done** |
 | 8 | DNS/TLS preflight oraz public content fingerprint verify — **done** |
-| 9 | Migracja `docs.subactor.com` z Pages do Pleska — **prep** (runbook + dry preflight; execute when gates green) |
-| 10 | Usunięcie legacy resolverów i starych kopii wiring |
+| 9 | Migracja `docs.subactor.com` z Pages do Pleska — **prep / blocked** (G1 addon+SFTP, G2 cert, G6 HITL; **no DNS flip**) |
+| 10 | Usunięcie legacy resolverów — **started** (`INTENT_PACK_DUAL_RUN` shadow/off; cold fallbacks retained) |
 
 Każdy PR odwracalny; kompatybilność ze starymi recipes do końca migracji.
 
@@ -119,4 +119,4 @@ Pełna lista: rekomendacja §12. Evidence: [`../architecture/autonomy-implementa
 
 Cztery fundamenty: intent pack SSOT · policy engine · connector (transport+rollback) · verify obowiązkowy.  
 Reprezentatywny sukces produkcyjny: autonomiczny release docs na Plesk — **po** PR9 cutover.  
-Najbliższy kamień: **PR9 execute** (Pages→Plesk) gdy gates z [`PR9-docs-cutover-runbook.md`](../deployment/PR9-docs-cutover-runbook.md) są zielone; potem **PR10** legacy cleanup.
+Najbliższy kamień: odblokować **PR9 G1** (addon docs + SFTP/paramiko + `__subactor_release.json` na origin); DNS cutover tylko przy G0–G6 green. Równolegle **PR10** dual-run shadow/off — [`PR10-legacy-resolver-cleanup.md`](../deployment/PR10-legacy-resolver-cleanup.md).

@@ -9,11 +9,11 @@
 
 | Layer | CURRENT (implemented) | TARGET | PLANNED | LEGACY (still present) |
 | --- | --- | --- | --- | --- |
-| Intent | Pack registry + pack-first resolvers; derived phrases/LLM/step-catalog sync | Single pack SSOT end-to-end | Dual-run remove (PR10); Planfile auto from pack | Planfile imports hand-maintained; some dual-run compare |
+| Intent | Pack registry + pack-first resolvers; derived phrases/LLM/step-catalog sync; **PR10 started:** `INTENT_PACK_DUAL_RUN=shadow` default | Single pack SSOT end-to-end | Finish PR10 (off + remove cold fallbacks); Planfile auto from pack | Planfile imports hand-maintained; cold FALLBACK_PHRASES; dual-run optional |
 | Policy | `on_fail` / retry / timeout / `depends_on` vs `after`; **rollback → release-rollback** (PR7); **verify → `applied_unverified`** (PR8) | Full lifecycle + `try_in_order` | — | Default `halt` |
-| Apply auth | Dual kill switch + signed apply grant + `plan_hash` + **jti replay** (PR5a–5c) | production verify DoD on live DNS | PR9 cutover | Founder token ≠ grant (ADR-003); dual-run retained |
-| Transport | **SFTP readiness (PR6)** + **release paths (PR7):** upload→verify→activate; symlink/pointer | Live SFTP apply on Plesk + docroot cutover | PR9 | Lab may set `PLESK_SYNC_ALLOW_FTP_FALLBACK=1`; legacy direct `/httpdocs` sync still present |
-| DNS / verify | **PR8:** publish-verify ladder (DNS/TLS/HTTPS/fingerprint) + origin `--resolve`; marker `__subactor_release.json` | DNS→Plesk + live public DoD | **PR9 cutover** | **GitHub Pages is not healthy last_known_good** for content rollback; public docs may still be Pages |
+| Apply auth | Dual kill switch + signed apply grant + `plan_hash` + **jti replay** (PR5a–5c) | production verify DoD on live DNS | PR9 cutover (blocked) | Founder token ≠ grant (ADR-003) |
+| Transport | **SFTP readiness (PR6)** + **release paths (PR7):** upload→verify→activate; symlink/pointer | Live SFTP apply on Plesk + docroot cutover | PR9 | **Live urirun-node still `paramiko_missing` (2026-07-18)**; FTP ok; legacy direct `/httpdocs` sync still present |
+| DNS / verify | **PR8:** publish-verify ladder; **PR9 prep:** runbook + desired A=`217.160.250.222` | DNS→Plesk + live public DoD | **PR9 execute when G0–G6 green** | **GitHub Pages unhealthy LKG**; origin Host serves prototypowanie.pl (no docs addon) |
 | Vault | Lease via browser-agent vault in recipes; lease error mapping (401→`credential_expired`) | ADR-006 lease/revoke/audit | — | `.env` tokens in lab |
 
 ## PR0–PR8 evidence table
@@ -81,15 +81,19 @@ Pass returned `grant` as `apply_grant` on mutate. Each `jti` is single-use (repl
 3. **PR6 done:** paramiko in image, capability readiness, structured errors, SFTP-required prod policy.
 4. **PR7 done:** release upload / activate / rollback + orchestrator compensation.
 5. **PR8 done:** DNS/TLS preflight + public content fingerprint verify (mocked; no cutover claim).
-6. **PR9 prep:** cutover runbook + desired/observed DNS + `dns-record-reconcile` stub — **no production DNS flip**.
-7. **Next: PR9 execute** when gates green; then **PR10** legacy resolver / dual-run cleanup.
+6. **PR9 prep:** cutover runbook + desired A=`217.160.250.222` + origin/public dry probes — **no production DNS flip** (G1/G2/G6 red).
+7. **PR10 started:** `INTENT_PACK_DUAL_RUN=shadow|off|on` (default shadow); pack-first retained; cold fallbacks remain until packs always mounted.
 
 Do **not** treat GitHub Pages as safe DNS/content rollback without noting it is an
 **unhealthy** last_known_good until Plesk cutover + verify (ADR-002/005).
 
-### PR9 dry preflight (public, 2026-07-18)
+### PR9 dry preflight (public + origin, 2026-07-18)
 
-- CNAME `docs.subactor.com` → `subactor.github.io` (Pages).
+- CNAME `docs.subactor.com` → `subactor.github.io` (Pages) — **unchanged; no cutover**.
 - TLS SAN = `*.github.io` (does **not** include `docs.subactor.com`).
 - Public fingerprint fetch fails TLS verify — expected `applied_unverified` until cutover.
+- Origin `--resolve` → `217.160.250.222`: HTTPS 200 but **prototypowanie.pl** content; `/__subactor_release.json` **404** (docs addon missing).
+- `docs-stage.subactor.com` also CNAME → Pages — not a Plesk rehearsal target yet.
+- Live methods: FTP ok; SFTP `paramiko_missing` on running urirun-node.
 - Runbook: [`../deployment/PR9-docs-cutover-runbook.md`](../deployment/PR9-docs-cutover-runbook.md).
+- PR10 notes: [`../deployment/PR10-legacy-resolver-cleanup.md`](../deployment/PR10-legacy-resolver-cleanup.md).

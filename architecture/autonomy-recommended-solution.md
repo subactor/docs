@@ -330,7 +330,7 @@ assumed); orchestrator `on_fail:rollback` → real compensation; plan stage
 Staging recommendation: `docs-stage.subactor.com` (optional infra).
 **Does not** switch production DNS for `docs.subactor.com`.
 
-**Next:** PR9 cutover **when gates green** — see [`../deployment/PR9-docs-cutover-runbook.md`](../deployment/PR9-docs-cutover-runbook.md). Prep only until then.
+**Next:** PR9 cutover **only when G0–G6 green** — see [`../deployment/PR9-docs-cutover-runbook.md`](../deployment/PR9-docs-cutover-runbook.md). As of 2026-07-18 continuation: **blocked** (no docs addon on origin, SFTP paramiko_missing, cert HITL, DNS HITL). Parallel: [`../deployment/PR10-legacy-resolver-cleanup.md`](../deployment/PR10-legacy-resolver-cleanup.md).
 ---
 
 ## 7. Faza 4 — connector capabilities i SFTP

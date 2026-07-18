@@ -28,9 +28,9 @@ LLM **nie może**:
 
 | | |
 | --- | --- |
-| CURRENT | Pack registry + pack-first control/agents resolvers; derived phrases/LLM/step sync |
+| CURRENT | Pack registry + pack-first control/agents resolvers; derived phrases/LLM/step sync; dual-run via `INTENT_PACK_DUAL_RUN` (default `shadow`) |
 | TARGET | Pack jedynym SSOT wiring; zero dual-run; Planfile generowany z packa |
-| LEGACY | Planfile imports ręczne; dual-run compare do PR10 |
+| LEGACY | Planfile imports ręczne; cold FALLBACK_PHRASES; dual-run `on` for mismatch debug |
 
 ## Konsekwencje
 

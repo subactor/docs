@@ -4,7 +4,7 @@
 **Related:** ADR-002 (DNS SSOT), ADR-004 (publish DoD), ADR-005 (rollback), PR8 verify ladder.  
 **Staging preference:** `docs-stage.subactor.com` (infra optional; origin Host / `curl --resolve` works without it).
 
-## Honesty (2026-07-18 dry preflight)
+## Honesty (2026-07-18 dry preflight + continuation)
 
 Observed **public** `docs.subactor.com` (read-only):
 
@@ -15,15 +15,39 @@ Observed **public** `docs.subactor.com` (read-only):
 | TLS SAN | `*.github.io` / `*.github.com` — **not** `docs.subactor.com` | Pages TLS is an **unhealthy** last_known_good for hostname DoD |
 | `GET /__subactor_release.json` | TLS verify fails (SAN mismatch) | Public fingerprint DoD **cannot** pass until cutover + cert |
 
+Observed **origin** via `curl --resolve docs.subactor.com:443:217.160.250.222` (Plesk IP = `dig A subactor.com`):
+
+| Check | Result | Implication |
+| --- | --- | --- |
+| HTTPS `/` | 200 | Body is **prototypowanie.pl** WordPress — default/primary vhost |
+| `/__subactor_release.json` | 404 | No docs release activated on this hostname |
+| `docs-stage.subactor.com` public DNS | CNAME → `subactor.github.io` | Staging not on Plesk yet |
+
+Live `plesk://…/query/methods` (urirun-node, 2026-07-18): **FTP available**; **SFTP `paramiko_missing`** — production publish path blocked until image rebuilt with paramiko.
+
 This mismatch is **expected** until PR9 completes. Reporting it as `dns_mismatch` / `tls_san_mismatch` / `applied_unverified` is correct — **not** a publish success.
+
+**Cutover today: NO** — gates not green; DNS HITL must not run.
+
+## Gate status (2026-07-18 continuation)
+
+| Gate | Status | Evidence / blocker |
+| --- | --- | --- |
+| **G0** Intent & ownership | **YELLOW** | Desired A filled (`217.160.250.222`); Pages CNAME saved as DNS emergency. Boundary HITL approval **not** recorded. |
+| **G1** Origin content ready | **RED** | No docs addon/docroot; Host serves wrong site; no `__subactor_release.json`; SFTP unavailable (`paramiko_missing`). |
+| **G2** Certificate plan | **RED** | Path not agreed / no SAN for `docs.subactor.com` on origin. |
+| **G3** DNS provider readiness | **YELLOW** | Desired state + reconcile stub exist; live mutate still HITL; TTL not lowered. |
+| **G4** Verify ladder | **RED** | Origin fingerprint cannot pass; public Pages failure expected. |
+| **G5** Rollback targets | **YELLOW** | Content rollback API exists but no prior docs release on Plesk; DNS emergency = unhealthy Pages LKG. |
+| **G6** Go / no-go | **RED** | Stop — do not mutate production DNS. |
 
 ## Gates (all required before DNS mutate)
 
 ### G0 — Intent & ownership
 
 - [ ] Cutover owned as **boundary-class** HITL (ADR-003) — not zero-touch reversible publish.
-- [ ] Desired DNS recorded in [`dns-desired-state.json`](./dns-desired-state.json) with real Plesk A/AAAA (no placeholder).
-- [ ] Previous desired (Pages → `subactor.github.io`) saved as emergency DNS rollback target (HITL only; **not** content LKG).
+- [x] Desired DNS recorded in [`dns-desired-state.json`](./dns-desired-state.json) with real Plesk A/AAAA (no placeholder).
+- [x] Previous desired (Pages → `subactor.github.io`) saved as emergency DNS rollback target (HITL only; **not** content LKG).
 
 ### G1 — Origin content ready (no public DNS required)
 
@@ -34,6 +58,8 @@ This mismatch is **expected** until PR9 completes. Reporting it as `dns_mismatch
   - Fingerprint fields match expected (`release_id`, `artifact_sha256`, `source_commit`, `built_at`, `pack_version`)
   - Marker served with `Cache-Control: no-store` (or equivalent)
 - [ ] Prefer rehearsal on **`docs-stage.subactor.com`** pointing at Plesk before touching production.
+- [ ] **needs_human:** create Plesk addon `docs.subactor.com` (dedicated docroot) — connector has no safe addon-create URI; do not upload into primary prototypowanie.pl httpdocs.
+- [ ] **needs_human:** rebuild urirun-node with paramiko (SFTP) — FTP-only is not production publish.
 
 ### G2 — Certificate plan
 
@@ -57,8 +83,8 @@ plesk://host/site/command/publish-verify
   hostname=docs.subactor.com
   release_id=…
   artifact_sha256=…
-  origin_ip=<plesk-ipv4>          # pre-cutover
-  dns_targets=[<plesk-ipv4>]      # post-cutover
+  origin_ip=217.160.250.222          # pre-cutover
+  dns_targets=[217.160.250.222]      # post-cutover
   verify_origin=true
   verify_public=true              # only after DNS+TLS green
   check_dns=true
@@ -73,9 +99,9 @@ plesk://host/site/command/publish-verify
 
 | Layer | Healthy target | Unhealthy / notes |
 | --- | --- | --- |
-| Content | Previous Plesk release (`activate(previous)`) | GitHub Pages content ≠ Plesk release |
+| Content | Previous Plesk release (`activate(previous)`) | GitHub Pages content ≠ Plesk release; no docs release on origin yet |
 | DNS emergency | Prior CNAME → `subactor.github.io` (HITL) | Restores Pages; TLS SAN still wrong for `docs.subactor.com` until Pages/custom-domain cert fixed — **ops emergency only** |
-| Staging | `docs-stage.subactor.com` on Plesk | Preferred rehearsal path |
+| Staging | `docs-stage.subactor.com` on Plesk | Preferred rehearsal path — **not created** (public DNS still Pages) |
 
 ### G6 — Go / no-go
 
@@ -107,7 +133,7 @@ Cutover is allowed only when:
 | `plesk://…/publish-verify` | **PR8 done** (mocked + optional live) |
 | `__subactor_release.json` on upload | **PR8 done** |
 | Orchestrator `applied_unverified` | **PR8 done** |
-| Desired DNS file | [`dns-desired-state.json`](./dns-desired-state.json) |
+| Desired DNS file | [`dns-desired-state.json`](./dns-desired-state.json) — A=`217.160.250.222` |
 | `dns-record-reconcile` recipe stub | [`dns-record-reconcile.urirun.json`](./dns-record-reconcile.urirun.json) — **not** in intent-pack registry yet (avoids dual-run churn); register in PR9 when AQL + provider connector wired |
 | Intent pack `dns-record-reconcile.v1.json` | Deferred until AQL model + namecheap/dns connector grant exist |
 
@@ -115,4 +141,8 @@ Cutover is allowed only when:
 
 - Flipping production DNS without green gates.
 - Claiming public `docs.subactor.com` is on Plesk.
-- PR10 legacy resolver / dual-run removal.
+- Uploading docs into primary `prototypowanie.pl` httpdocs as a substitute for the docs addon.
+
+## Parallel work while PR9 blocked
+
+See [`PR10-legacy-resolver-cleanup.md`](./PR10-legacy-resolver-cleanup.md) — reduce dual-run / legacy resolvers (pack-first already stable for docs/www).
