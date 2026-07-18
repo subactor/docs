@@ -1,18 +1,19 @@
 # ADR-001: Zakres autonomii
 
-- **Status:** Proposed  
+- **Status:** Accepted  
 - **Data:** 2026-07-18  
 - **Kontekst:** [`../autonomy-recommended-solution.md`](../autonomy-recommended-solution.md) §2.1  
-- **Pytanie statusowe:** „Scope dowolne zadanie vs katalog intent packs?”
+- **Pytanie statusowe:** „Scope dowolne zadanie vs katalog intent packs?” — **rozstrzygnięte**
 
 ## Decyzja
 
-System autonomicznie wykonuje zadania z **wersjonowanego katalogu intent packów**.
+System autonomicznie wykonuje zadania z **wersjonowanego katalogu intent packów**
+(`platform/config/intent-packs/`).
 
 LLM może:
 
 - wybrać istniejący pack (`pack_id`),
-- wypełnić dozwolone parametry (situation slots).
+- wypełnić dozwolone parametry (situation slots z `situation_schema`).
 
 LLM **nie może**:
 
@@ -22,6 +23,14 @@ LLM **nie może**:
 - definiować polityk wykonania (`on_fail`, timeout, retry).
 
 „Dowolne zadanie” = dowolna kompozycja **zatwierdzonych** zdolności, nie dowolny kod ani operacja wymyślona przez model.
+
+### CURRENT vs TARGET
+
+| | |
+| --- | --- |
+| CURRENT | Pack registry + pack-first control/agents resolvers; derived phrases/LLM/step sync |
+| TARGET | Pack jedynym SSOT wiring; zero dual-run; Planfile generowany z packa |
+| LEGACY | Planfile imports ręczne; dual-run compare do PR10 |
 
 ## Konsekwencje
 

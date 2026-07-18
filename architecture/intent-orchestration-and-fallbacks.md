@@ -1,6 +1,11 @@
 # Architektura: intent packs, orkiestracja i fallbacki zdolności
 
-**Status:** dokument projektowy (analiza + propozycja). Bez implementacji kodu.  
+**Status:** dokument projektowy (analiza + propozycja + **aktualizacja stanu 2026-07-18**).  
+Część warstw jest już zaimplementowana — patrz
+[`autonomy-implementation-status.md`](./autonomy-implementation-status.md)
+(CURRENT / TARGET / LEGACY). Ten plik pozostaje SSOT modelu; nie czytać §1/§2 jako
+„nic nie istnieje”, jeśli status mówi inaczej.
+
 **Kanoniczny:** tak — ten plik jest SSOT dla modelu. Krótka nota planowa:
 [`../plans/intent-capability-fallbacks.md`](../plans/intent-capability-fallbacks.md).
 
@@ -20,20 +25,20 @@ GitHub, …). Przykład **docs → Plesk httpdocs** jest tylko ilustracją.
 
 ## 1. Problem
 
-Łatwość intencji (NL → działający plan) blokuje dziś nie „brak LLM”, lecz:
+Łatwość intencji (NL → działający plan) historycznie blokowały:
 
 1. **N-krotne ręczne podpinanie tego samego celu** — frazy, katalog LLM, model AQL,
    step-catalog, recipe `*.urirun.json`, import Planfile, `ALLOW MODEL` / `ALLOW URI_PROCESS`.
-2. **Liniowy fail-fast** w `runTask` — pierwsza porażka urirun kończy cały plan;
-   brak `optional` / `on_fail` / `try_in_order` na poziomie *zdolności*.
+   **CURRENT (PR2–3 partial):** pack registry + derived sync redukują drift; Planfile
+   imports nadal ręczne; dual-run do PR10.
+2. **Liniowy fail-fast** w `runTask` — pierwsza porażka urirun kończy cały plan.
+   **CURRENT (PR4 partial):** `on_fail` / `optional` / retry / timeout działają;
+   brak pełnego `try_in_order`; rollback = stub → `rollback_failed`.
 3. **Mylenie warstw fallbacku** — transport (SFTP→FTP) należy do konektora;
-   alternatywy między URI (ensure A vs ensure B) do recipes/orchestratora;
-   wybór nazwanego intentu do phrase map / LLM.
+   alternatywy między URI do recipes/orchestratora; wybór nazwanego intentu do pack/phrase.
 
 Bez SSOT dla **named intent** i **policy między krokami** każdy nowy cel
-(np. „opublikuj X”, „sprawdź DNS”, „ensure vault”) powiela wiring i ryzyko
-misroute (kontrolny LLM path historycznie ciągnie w modele onboardingowe, gdy
-brak trafienia frazy).
+powiela wiring. **Nie** jest już prawdą „brak packów / tylko fail-fast” — patrz evidence.
 
 ---
 

@@ -295,43 +295,22 @@ Nie zaczynać od skomplikowanych grup fallbacków.
 
 `PLESK_SYNC_APPLY=1` jest dobrym kill switchem, ale **nie** jedyną autoryzacją.
 
-### 6.1 Dwupoziomowa brama
+### 6.1 Dwupoziomowa brama — **spec Accepted (ADR-003); kod PR5a→5b**
 
-**Poziom infrastrukturalny:** `AUTONOMY_MUTATIONS_ENABLED=1` — master kill switch na nodzie.
+**Poziom infrastrukturalny (dual layer):**
 
-**Poziom wykonania:** Control wydaje krótko żyjący, podpisany **apply grant**:
+- Master: `AUTONOMY_MUTATIONS_ENABLED` — jawne `0` blokuje mutacje; `1` otwiera bramę.
+- Domenowy: `PLESK_SYNC_APPLY=1` — istniejący kill switch syncu Plesk.
 
-```json
-{
-  "run_id": "run_...",
-  "actor": "founder-agent",
-  "intent_pack": "docs-httpdocs-publish",
-  "plan_hash": "...",
-  "artifact_sha256": "...",
-  "target": "docs.subactor.com",
-  "expires_at": "...",
-  "risk_class": "reversible"
-}
-```
+**Poziom wykonania:** Control wydaje krótko żyjący, podpisany **apply grant**
+(`POST /api/apply-grants`, scope `plans:approve`) — pełna spec w ADR-003.
 
-Connector sprawdza: podpis, ważność, `plan_hash`, artefakt, target, kontrakt aktora.
+**Źródło klucza HMAC:** `APPLY_GRANT_HMAC_SECRET` (preferowane) albo fallback `TOKEN_PEPPER`.
 
-### 6.2 Dry-run → immutable plan
+### 6.2 Dry-run → immutable plan — **PR5a**
 
-Po dry-run **nie** wolno ponownie wyliczać listy plików przed apply. Manifest:
-
-```json
-{
-  "release_id": "rel_20260718_...",
-  "source_sha256": "...",
-  "files": [{ "path": "index.html", "sha256": "..." }],
-  "deletes": [],
-  "target": "...",
-  "plan_hash": "..."
-}
-```
-
-Apply realizuje dokładnie ten manifest.
+Po dry-run apply weryfikuje `plan_hash` (pliki + target; bez `release_id` w hashu).
+Ship: najpierw manifest (5a), potem grant-required (5b), potem replay (5c).
 
 ---
 
@@ -495,7 +474,9 @@ Pełna tabela: [`../plans/autonomy-implementation-roadmap.md`](../plans/autonomy
 | 2 | Intent pack schema, registry, migracja docs/www — **done** (dual-run) |
 | 3 | Deduplikacja phrase map, katalogu LLM, step-catalog — **done** (pack SSOT + sync script; dual-run retained) |
 | 4 | `on_fail`, retry, timeout, statusy kroków — **done** (`@subactor/orchestrator`) |
-| 5 | Signed apply grants + plan/artifact hash binding |
+| 5a | Immutable manifest + plan_hash |
+| 5b | Signed apply grants (ADR-003) |
+| 5c | Grant replay (`jti`) |
 | 6 | Paramiko/SFTP, capability readiness, błędy strukturalne |
 | 7 | Release upload, activation, rollback |
 | 8 | DNS/TLS preflight + public content fingerprint verify |

@@ -99,73 +99,52 @@ Krótko — szczegóły w
 
 | Problem | Skutek |
 | --- | --- |
-| Intent wiring zduplikowany (frazy, AQL, step-catalog, recipe, Planfile) | Drift; drogi cost nowego celu |
-| Brak intent pack SSOT | Każdy cel = N plików ręcznie |
+| Intent wiring zduplikowany (frazy, AQL, step-catalog, recipe, Planfile) | **Partial (PR3):** pack SSOT + derived sync; Planfile nadal osobno |
+| Brak intent pack SSOT | **Closed (PR2):** registry istnieje; dual-run do PR10 |
 | Orchestrator NL stub ≠ pełna multi-step recipe | `--nl` nie zastępuje ticketu z `uri_processes` |
-| Fail-fast `runTask` bez `optional` / `on_fail` | **Closed (PR4)** — policy w `@subactor/orchestrator` |
+| Fail-fast `runTask` bez `optional` / `on_fail` | **Closed (PR4 core)** — hardening ticket/rollback w toku |
 | Kontrakty autonomii w API to głównie TestQL onboarding | Brak produkcyjnego kontraktu „docs publish” |
 | Multi-goal NL (treść + publish) niepełne | Intent trafia w sync; generacja treści nie jest w tym samym łańcuchu |
-| Misroute LLM bez trafienia frazy | Historycznie modele onboardingowe — łata phrase map, nie SSOT |
+| Misroute LLM bez trafienia frazy | Historycznie modele onboardingowe — łata phrase map + packs |
 
 ---
 
 ## 5. Pytania do rozstrzygnięcia
 
 Checklist decyzji pod **pełną autonomię poza self-evolution**.  
-*(Self-evolution: out of scope — jawnie wykluczone.)*
+*(Self-evolution: out of scope — jawnie wykluczone.)*  
+Evidence implementacji: [`autonomy-implementation-status.md`](./autonomy-implementation-status.md).
 
 ### Governance / apply
 
-- [ ] **Kto zatwierdza apply?** Founder zawsze bypass (`SUBACTOR_ADMIN_TOKEN` + `*`)
-      vs polityka kontraktu (bot tylko dry-run; apply po human / po nazwanym kontrakcie)?  
-      **Rekomendacja:** kill switch + podpisany apply grant związany z `plan_hash`/artefaktem/targetem; founder bypass nie zastępuje grantu w docelowym modelu ([ADR-003](./adr/003-approval-hitl-model.md)).
-- [ ] **Dry-run zawsze przed apply?** Czy obowiązkowy w recipe policy, czy wystarczy
-      brama `PLESK_SYNC_APPLY`?  
-      **Rekomendacja:** obowiązkowy dry-run → immutable manifest; `PLESK_SYNC_APPLY` / `AUTONOMY_MUTATIONS_ENABLED` tylko jako kill switch, nie jedyna autoryzacja.
-- [ ] **Human-in-the-loop when?** Tylko ensure credentials / DNS / TLS, czy też
-      każdy live mutate poza allowlistą?  
-      **Rekomendacja:** HITL dla boundary (domena, DNS, credential) i governance (nowy pack/polityka); reversible mutate (kolejny release) zero-touch po dry-run ([ADR-003](./adr/003-approval-hitl-model.md)).
+- [x] **Kto zatwierdza apply?** → [ADR-003](./adr/003-approval-hitl-model.md) **Accepted** (kill switch + signed grant; founder ≠ grant).
+- [x] **Dry-run zawsze przed apply?** → ADR-003 (immutable manifest; kill switch ≠ jedyna autoryzacja).
+- [x] **Human-in-the-loop when?** → ADR-003 (boundary/governance HITL; reversible zero-touch po dry-run+grant).
 
 ### Prawda domeny i weryfikacja
 
-- [ ] **Gdzie żyje prawda DNS/domen?** Repo CNAME, Plesk API, zewnętrzny DNS panel —
-      jeden SSOT + preflight URI przed obietnicą NL?  
-      **Rekomendacja:** repo = desired state; provider = observed; connector DNS = reconcile; Plesk nie jest SSOT DNS ([ADR-002](./adr/002-dns-ssot.md)).
-- [ ] **Monitoring / verify obowiązkowe?** Czy plan bez HTTPS/DNS check może być
-      `ok: true`, czy verify jest częścią Definition of Done autonomii?  
-      **Rekomendacja:** verify obowiązkowy; `upload OK + verify FAIL` = `applied_unverified` ≠ sukces ([ADR-004](./adr/004-publish-definition-of-done.md)).
-- [ ] **GitHub Pages vs Plesk:** docs zostaje na Pages, czy migracja DNS→Plesk
-      (wzorzec `subactor.com`)?  
-      **Rekomendacja:** `docs.subactor.com → Plesk`; jeśli Pages — usunąć intent docs→Plesk z procesu publicznego ([ADR-002](./adr/002-dns-ssot.md)).
+- [x] **Gdzie żyje prawda DNS/domen?** → [ADR-002](./adr/002-dns-ssot.md) **Accepted**.
+- [x] **Monitoring / verify obowiązkowe?** → [ADR-004](./adr/004-publish-definition-of-done.md) **Accepted**.
+- [x] **GitHub Pages vs Plesk:** → ADR-002 (`docs → Plesk`); Pages ≠ healthy content LKG.
 
 ### Zdolności i connectorzy
 
 - [ ] **Jakie capability muszą być w connectorach zanim NL może obiecać wynik?**
       Minimum: transport (SFTP lub FTP), vault lease, allowlist source, domain
       exists, TLS OK, apply gate, post-verify.  
-      **Rekomendacja:** pack deklaruje `required_capabilities`; preflight musi być green przed obietnicą sukcesu; minimum jak powyżej + release activate/rollback.
-- [ ] **Paramiko / SFTP w obrazie urirun-node** — wymagane przed „autonomicznym
-      publish”, czy FTP + wyższy timeout wystarczy?  
-      **Rekomendacja:** paramiko w obrazie; brak SFTP blokuje readiness produkcyjnego publish; FTP tylko jako fallback konektora, nie jedyna ścieżka.
-- [ ] **Timeout / retries:** stałe 30s vs per-URI budget; kto ustawia?  
-      **Rekomendacja:** policy connectora/recipe (np. connect 15s, op 120s, budget 180s, 3× backoff 1/3/9); nie LLM.
+      **Rekomendacja:** pack deklaruje `required_capabilities`; preflight green przed obietnicą sukcesu.
+- [ ] **Paramiko / SFTP w obrazie urirun-node** — **Rekomendacja:** paramiko w obrazie; FTP tylko fallback (PR6).
+- [ ] **Timeout / retries (connector budgets):** orchestrator ma `timeout_ms`/`retry` (PR4); budgets connect/op → PR6.
 
 ### Secrets / vault
 
-- [ ] **Ownership sekretów?** Kto tworzy, rotuje, lease’uje z CLI/recipe bez wklejania
-      do ticketów?  
-      **Rekomendacja:** człowiek tworzy/rotuje; vault = SSOT; recipe = `credential_ref`; runtime = krótki lease ([ADR-006](./adr/006-secrets-ownership.md)).
-- [ ] **Ensure SFTP → vault** zawsze pierwszym krokiem, czy opcjonalny preflight?  
-      **Rekomendacja:** brak credential → `needs_human` + ticket bootstrap; bez publikacji i bez pytania LLM o hasło.
+- [x] **Ownership sekretów?** → [ADR-006](./adr/006-secrets-ownership.md) **Accepted**.
+- [x] **Ensure SFTP → vault** → ADR-006 (`needs_human` bez credential).
 
 ### Scope produktu
 
-- [ ] **Scope „dowolne zadanie” vs katalog intent packs?** Autonomia = zamknięty
-      katalog nazwanych celów, czy free-form LLM z eskalacją?  
-      **Rekomendacja:** kontrolowany katalog intent packów; LLM wybiera pack + sloty, nie URI ([ADR-001](./adr/001-autonomy-scope.md)).
-- [ ] **Rollback / failure semantics?** Halt + ticket; partial upload rollback;
-      `on_fail: continue|ticket|halt` w recipe policy?  
-      **Rekomendacja:** `on_fail: halt|continue|ticket|rollback`; release-based rollback + stany planu bogatsze niż boolean ([ADR-005](./adr/005-rollback.md)).
+- [x] **Scope katalog intent packs?** → [ADR-001](./adr/001-autonomy-scope.md) **Accepted**.
+- [x] **Rollback / failure semantics?** → [ADR-005](./adr/005-rollback.md) **Accepted**.
 
 ### Poza zakresem (nie rozstrzygamy tu)
 
