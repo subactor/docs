@@ -21,7 +21,9 @@ Dwa strumienie (równolegle, E2E dopiero po obu):
 - Zachować `5894906` jako snapshot diagnostyczny.
 - ADR-y: zakres autonomii, DNS SSOT, HITL, DoD publish, rollback, sekrety.
 - Wypchnąć docs; **bez** dużego refaktoru kodu w tym samym commitcie.
-- Uwaga PR1: duplikaty `core/...` vs `platform/components/core/...` (mapa repo / `project/map.toon.yaml` w monorepo).
+- Uwaga PR1: **rozstrzygnięte** — `platform/components/*` = submoduły (pin deploy);
+  kanoniczny kod w `subactor/<name>`; drift: `platform/scripts/check-component-drift.mjs`
+  ([`../architecture/canonical-component-paths.md`](../architecture/canonical-component-paths.md), ADR-007).
 
 ## Faza 1 — Intent Pack Registry
 

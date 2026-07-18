@@ -13,6 +13,9 @@
 | [004](./004-publish-definition-of-done.md) | Verify / DoD publikacji | Proposed |
 | [005](./005-rollback.md) | Rollback i failure semantics | Proposed |
 | [006](./006-secrets-ownership.md) | Ownership sekretów / vault | Proposed |
+| [007](./007-canonical-component-paths.md) | Kanoniczne ścieżki vs `platform/components` | Accepted |
+
+Pełny opis ścieżek: [`../canonical-component-paths.md`](../canonical-component-paths.md).
 
 Akceptacja ADR = zamknięcie odpowiadających pytań w
 [`../autonomy-ops-status-and-open-questions.md`](../autonomy-ops-status-and-open-questions.md) §5.

@@ -154,9 +154,7 @@ connectors/services/...
 platform/components/connectors/services/...
 ```
 
-Przed refaktorem trzeba ustalić: która lokalizacja jest kanoniczna; czy `platform/components` to kopia, vendor czy artefakt generowany; czy zmiany synchronizuje generator. W przeciwnym razie intent resolver może być poprawiony w jednej kopii, a produkcja uruchomi drugą.
-
-Jeśli lokalna mapa `sandbox:/…/map.toon` nie jest wersjonowana w tym repo — traktować **mapę repo** jako znane ryzyko duplikacji i dodać CI wykrywające rozjazd kanonicznej części i jej kopii (PR1 w roadmapie).
+**Rozstrzygnięte (ADR-007):** `platform/components/*` to **git submodules** (pin deployowy dla Compose), nie vendor ani generator. Kanoniczny kod = repozytoria `subactor/<name>`. Bramka driftu: `platform/scripts/check-component-drift.mjs`. Szczegóły: [`canonical-component-paths.md`](./canonical-component-paths.md).
 
 ---
 
