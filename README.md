@@ -11,6 +11,7 @@ Publiczna dokumentacja Subactor.
 | [architecture/autonomy-ops-status-and-open-questions.md](architecture/autonomy-ops-status-and-open-questions.md) | Status ops + pytania otwarte (z proponowanymi odpowiedziami); baseline `5894906` |
 | [architecture/intent-orchestration-and-fallbacks.md](architecture/intent-orchestration-and-fallbacks.md) | Intent packs, recipe policy, capability fallbacki, rola LLM (generycznie; publish tylko jako przykład) |
 | [architecture/testing-intents-and-deploy-results.md](architecture/testing-intents-and-deploy-results.md) | Macierze testów intent/deploy; ownership vs TestQL; luki capability/verify |
+| [architecture/capability-tooling-evaluation.md](architecture/capability-tooling-evaluation.md) | Ocena touri/uri2verify/TestQL/dockfra/hypervisor + gate pack⊆doctor |
 | [plans/autonomy-implementation-roadmap.md](plans/autonomy-implementation-roadmap.md) | Roadmapa: fazy 0–8 + kolejność jednostek zmian (PR table) |
 | [EQL ↔ autonomy (external)](https://github.com/subactor/eql/blob/main/docs/SUBACTOR_KORU_INTEGRATION.md) | Prototyp EQL 0.2: SemanticPatch + hash ladder vs `plan_hash` / apply grant |
 | [autonomy-cli-runbook.md](autonomy-cli-runbook.md) | Runbook: NL z shella (`subactor` / `subactor-run`) → AQL/OQL/URI → Plesk sync; current vs target dla docs.subactor.com |

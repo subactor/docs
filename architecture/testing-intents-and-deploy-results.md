@@ -22,7 +22,7 @@ JSON, nie powinien być SSOT tych kontraktów.
 | Warstwa | Właściciel testów | Artefakt |
 | --- | --- | --- |
 | NL → pack id / slots | Control + pack registry unit | `ask --json` → `pack_id`, `model_name` |
-| Capability preflight | Connector doctor + pack `required_capabilities` ⊆ AQL | `capability_unavailable`, CI ⊆-check |
+| Capability preflight | Connector doctor + pack `required_capabilities` ⊆ AQL | `capability_unavailable`, CI ⊆-check (`platform/scripts/capability-preflight.mjs`) |
 | Dry-run / `plan_hash` / grant / jti | Orchestrator + Control apply-grants | deny codes ADR-003 |
 | Origin vs public verify / fingerprint | Connector `publish-verify` + orchestrator stages | `applied_unverified` ≠ `completed` |
 | EQL determinism (`eqlHash` / `artifactHash`) | `@subactor/eql` matrix (mock) | przed `POST /api/apply-grants` |
