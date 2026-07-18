@@ -6,8 +6,10 @@ Publiczna dokumentacja Subactor.
 
 | Dokument | Opis |
 |----------|------|
+| [architecture/intent-orchestration-and-fallbacks.md](architecture/intent-orchestration-and-fallbacks.md) | **Kanoniczny:** intent packs, recipe policy, capability fallbacki, rola LLM (generycznie; publish tylko jako przykład) |
 | [autonomy-cli-runbook.md](autonomy-cli-runbook.md) | Runbook: NL z shella (`subactor` / `subactor-run`) → AQL/OQL/URI → Plesk sync; current vs target dla docs.subactor.com |
 | [plans/docs-subactor-com-publish.md](plans/docs-subactor-com-publish.md) | Plan implementacji: allowlist `docs/`, recipe, NL → publish na docs.subactor.com |
+| [plans/intent-capability-fallbacks.md](plans/intent-capability-fallbacks.md) | Skrót / pointer do dokumentu architektury intent + fallbacki |
 | [deployment/docs-httpdocs-sync.urirun.json](deployment/docs-httpdocs-sync.urirun.json) | Recipe urirun (dry-run → apply) |
 
 ## Platforma (Organization OS)
