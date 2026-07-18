@@ -56,7 +56,8 @@ Founder bypass (`SUBACTOR_ADMIN_TOKEN`) **nie** zastępuje grantu w modelu produ
 
 Wymagane: `run_id`, `actor`, `intent_pack`, `plan_hash`, `artifact_sha256`, `target`, `expires_at`, `risk_class`.
 
-Opcjonalne (PR5c): `jti` (unique id grantu), `iat`.
+Opcjonalne w ADR (pełny replay = **PR5c**): `jti`, `iat`.
+**PR5b wydaje `jti` w tokenie**; store użytych `jti` pozostaje PR5c.
 
 `risk_class` ∈ `read_only` \| `reversible` \| `boundary` \| `governance`. Mutate sync = zwykle `reversible`.
 

@@ -310,8 +310,10 @@ Nie zaczynać od skomplikowanych grup fallbacków.
 ### 6.2 Dry-run → immutable plan — **PR5a done**
 
 Po dry-run apply weryfikuje `plan_hash` (pliki + target; bez `release_id` w hashu).
-**CURRENT:** bridge + `urirun-connector-plesk` emitują `manifest`/`plan_hash`; apply bez
-pasującego hasha → `plan_hash_mismatch` (zero upload). **Next:** grant-required (5b), potem replay (5c).
+**CURRENT:** bridge + `urirun-connector-plesk` require
+`AUTONOMY_MUTATIONS_ENABLED=1` + `PLESK_SYNC_APPLY=1` + signed `apply_grant`
++ matching `plan_hash`. Control issues grants via `POST /api/apply-grants`.
+**Next:** `jti` replay store (PR5c), potem SFTP readiness (PR6).
 
 ---
 
