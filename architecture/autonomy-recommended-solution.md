@@ -313,7 +313,12 @@ Po dry-run apply weryfikuje `plan_hash` (pliki + target; bez `release_id` w hash
 **CURRENT:** bridge + `urirun-connector-plesk` require
 `AUTONOMY_MUTATIONS_ENABLED=1` + `PLESK_SYNC_APPLY=1` + signed `apply_grant`
 + matching `plan_hash` + single-use `jti` (replay store on mutate). Control issues grants via `POST /api/apply-grants`.
-**Next:** SFTP readiness (PR6).
+**CURRENT (PR6):** `paramiko` in `urirun-node` image build; doctor reports
+`capabilities.sftp|ftp` + `production_publish_ready`; structured transport
+errors; FTP fallback only with `PLESK_SYNC_ALLOW_FTP_FALLBACK=1`. Publish packs
+require `plesk.transport.sftp`.
+
+**Next:** release upload/activate/rollback (PR7).
 
 ---
 

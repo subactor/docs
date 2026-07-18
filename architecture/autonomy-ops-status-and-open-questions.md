@@ -133,8 +133,9 @@ Evidence implementacji: [`autonomy-implementation-status.md`](./autonomy-impleme
       Minimum: transport (SFTP lub FTP), vault lease, allowlist source, domain
       exists, TLS OK, apply gate, post-verify.  
       **Rekomendacja:** pack deklaruje `required_capabilities`; preflight green przed obietnicą sukcesu.
-- [ ] **Paramiko / SFTP w obrazie urirun-node** — **Rekomendacja:** paramiko w obrazie; FTP tylko fallback (PR6).
-- [ ] **Timeout / retries (connector budgets):** orchestrator ma `timeout_ms`/`retry` (PR4); budgets connect/op → PR6.
+- [x] **Paramiko / SFTP w obrazie urirun-node** — paramiko w Dockerfile; FTP tylko fallback (`PLESK_SYNC_ALLOW_FTP_FALLBACK=1`) (PR6).
+- [x] **Timeout / retries (connector budgets):** connect/op/total 15/120/180 (PR6); orchestrator `timeout_ms`/`retry` (PR4).
+- [ ] **Release upload / activate / symlink** — **PR7**.
 
 ### Secrets / vault
 

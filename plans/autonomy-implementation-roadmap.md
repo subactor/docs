@@ -58,11 +58,13 @@ Dwa strumienie (równolegle, E2E dopiero po obu):
 
 ## Faza 4 — Connector / SFTP
 
-- Paramiko w obrazie urirun-node; capability readiness; timeouty 15/120/180; błędy strukturalne.
+- **PR6 done:** Paramiko w obrazie urirun-node; capability readiness w doctor;
+  timeouty 15/120/180; błędy strukturalne; FTP fallback tylko z
+  `PLESK_SYNC_ALLOW_FTP_FALLBACK=1`; brak SFTP → `production_publish_ready=false`.
 
 ## Faza 5 — Release deploy + rollback
 
-- `releases/` + `current`/`previous`; `release-upload` / `activate` / `rollback`.
+- `releases/` + `current`/`previous`; `release-upload` / `activate` / `rollback` — **PR7**.
 
 ## Faza 6 — Vault
 
@@ -93,8 +95,8 @@ Szczegóły każdej fazy: dokument rekomendacji §3–§11.
 | 5a | Immutable manifest + plan_hash binding — **done** |
 | 5b | Signed apply grants (ADR-003) — **done** |
 | 5c | Grant replay (`jti`) — **done** |
-| 6 | Paramiko/SFTP, capability readiness i strukturalne błędy — **next** |
-| 7 | Release upload, activation i rollback |
+| 6 | Paramiko/SFTP, capability readiness i strukturalne błędy — **done** |
+| 7 | Release upload, activation i rollback — **next** |
 | 8 | DNS/TLS preflight oraz public content fingerprint verify |
 | 9 | Migracja `docs.subactor.com` z Pages do Pleska |
 | 10 | Usunięcie legacy resolverów i starych kopii wiring |
