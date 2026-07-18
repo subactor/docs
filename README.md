@@ -15,6 +15,7 @@ Publiczna dokumentacja Subactor.
 | [plans/autonomy-implementation-roadmap.md](plans/autonomy-implementation-roadmap.md) | Roadmapa: fazy 0–8 + kolejność jednostek zmian (PR table) |
 | [EQL ↔ autonomy (external)](https://github.com/subactor/eql/blob/main/docs/SUBACTOR_KORU_INTEGRATION.md) | Prototyp EQL 0.2: SemanticPatch + hash ladder vs `plan_hash` / apply grant |
 | [autonomy-cli-runbook.md](autonomy-cli-runbook.md) | Runbook: NL z shella (`subactor` / `subactor-run`) → AQL/OQL/URI → Plesk sync; current vs target dla docs.subactor.com |
+| [ops/subactor-ask-troubleshooting.md](ops/subactor-ask-troubleshooting.md) | Troubleshooting `subactor ask`: flagi CLI, hr-control, remote_path, origin `--resolve`, Koru vs HITL |
 | [plans/docs-subactor-com-publish.md](plans/docs-subactor-com-publish.md) | Plan implementacji: allowlist `docs/`, recipe, NL → publish na docs.subactor.com |
 | [plans/intent-capability-fallbacks.md](plans/intent-capability-fallbacks.md) | Skrót / pointer do dokumentu architektury intent + fallbacki |
 | [deployment/docs-httpdocs-sync.urirun.json](deployment/docs-httpdocs-sync.urirun.json) | Recipe urirun (dry-run → apply) |
