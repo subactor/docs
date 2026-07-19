@@ -15,3 +15,5 @@ coverage/
 .planfile/.koru/
 .koru/
 .planfile/sprints/*.bak-*
+.planfile/.store.lock
+.planfile/**/*.fast.json

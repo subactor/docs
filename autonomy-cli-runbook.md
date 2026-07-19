@@ -163,7 +163,7 @@ Start from the shell. Prefer deterministic CLIs when the URI is already known.
 | Dry-run sync | Reviews file plan / hashes | Plan only | URI sync `apply=false` |
 | Live sync | Sets `PLESK_SYNC_APPLY=1` on node (or founder policy) | Upload via SFTP/FTP | URI sync `apply=true` |
 | Verify | Spot-check browser | Optional automated GET | `curl -fsS https://docs.subactor.com/` |
-| Out of scope | Answers `waiting_input` ticket | Escalates to `human:founder` | Planfile + `subactor tickets` |
+| Out of scope | Maintains preauthorized mandates/providers | Resolution Engine selects actor/provider and monitors SLA | Planfile + authority graph |
 
 ### Languages / packages (no secrets in docs)
 
