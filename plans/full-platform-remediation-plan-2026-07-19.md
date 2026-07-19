@@ -167,12 +167,17 @@ EVIDENCE`:
 - `orchestrator@b9e6940` podłącza jego odczytową część do żywych `/routes`,
   `auth/query/status`, `auth/query/scopes` i
   `auth/query/acquisition-methods`, bez stałej mapy providerów;
+- `runtime@95e7e71` kompiluje, weryfikuje i jednorazowo zużywa podpisane child
+  grants dla acquire/refresh/delegate/rotate/revoke, używając istniejącego
+  apply-grant HMAC i replay store;
+- `orchestrator@4268748` dodaje hash-chained append-only evidence outbox oraz
+  opt-in command executor związany z dokładnym URI i hashem payloadu;
 - `urirun-connector-plesk@4db9c48` jest pierwszym connector-em referencyjnym
   z `auth/query/status`, `auth/query/scopes` i
   `auth/query/acquisition-methods` bez ujawniania sekretu;
-- `platform@4dda830` przypina aktualny contracts w source lock.
+- `platform@75f0511` przypina aktualny runtime i contracts w source lock.
 
-Testy: runtime 70/70, Orchestrator 90/90, contracts 4/4, generator kontraktów
+Testy: runtime 74/74, Orchestrator 95/95, contracts 4/4, generator kontraktów
 10/10, Plesk 80/80 oraz pełny `npm test` Platformy. Po restarcie żywy runtime
 urirun odkrył trzy trasy auth Plesk. Autoryzowane, odczytowe wywołanie
 `auth/query/acquisition-methods` zakończyło się powodzeniem i zwróciło
@@ -184,14 +189,21 @@ Odczytowa część Access Resolvera jest już podłączona do live `/routes` i t
 auth. Próba wykonana przez publiczne API Orchestratora odnalazła Plesk,
 wywołała auth status, zapisała zdarzenia `route_discovery`, `auth_status` i
 `access_resolution`, po czym zachowała `plesk_https_required`. Nie wywołała
-bootstrapu. Evidence jest obecnie przekazywane do wstrzykniętego sinka, ale
-nie ma jeszcze trwałego outboxa.
+bootstrapu. Evidence może być teraz zapisane do pliku JSONL `0600` z
+monotoniczną sekwencją i łańcuchem SHA-256. Próba live zapisała i ponownie
+zweryfikowała trzy rekordy.
 
-Komendy bootstrap/refresh/delegate pozostają celowo niepodłączone do adaptera,
-dopóki child grant compiler nie zwiąże ich z `plan_hash`, targetem, TTL i
-jednorazowym nonce. DNS, GitHub, e-mail, voice i e-sign wymagają kolejnych
-implementacji conformance. Do czasu scope proof brak credentiala nie może być
-raportowany jako automatycznie rozwiązany.
+Command executor obsługuje bootstrap/refresh/delegate dopiero po weryfikacji i
+atomowym zużyciu podpisanego child grantu związanego z `plan_hash`, targetem,
+fingerprintem środowiska, URI, hashem payloadu, credential handles, TTL,
+budżetem i jednym wykonaniem. Testy potwierdzają odmowę replay oraz zmienionego
+payloadu bez wywołania `/run`. Nie wykonano komendy w środowisku live.
+
+Pozostaje wymusić ten grant także na natywnej granicy connectora/urirun i
+ograniczyć token node tak, aby bezpośrednie `/run` nie mogło ominąć executora.
+DNS, GitHub, e-mail, voice i e-sign wymagają kolejnych implementacji
+conformance. Do czasu scope proof brak credentiala nie może być raportowany
+jako automatycznie rozwiązany.
 
 E-mail do Foundera nie jest globalnym fallbackiem każdego błędu. Powiadomienie
 powstaje dopiero dla typowanego `AQL_ALLOW_REQUIRED`, native provider consent,

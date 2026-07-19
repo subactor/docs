@@ -41,6 +41,7 @@ nieumocowanej osoby ani uznanie testu mock za dowód działania produkcyjnego.
 | P1 | Brak kont i umocowania na marketplace | właściciele kont sprzedażowych | scenariusze sprzedaży pozostają symulacją |
 | P1 | Brak produkcyjnej tożsamości i ingressu chatu | operator DNS/TLS/IdP | chat działa lokalnie, ale nie publicznie per-user |
 | P1 | Brak kontrolowanego testu live end-to-end | właściciele powyższych zasobów | zielony TestQL nie dowodzi gotowości produkcyjnej |
+| P1 | Child grant jest sprawdzany przez oficjalny executor, ale jeszcze nie natywnie przez każdy connector/urirun command boundary | właściciel urirun policy i connectorów | klient posiadający zbyt szeroki token node mógłby ominąć executor; produkcyjne auth commands pozostają wyłączone |
 
 ## 3. Nieznany limit domen subskrypcji Plesk
 
