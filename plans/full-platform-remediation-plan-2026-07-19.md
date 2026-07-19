@@ -103,7 +103,7 @@ stan jednego connectora nie rozszerza praw innego.
 | --- | --- | --- |
 | REL-001 | zakończony dla komponentów Platformy | `platform@8ff89d9`, `core@5631ce4`; lock 8/8, czysty klon, Core 158/158, meta 41/41 |
 | REL-002 | zakończony | `orchestrator@69e4aeb`; testy 79/79 oraz live dry-run bez ticketu eskalacyjnego |
-| REL-003 | zakończony | `contracts@cb270ab`, `connectors@4c990b3`, `urirun-connector-plesk@1f82dd2`, `platform@db6b09a` |
+| REL-003 | etap bazowy zakończony | odmowa publish Python ↔ JS: `contracts@cb270ab`, `connectors@4c990b3`, `urirun-connector-plesk@1f82dd2`, `platform@db6b09a`; pozostały partial/rollback i inne route'y |
 | REL-004 | oczekuje | manifesty należy domknąć najpierw dla Plesk, DNS i verify |
 | REL-005 | oczekuje | wymagane odtworzenie i dowód zamknięcia historycznego incydentu |
 
@@ -129,7 +129,7 @@ i nie tworzy eskalacji. Ten sam krok w trybie mutacji bez mandatu nadal zwraca
 `8cec51cdbf70dcaa0c795f1b1f4e826bcdd7b62d60472435c795d3c47c794c23`;
 produkcyjny apply nie został wykonany.
 
-REL-003 opublikował kanoniczny, domenowo neutralny JSON Schema
+Bazowy etap REL-003 opublikował kanoniczny, domenowo neutralny JSON Schema
 `subactor.connector-result.v1` wraz z fixture odmowy authority. Bridge JS i
 connector Python zwracają te same pola wykonania, weryfikacji, dry-run, próby
 mutacji, liczników plików i bajtów, `plan_hash`, evidence oraz retry. Dla
@@ -138,6 +138,12 @@ jedynym nośnikiem semantyki. Odmowa przed mutacją zawsze raportuje zera i
 `mutation_attempted: false`; `null` nie oznacza już „nie wykonano”. Testy:
 kontrakty 12/12, bridge 4/4, connector Python 57/57, Platform meta 41/41 i
 connector LAN 3/3.
+
+Do pełnego zamknięcia REL-003 pozostaje objęcie tym envelope wyników
+`capability_unavailable`, błędu częściowego i rollbacku oraz dodanie testów
+kontraktowych dla pozostałych mutacyjnych route'ów. Aktualna zmiana celowo
+rozwiązuje pierwotną rozbieżność odmowy publish Python ↔ JS bez deklarowania,
+że wszystkie connectory zostały już zmigrowane.
 
 # Część I — naprawy lokalne
 
