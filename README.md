@@ -1,5 +1,7 @@
 # docs.subactor.com
 
+![img.png](img.png)
+
 Publiczna dokumentacja Subactor.
 
 ## Autonomy (CLI → connectors)
