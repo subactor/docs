@@ -158,17 +158,21 @@ EVIDENCE`:
 - `runtime@5614168` rozszerza Contract AQL o capability- i target-bound
   `ALLOW ACCESS`, `ALLOW ACCESS_TARGET` oraz limit TTL credentiala. Delegacja
   nie może rozszerzyć lifecycle action, targetu ani TTL;
-- `contracts@b9c5185` publikuje `AccessRequirement`, secret-free `AuthStatus`
-  i pierwszy standing contract infrastruktury;
+- `contracts@a888af9` publikuje `AccessRequirement`, secret-free `AuthStatus`,
+  pierwszy standing contract infrastruktury oraz jawnych kandydatów
+  connectorów pochodzących z plannera/Digital Twin;
 - `orchestrator@f9cd6e2` dodaje Access Resolver: route discovery, existing
   handle, refresh, child delegation, acquisition, scope proof oraz osobne
   blockery AQL/consent/MFA/root credential;
+- `orchestrator@b9e6940` podłącza jego odczytową część do żywych `/routes`,
+  `auth/query/status`, `auth/query/scopes` i
+  `auth/query/acquisition-methods`, bez stałej mapy providerów;
 - `urirun-connector-plesk@4db9c48` jest pierwszym connector-em referencyjnym
   z `auth/query/status`, `auth/query/scopes` i
   `auth/query/acquisition-methods` bez ujawniania sekretu;
-- `platform@c605b47` przypina nowe runtime i contracts w source lock.
+- `platform@4dda830` przypina aktualny contracts w source lock.
 
-Testy: runtime 70/70, Orchestrator 86/86, contracts 4/4, generator kontraktów
+Testy: runtime 70/70, Orchestrator 90/90, contracts 4/4, generator kontraktów
 10/10, Plesk 80/80 oraz pełny `npm test` Platformy. Po restarcie żywy runtime
 urirun odkrył trzy trasy auth Plesk. Autoryzowane, odczytowe wywołanie
 `auth/query/acquisition-methods` zakończyło się powodzeniem i zwróciło
@@ -176,11 +180,18 @@ secret-free strategię `bootstrap-api-key`. `auth/query/status` dotarło do
 connectora, lecz zakończyło się typowanym `plesk_https_required`, ponieważ
 aktualny endpoint środowiska jest HTTP. Nie wykonano bootstrapu ani mutacji.
 
-Sam Access Resolver nie jest jeszcze podłączony do live `/routes`, adapterów
-auth i magazynu evidence; obecny test dowodzi rejestracji i wykonania tras, a
-nie kompletnej automatycznej pętli. DNS, GitHub, e-mail, voice i e-sign
-wymagają kolejnych implementacji conformance. Do czasu tego podłączenia brak
-credentiala nie może być raportowany jako automatycznie rozwiązany.
+Odczytowa część Access Resolvera jest już podłączona do live `/routes` i tras
+auth. Próba wykonana przez publiczne API Orchestratora odnalazła Plesk,
+wywołała auth status, zapisała zdarzenia `route_discovery`, `auth_status` i
+`access_resolution`, po czym zachowała `plesk_https_required`. Nie wywołała
+bootstrapu. Evidence jest obecnie przekazywane do wstrzykniętego sinka, ale
+nie ma jeszcze trwałego outboxa.
+
+Komendy bootstrap/refresh/delegate pozostają celowo niepodłączone do adaptera,
+dopóki child grant compiler nie zwiąże ich z `plan_hash`, targetem, TTL i
+jednorazowym nonce. DNS, GitHub, e-mail, voice i e-sign wymagają kolejnych
+implementacji conformance. Do czasu scope proof brak credentiala nie może być
+raportowany jako automatycznie rozwiązany.
 
 E-mail do Foundera nie jest globalnym fallbackiem każdego błędu. Powiadomienie
 powstaje dopiero dla typowanego `AQL_ALLOW_REQUIRED`, native provider consent,
