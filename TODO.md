@@ -4,3 +4,4 @@
 - [ ] Confirm Plesk add-on domain quota through an authoritative panel/API path.
 - [ ] Document credential bootstrap and phone-provider legal requirements.
 - [ ] Keep the live status report synchronized with tested evidence.
+- [ ] Add an umbrella manifest/bootstrap for the independent `platform`, `docs`, `logo` and `www` repositories.

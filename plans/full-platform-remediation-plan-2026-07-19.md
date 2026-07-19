@@ -101,25 +101,29 @@ stan jednego connectora nie rozszerza praw innego.
 
 | ID | Stan | Dowód |
 | --- | --- | --- |
-| REL-001 | zakończony dla komponentów Platformy | `platform@8ff89d9`, `core@5631ce4`; lock 8/8, czysty klon, Core 158/158, meta 41/41 |
+| REL-001 | zakończony dla komponentów Platformy | `platform@46dd037`, `core@5631ce4`; source lock 8/8, czysty klon bez submodułów, Core 158/158, meta 43/43 |
 | REL-002 | zakończony | `orchestrator@69e4aeb`; testy 79/79 oraz live dry-run bez ticketu eskalacyjnego |
 | REL-003 | etap bazowy zakończony | odmowa publish Python ↔ JS: `contracts@cb270ab`, `connectors@4c990b3`, `urirun-connector-plesk@1f82dd2`, `platform@db6b09a`; pozostały partial/rollback i inne route'y |
 | REL-004 | oczekuje | manifesty należy domknąć najpierw dla Plesk, DNS i verify |
 | REL-005 | oczekuje | wymagane odtworzenie i dowód zamknięcia historycznego incydentu |
 
 REL-001 wprowadził `platform/dependencies.lock.json` jako jedno źródło prawdy
-dla ośmiu submodułów oraz verifier zgodności gitlink, URL repozytorium, commitu
-i czystości checkoutu. Negatywne testy wykrywają niezatwierdzoną zmianę commitu
-i URL. Nowy klon z GitHub pobrał wszystkie submoduły, odtworzył zależności bez
-luk i przeszedł izolowany AQL preflight na 17 kontraktach. Naprawiono też
-ścieżkę preflight tak, aby używała przypiętego `components/contracts`, a nie
-przypadkowego sąsiedniego checkoutu.
+dla ośmiu niezależnych repozytoriów źródłowych. Submoduły, `.gitmodules` i
+gitlinki trybu `160000` zostały usunięte. `npm run dependencies:sync` tworzy w
+ignorowanym `components/*` zwykłe checkouty Git, a verifier sprawdza URL
+originu, dokładny commit, czystość drzewa i zgodność źródeł. Negatywne testy
+odrzucają `.gitmodules`, gitlink, inny remote i lokalny drift. Nowy klon z
+GitHub bez `--recurse-submodules` pobrał wszystkie źródła, odtworzył zależności
+i przeszedł AQL preflight na 17 kontraktach. Naprawiono też ścieżkę preflight
+tak, aby używała przypiętego `components/contracts`, a nie przypadkowego
+sąsiedniego checkoutu.
 
-Pełny `npm test` Platformy przeszedł w czystym układzie umbrella. Sama Platforma
-nie zawiera jednak repozytoriów źródłowych receptur `docs`, `logo` i `www`;
-dlatego odtworzenie całego zestawu testów nadal wymaga jawnego manifestu albo
-bootstrapu umbrella. Nie jest to obejście bramki ani blocker runtime
-preflight, lecz pozostaje zadaniem G0 dotyczącym pełnej reprodukowalności.
+Pełny `npm test` Platformy przeszedł w świeżym układzie umbrella po source
+bootstrapie: meta 43/43, runtime 69/69, contracts 10/10, testkit 146/146, Core
+158/158 i connector LAN 3/3. Repozytoria receptur `docs`, `logo` i `www`
+pozostają jawnie niezależnymi sąsiadami umbrella; nie są zależnościami
+komponentowymi Platformy. Ich bootstrap wymaga nadal manifestu nadrzędnego,
+jeżeli pełny układ umbrella ma być odtwarzany jednym poleceniem.
 
 REL-002 dodał wspólny enum wyników wykonania. Krok wymagający zatwierdzenia w
 trybie dry-run zwraca teraz `SKIPPED_DRY_RUN`, nie uruchamia resolvera authority
@@ -149,8 +153,9 @@ rozwiązuje pierwotną rozbieżność odmowy publish Python ↔ JS bez deklarowa
 
 ## 5. REL-001 — kanoniczny pin Core
 
-`platform/test/platform.test.js` oczekuje `36130b5`, a gitlink wskazuje
-`a9ac816`. Nie wolno jedynie przepisać hasha.
+Historycznie `platform/test/platform.test.js` oczekiwał `36130b5`, podczas gdy
+źródło Core było już nowsze. Problem zamknięto przez kanoniczny source lock;
+nie przez ręczne osłabienie asercji.
 
 Realizacja:
 
@@ -159,7 +164,7 @@ Realizacja:
 3. potwierdzić Core 158/158 oraz zgodność API z Platformą;
 4. wprowadzić `platform/dependencies.lock.json` jako SSOT;
 5. generować asercję meta z lockfile;
-6. blokować drift gitlink ↔ lockfile;
+6. blokować `.gitmodules`, gitlinki i drift checkout ↔ lockfile;
 7. wykonać pełne `npm test` i start z czystego checkoutu;
 8. commit/push dopiero przy zielonej bramce.
 
@@ -469,7 +474,7 @@ Status bez kompletnego dowodu nie zalicza testu.
 
 | Gate | Warunek |
 | --- | --- |
-| G0 Source | czysty checkout, lockfile=gitlink, odtwarzalne deps, SBOM |
+| G0 Source | czysty checkout, source lock=origin+commit, brak gitlinków, odtwarzalne deps, SBOM |
 | G1 Tests | unit, integration, contract, TestQL, negative auth, replay, rollback, redaction |
 | G2 Capability | wymagane capability ≥ sandbox, świeże evidence, brak unknown dla mutacji |
 | G3 Authority | issuer/hash/target/budget/nonce/kill switch poprawne |
