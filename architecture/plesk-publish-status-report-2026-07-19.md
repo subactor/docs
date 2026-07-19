@@ -3,6 +3,8 @@
 **Data:** 2026-07-19 · **Zakres:** ścieżka `subactor ask` → intent pack → ticket → plan → dry-run → apply (Plesk), stan po promocji generycznego packa `site-publish` (SELFDEV-062).
 
 > **Aktualizacja 2026-07-19 (po refaktoryzacji):** wykonano punkty **2.1** (commit promocji), **2.2** (tokenowy matcher fraz), **2.5** (cały stack z repo, zero mountów `/tmp`), **3.1** (podział `registry.mjs` na 4 moduły) i **3.3** (wspólny `config-paths.mjs`). Szczegóły w treści — wykonane pozycje oznaczone ✅. Testy po refaktoryzacji: intent-packs 30/30, control 113 (0 fail), modele AQL OK; e2e `ask` z identycznymi `plan_hash` (www `1418bcbd…`, identity `3b19a968…`). Fraza z wtrąconym słowem („opublikuj stronę **identity** na plesk") rozwiązuje się teraz poprawnie do packa `site-publish`.
+>
+> **Aktualizacja 2026-07-19 (wieczór):** domknięto prace wokół digital twin / ciągłości decyzyjnej — subject-bound scope `digital-twin:self:read`, synchronizację env-contract (`npm run env:sync`) i plan „constitutional continuity". Szczegóły w sekcji **6**.
 
 Powiązane dokumenty:
 
@@ -149,6 +151,30 @@ Generat istnieje w `agents/nlp-uri-phrases.yaml` (umbrella) i w pinowanym klonie
 | Repo | Commit | Zakres |
 | --- | --- | --- |
 | `platform` | „refactoring" (użytkownik) + `chore: pin agents submodule at 712bc45` | promocja site-publish, pin agents |
-| `platform` | `refactor(intent-packs): split registry.mjs into focused modules + token-tier phrase matching` | 3.1 + 2.2 |
-| `platform/components/core` | `refactor(control): extract shared config-paths.mjs (4 copies -> 1)` + bump pinu w platform | 3.3 |
-| `platform/components/contracts` | `chore: ignore __pycache__` | porządek |
+| `platform` | `refactor(intent-packs): split registry.mjs into focused modules + token-tier phrase matching` (`eb70758`) | 3.1 + 2.2 |
+| `platform/components/core` | `refactor(control): extract shared config-paths.mjs (4 copies -> 1)` (`1d6133d`) + bump pinu w platform (`7e1b2b0`) | 3.3 |
+| `platform/components/contracts` | `chore: ignore __pycache__` (`96b7245`) | porządek |
+
+## 6. Prace domknięte po refaktoryzacji (2026-07-19, wieczór)
+
+Zmiany niezwiązane bezpośrednio ze ścieżką publikacji Plesk, ale dotykające tej samej platformy:
+
+### 6.1 Subject-bound digital twin
+
+Scope `digital-twin:self:read` jest dostępny w presetach tokenów i E2E. Endpoint `GET /api/digital-twin/self` wiąże widok z principalem tokenu, sprawdza AQL `twin://actor/digital-twin/query/self`, zwraca wyłącznie projekcję read-only i nie udostępnia lookupu cross-subject.
+
+Test live potwierdził tę izolację dla 8/8 zarejestrowanych aktorów. Implementacja: Core `075fc0f`, kontrakty `a47e34b`, testkit `4959261`, pin platformy `fb741ec`.
+
+### 6.2 Tooling env-contract
+
+`platform/scripts/sync-env-contract.mjs` i npm script **`env:sync`** wciągają aktualny `.env.example` jako `template` do `platform/config/env-contract.json`. `.env.example` jest SSOT, a kontrakt jest generowany i kontrolowany przez test driftu.
+
+Konfiguracja Foundera nie zakłada już nazwy kontraktu w kodzie Organization Core: `FOUNDER_PRINCIPAL` i `FOUNDER_CONTRACT_NAME` są częścią kontraktu środowiska.
+
+### 6.3 Plan „constitutional continuity" (skomitowane w `docs`)
+
+Commit `88702f5 docs: plan constitutional continuity rollout`: nowy `docs/plans/resolution-continuity-implementation.md` + aktualizacja sprintu `.planfile/sprints/current.yaml` (±130 linii). Kierunek: ciągłość decyzyjna organizacji (digital twin) — spójny z nowym scope z 6.1.
+
+### 6.4 Wpływ na rekomendowaną kolejność
+
+Bez zmian dla punktu 4 (dedup ticketów / SELFDEV TTL — nadal następny krok ścieżki Plesk). Punkty 6.1 i 6.2 są już skomitowane, przetestowane w pełnej bramce platformy i uruchomione w lokalnym trybie live/mock.
