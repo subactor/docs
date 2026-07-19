@@ -7,6 +7,10 @@ Publiczna dokumentacja Subactor.
 ## Stan live (2026-07-19)
 
 Aktualny raport Plesk i autonomii: [architecture/plesk-publish-status-report-2026-07-19.md](architecture/plesk-publish-status-report-2026-07-19.md).
+Szczegółowy rejestr zależności, których platforma nie może utworzyć samodzielnie:
+[architecture/unresolved-live-autonomy-blockers-2026-07-19.md](architecture/unresolved-live-autonomy-blockers-2026-07-19.md).
+Plan usunięcia blokad i uruchomienia pierwszego kontrolowanego pilota:
+[plans/full-platform-remediation-plan-2026-07-19.md](plans/full-platform-remediation-plan-2026-07-19.md).
 Dry-run `projekty/02_landing` działa, ale produkcyjne utworzenie domeny blokują
 nieznany limit subskrypcji oraz brak DNS/TLS. Prywatny chat per-user i lokalny
 agent autonomii działają; realny e-mail i telefon nie są jeszcze gotowe live.
