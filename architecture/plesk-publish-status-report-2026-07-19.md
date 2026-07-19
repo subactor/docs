@@ -286,7 +286,7 @@ ważny authority graph i kontrakty następców, redundantne kanały komunikacji,
 prekontraktowani dostawcy, aktywne budżety continuity, provider replacement,
 obserwowalny Resolution Continuity Engine oraz zamknięte bramki DNS/TLS/Plesk.
 
-## 9. `@subactor/founder-cli` — CLI foundera przeniesione do paczki (2026-07-19, noc)
+## 10. `@subactor/founder-cli` — CLI foundera przeniesione do paczki (2026-07-19, noc)
 
 Zrealizowany punkt **3.2** (największa pozycja modularyzacji): `platform/bin/subactor` — 764 linie basha z wklejkami Pythona — jest teraz **20-liniowym wrapperem** wykonującym `packages/founder-cli/bin/subactor.mjs`.
 
@@ -304,3 +304,11 @@ Zrealizowany punkt **3.2** (największa pozycja modularyzacji): `platform/bin/su
 Zweryfikowane e2e na żywej platformie: `help/health/status/tickets/plans/get`, `ask --json`, `ask --execute --yes` — format wyjścia, semantyka bramek i pliki uboczne identyczne z bashem (łącznie z zapisem ticketu SELFDEV przy znanym ostrzeżeniu authority z §7.3). Zysk: logika lifecycle/grant/lease jest wreszcie testowalna jednostkowo i re-używalna (orchestrator może importować `@subactor/founder-cli/lifecycle` zamiast duplikować mapowanie).
 
 **Stan planu paczek (§8.1):** founder-cli ✅ · site-publish → po osadzeniu digital-twin · capability-gate merge → otwarte · delegation → otwarte.
+
+### 10.1 ⚠→✅ Regresja migracji CLI i jej domknięcie
+
+Port founder-cli **złamał bramkę governance** `platform/test/founder-cli-confirmation.test.mjs` (test interaktywnego apply stubował stary przepływ, a analiza statyczna czytała usunięty bash) — regresja niewykryta, bo weryfikacja portu objęła `make test-intent-packs` + testy paczki, a **nie pełne `npm test` platformy**. Wykrył ją równoległy przegląd foundera; bramka zmigrowana do modułu Node w `628b78c test(platform): migrate founder CLI governance gate coverage` (zmiana wyłącznie w teście — źródła paczki bez zmian; niezmienniki: odmowa produkcji nie wydaje grantu ani lease, `--execute` pozostaje dry-run-only, cleanup lease na sygnałach).
+
+Po migracji: bramka 2/2, **pełne `npm test` platformy: 7 suite'ów, 0 fail**.
+
+**Lekcja procesowa:** każda zmiana w `platform/` przechodzi pełne `npm test` (meta+runtime+contracts+testkit+site-generator+core+connector-lan) przed commitem — selektywne suite'y nie wystarczają przy przenoszeniu kodu między warstwami.
