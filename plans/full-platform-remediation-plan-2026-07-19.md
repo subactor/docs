@@ -149,6 +149,38 @@ kontraktowych dla pozostałych mutacyjnych route'ów. Aktualna zmiana celowo
 rozwiązuje pierwotną rozbieżność odmowy publish Python ↔ JS bez deklarowania,
 że wszystkie connectory zostały już zmigrowane.
 
+## 4.2. Autonomous Access Acquisition Loop — pierwszy pion
+
+Zaimplementowano domenowo neutralny pion `human daje ALLOW → system zdobywa
+ACCESS → vault przechowuje SECRET → connector wykonuje ACTION → runtime tworzy
+EVIDENCE`:
+
+- `runtime@5614168` rozszerza Contract AQL o capability- i target-bound
+  `ALLOW ACCESS`, `ALLOW ACCESS_TARGET` oraz limit TTL credentiala. Delegacja
+  nie może rozszerzyć lifecycle action, targetu ani TTL;
+- `contracts@b9c5185` publikuje `AccessRequirement`, secret-free `AuthStatus`
+  i pierwszy standing contract infrastruktury;
+- `orchestrator@f9cd6e2` dodaje Access Resolver: route discovery, existing
+  handle, refresh, child delegation, acquisition, scope proof oraz osobne
+  blockery AQL/consent/MFA/root credential;
+- `urirun-connector-plesk@4db9c48` jest pierwszym connector-em referencyjnym
+  z `auth/query/status`, `auth/query/scopes` i
+  `auth/query/acquisition-methods` bez ujawniania sekretu;
+- `platform@c605b47` przypina nowe runtime i contracts w source lock.
+
+Testy: runtime 70/70, Orchestrator 86/86, contracts 4/4, generator kontraktów
+10/10, Plesk 80/80 oraz pełny `npm test` Platformy. Pętla nie jest jeszcze
+produkcyjnie podłączona do live `/routes` i connector auth adapters. DNS,
+GitHub, e-mail, voice i e-sign wymagają kolejnych implementacji conformance.
+Do czasu tego podłączenia brak credentiala nie może być raportowany jako
+automatycznie rozwiązany.
+
+E-mail do Foundera nie jest globalnym fallbackiem każdego błędu. Powiadomienie
+powstaje dopiero dla typowanego `AQL_ALLOW_REQUIRED`, native provider consent,
+MFA, braku root of trust, umowy zewnętrznej albo authority prawnej, po
+wyczerpaniu dozwolonych strategii automatycznych. Wiadomość nie może zawierać
+sekretu; przekazuje bezpieczne podsumowanie i korelację z ticketem.
+
 # Część I — naprawy lokalne
 
 ## 5. REL-001 — kanoniczny pin Core
