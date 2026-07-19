@@ -312,3 +312,16 @@ Port founder-cli **złamał bramkę governance** `platform/test/founder-cli-conf
 Po migracji: bramka 2/2, **pełne `npm test` platformy: 7 suite'ów, 0 fail**.
 
 **Lekcja procesowa:** każda zmiana w `platform/` przechodzi pełne `npm test` (meta+runtime+contracts+testkit+site-generator+core+connector-lan) przed commitem — selektywne suite'y nie wystarczają przy przenoszeniu kodu między warstwami.
+
+## 10. Rdzeń capability-gate w `@subactor/capability-preflight` (2026-07-19, noc)
+
+Domknięta trzecia pozycja z §8.1: `capability-gate/{config,pack-loader,preflight-run}.mjs` + orkiestrator `gateResolvedPackCapabilities` przeniesione z control do paczki (`packages/capability-preflight/src/gate.mjs`, export `./gate`). Uproszczenia przy okazji:
+
+- `loadPreflight` importuje `../preflight.mjs` **bezpośrednio** — dynamiczna rezolucja po config-dir istniała tylko dlatego, że kod jechał w montowanym katalogu config;
+- pack-loader bramki używa `@subactor/intent-packs` wprost (koniec `pathToFileURL(packsDir/registry.mjs)`).
+
+W control zostały: 14-liniowy shim `capability-preflight-gate.mjs` (API dla routes/testów bez zmian) i `capability-gate/denial.mjs` — formatka odpowiedzi HTTP ze słownikiem lifecycle, celowo poza paczką (paczka jest właścicielem **decyzji**, nie jej renderowania).
+
+Weryfikacja (z lekcją z §9.1): control 158/158 · **pełne `npm test`: 7 suite'ów, 0 fail** · rebuild kontenera + e2e `ask` www → `preflight_passed` przez spakowaną bramkę.
+
+**Stan planu paczek (§8.1):** founder-cli ✅ · capability-gate merge ✅ · site-publish → po osadzeniu digital-twin · delegation → otwarte.
