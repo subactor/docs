@@ -81,9 +81,9 @@ Nowy `platform/config/intent-packs/phrase-matcher.mjs`: tier 1 to historyczny ex
 
 `service-manager-pilot-backend`, `service-id-pilot-backend` (`~/github/maskservice/c2004`), `proxym` (`~/github/semcod/proxym`). Poza zakresem subactora, ale szumią w monitoringu hosta.
 
-### 2.7 Preflight live-publish oparty o `pgrep`
+### 2.7 ✅ Preflight live-publish oparty o `pgrep` — WYKONANE
 
-`platform/bin/subactor-live-publish.sh` sprawdza `pgrep -f "urirun node serve"` — działa przypadkiem (procesy kontenera widoczne z hosta). Pewniejszy: `curl -fsS http://127.0.0.1:18765/health`.
+`platform/bin/subactor-live-publish.sh` sprawdza teraz HTTP `GET /health` urirun-node (konfigurowalne `URIRUN_NODE_HEALTH_URL`, domyślnie `http://127.0.0.1:18765/health`) zamiast `pgrep` po procesie w kontenerze.
 
 ---
 
@@ -118,23 +118,17 @@ Nowy `platform/components/core/services/control/src/config-paths.mjs` (`configFi
 
 **Propozycja:** po okresie shadow bez mismatchy → `INTENT_PACK_DUAL_RUN=off` i usunięcie obu plików.
 
-### 3.5 Podwójny `agents/nlp-uri-phrases.yaml`
+### 3.5 ✅ Podwójny `agents/nlp-uri-phrases.yaml` — WYKONANE
 
-Generat istnieje w `agents/nlp-uri-phrases.yaml` (umbrella) i w pinowanym klonie `platform/components/agents/nlp-uri-phrases.yaml`; przy promocji packa synchronizowany ręcznie (`cp`).
+`platform/scripts/sync-intent-pack-derived.mjs` pisze/sprawdza teraz **oba** cele: umbrella `agents/nlp-uri-phrases.yaml` i pinowany klon `platform/components/agents/nlp-uri-phrases.yaml` (dedup po realpath — w testowej umbrelli to ten sam plik przez symlink). Koniec ręcznego `cp` po zmianie packów.
 
-**Propozycja:** `platform/scripts/sync-intent-pack-derived.mjs --write` pisze do obu lokalizacji, albo `components/agents` czyta generat z config packów w runtime.
+### 3.6 ✅ Generyczne id kroków w step-catalog — WYKONANE
 
-### 3.6 Generyczne id kroków w step-catalog
+`create_site_publish_ticket` (`platform/config/step-catalog.json`) i recipe `platform/config/recipes/site-publish.urirun.json` używają neutralnych id: `site-methods` / `site-sync-dry-run` / `site-sync-apply`. Zweryfikowane e2e — nowe id płyną przez ticket → orchestrator → urirun, dry-run identyczny (22 pliki identity). Uwaga operacyjna: control cache'uje step-catalog — po zmianie katalogu potrzebny restart `hr-control`.
 
-`create_site_publish_ticket` reużywa id `www-httpdocs-*` (`platform/config/step-catalog.json`), co myli w logach („www" przy publikacji identity).
+### 3.7 ✅ „Zduplikowany" testkit — BŁĘDNA DIAGNOZA, wycofane
 
-**Propozycja:** neutralne id `site-methods` / `site-sync-dry-run` / `site-sync-apply` w katalogu + w `platform/config/recipes/site-publish.urirun.json` (komparator `compareRecipeToStepCatalog` wymaga tylko spójności obu miejsc — zmiana lokalna).
-
-### 3.7 Zduplikowany testkit
-
-`testkit/tests/testql/` (root umbrelli) i `platform/components/testkit/tests/testql/` są bit-w-bit identyczne (zweryfikowane na `panel-gui.testql.toon.yaml`).
-
-**Propozycja:** zostawić `platform/components/testkit`, root-owy katalog → symlink albo usunięcie.
+Root `testkit/` to osobne repo git (komponent umbrelli), a `platform/components/testkit` to jego pinowany submoduł — identyczność plików jest **zamierzona** i pilnowana przez `platform/scripts/check-component-drift.mjs` (ten sam wzorzec co `agents`, `runtime`, `contracts`…). Symlink/usunięcie zepsułoby drift-gate. Pozycja zamknięta bez zmian.
 
 ---
 
@@ -178,3 +172,135 @@ Commit `88702f5 docs: plan constitutional continuity rollout`: nowy `docs/plans/
 ### 6.4 Wpływ na rekomendowaną kolejność
 
 Bez zmian dla punktu 4 (dedup ticketów / SELFDEV TTL — nadal następny krok ścieżki Plesk). Punkty 6.1 i 6.2 są już skomitowane, przetestowane w pełnej bramce platformy i uruchomione w lokalnym trybie live/mock.
+
+## 7. Druga fala refaktoryzacji + analiza prac digital-twin (2026-07-19, noc)
+
+### 7.1 ✅ Wykonane pozycje refaktoryzacji (commit `f59a463` w `platform`)
+
+| Pozycja | Zmiana |
+| --- | --- |
+| 2.7 | preflight live-publish przez HTTP `/health` zamiast `pgrep` |
+| 3.6 | neutralne id kroków `site-*` w step-catalog + recipe (zweryfikowane e2e) |
+| 3.5 | `sync-intent-pack-derived.mjs` pisze YAML do umbrelli **i** `components/agents` |
+| 3.7 | zamknięte jako błędna diagnoza (wzorzec komponent-umbrella + pin z drift-gate) |
+
+### 7.2 Równoległe prace foundera (w locie, częściowo nieskomitowane w `platform`)
+
+- **Domeny zewnętrzne w generycznym packu:** `components/core` commit `5a10aee feat(control): authorize exact project domains` — `validateDomain` przyjmuje `allowedDomains` (dokładne dopasowania z rejestru) obok sufiksu `.subactor.com`.
+- **Nowy zasób `workspace:autonomicznosc-pl`** → `projekty/02_landing` → domena **`autonomicznosc.pl`**; mounty w `hr-control` i `urirun-node` (`docker-compose.yml`), kontrakt autonomii rozszerzony o `autonomicznosc.pl` (`config/autonomy-contracts.json`). **E2E zweryfikowane: dry-run przechodzi** (docroot `/autonomicznosc.pl`, source spoza konwencji `<name>.subactor.com` — pierwszy taki przypadek).
+- **Warstwa digital-twin authority:** `runtime/src/autonomy-contract.mjs` — reguła `authorized_human_capability_required` dla kroków `human_approval: true`; commity `fix(core): reject expired digital twin authority`, `feat(platform): pin constitutional authority and digital twin`.
+
+### 7.3 ⚠ Obserwacja: lifecycle dry-run pod nową regułą authority
+
+Po włączeniu reguły **każdy** przebieg `ask ... --execute` (www, identity, autonomicznosc — wszystkie packi) kończy się `⚑ urirun / authorized_human_capability_required` zamiast `✓ dry_run_passed`, mimo że sam dry-run **succeeded**. Krok apply (`human_approval: true`, w trybie `--execute` celowo niewykonywany) jest teraz oceniany jako `required` i „resolving", a każdy przebieg dopisuje się do SELFDEV-074.
+
+**Propozycja (obszar prac foundera — do decyzji):** w trybie dry-run krok z `human_approval: true` powinien rozwiązywać się jako `skipped_dry_run` (nie `required`), np. w `orchestrator/src/pipeline.mjs` (okolice linii 126) albo przez warunek `plan.dry_run` w regule `runtime/src/autonomy-contract.mjs:161`. Wtedy `--execute` wraca do czystego `dry_run_passed`, a wymóg autorytetu digital-twin obowiązuje tam, gdzie ma sens — przy realnym apply.
+
+### 7.4 Zaktualizowany plan refaktoryzacji (pozostałe)
+
+| # | Pozycja | Status / warunek wejścia |
+| --- | --- | --- |
+| 1 | **2.3 dedup ticketów / SELFDEV TTL** | następny krok; poczekać aż osiądą zmiany foundera w `components/core` (kolizja plików) |
+| 2 | 7.3 dry-run vs authority rule | decyzja foundera (propozycja wyżej) |
+| 3 | 3.1-TODO: reguły docroot do danych packów | po stabilizacji `allowedDomains` — obejmie też domeny zewnętrzne |
+| 4 | 3.4 wygaszenie legacy intents (`docs/www-sync-intent.mjs`) | wymaga przeniesienia paraphrase-matchera do packów (pokrycie, którego packi nie mają) + `INTENT_PACK_DUAL_RUN=off` po okresie shadow bez mismatchy |
+| 5 | 3.2 CLI (764 linie bash) → orchestrator | największy; osobny PR, fazami: najpierw lifecycle-mapping, potem grant/lease |
+| 6 | 2.4 vault cleanup (`example.test`) | małe, niezależne |
+| 7 | 2.6 obce kontenery w restart-loopie | poza subactorem (c2004, proxym) |
+
+## 8. Ekstrakcja paczek workspace — koniec kodu w `config/` (2026-07-19, noc)
+
+Trzecia fala refaktoryzacji: `platform/config/` przewoziło **ponad 1000 linii wykonywalnego kodu** (`intent-packs/*.mjs`, `connector-capabilities/preflight.mjs`). Kod wyprowadzony do dwóch nowych paczek workspace w nowym katalogu `platform/packages/`:
+
+| Paczka | Zawartość (kod) | Dane zostają w |
+| --- | --- | --- |
+| **`@subactor/intent-packs`** | `pack-loader`, `phrase-matcher`, `docroot-rules`, `derived-artifacts`, `registry` (fasada) | `platform/config/intent-packs/*.v1.json` |
+| **`@subactor/capability-preflight`** | bramka preflight (607 linii), zależy od `@subactor/intent-packs` | `platform/config/connector-capabilities/` (catalog, fixtures, `*.uri.capability.yaml`) |
+
+Mechanika kompatybilności:
+
+- `config/intent-packs/registry.mjs` i `config/connector-capabilities/preflight.mjs` to **1-linijkowe shimy** (`export * from "@subactor/…"`) — dynamiczne importy po `packsDir`/`configDir` (`intent-pack-bridge.mjs`, `capability-gate/config.mjs`) oraz względne importy testów działają bez zmian w obu układach (repo i kontener).
+- Ścieżki do DANYCH rozwiązywane kandydatami: `INTENT_PACKS_DIR` / `CONNECTOR_CAPABILITIES_DIR` → `CONTROL_CONFIG_DIR` → układ repo (`packages/*/src → ../../../config/…`).
+- Obraz control: `COPY packages/* → /app/node_modules/@subactor/*` (ten sam wzorzec co `@subactor/runtime`); workspaces w `platform/package.json` linkują lokalnie.
+
+Weryfikacja: intent-packs 30/30 · control **158/158** · modele OK · `capability-preflight.mjs --json` ok · rebuild kontenera + e2e `ask` (intent www, dry-run identity 22 pliki — wyniki identyczne). Commity: `build(control): bake @subactor/* into image` (components/core) + `refactor(platform): extract @subactor/intent-packs + @subactor/capability-preflight workspace packages`.
+
+**Efekt architektoniczny:** `config/` to od teraz wyłącznie dane (JSON/YAML + 2 shimy), kod ma wersjonowane paczki z jawnymi zależnościami — gotowe do wydzielenia jako osobne repo komponentu (wzorzec umbrella+pin), jeśli koru ma się dalej odchudzać.
+
+### 8.1 Dalsze kandydatury do paczek (kolejność wg zysku)
+
+| Kandydat | Dziś | Docelowo |
+| --- | --- | --- |
+| logika lifecycle/grant/lease z `platform/bin/subactor` (764 linie bash) | bash + inline Python | `@subactor/founder-cli` (Node) — pokrywa się z 3.2 |
+| `site-*` moduły control (`site-intent-extractor`, `site-publish-resolver`, `site-resource-resolver`, `site-domain-validator`, `publish-source-guard`, ~800 linii) | luzem w `services/control/src` | `@subactor/site-publish` — po osadzeniu prac digital-twin |
+| `capability-gate/` + `capability-preflight-gate.mjs` | w control | dołączyć do `@subactor/capability-preflight` |
+| `delegation-*` (~390 linii) | w control | `@subactor/delegation` |
+
+## 9. Końcowa weryfikacja live (2026-07-19)
+
+### 9.1 Publikacja `projekty/*`
+
+Rzeczywisty profil integracyjny uwierzytelnił się do Plesk pod
+`https://prototypowanie.pl:8443`. Query capability potwierdziło dostęp do
+subskrypcji `subactor.com`, ale panel nie zwrócił limitu domen. Dlatego wynik
+pozostaje bezpiecznie negatywny: `can_create_domain=false`,
+`reason=subscription_domain_limit_unknown`.
+
+SFTP i FTP przeszły capability check z lease'ów vault. Dry-run dla
+`workspace:autonomicznosc-pl` (`projekty/02_landing`) i domeny
+`autonomicznosc.pl` zakończył się powodzeniem: 8 plików, 32 934 B, docroot
+`/autonomicznosc.pl`, plan hash
+`8cec51c...`. Nie wykonano mutacji produkcyjnej.
+
+Blokery apply:
+
+- brak wiarygodnego limitu/pojemności domen subskrypcji;
+- `autonomicznosc.pl` nie ma rekordu A kierującego do docelowego hosta;
+- brak potwierdzonego TLS dla nowej domeny;
+- master mutation gate oraz `PLESK_SYNC_APPLY` pozostają wyłączone;
+- brak lease `plesk-runtime` dla administracyjnego API (SFTP/FTP są dostępne).
+
+### 9.2 Kanały komunikacji
+
+`autonomy-chat-agent` działa jako usługa i przeszedł test end-to-end: wiadomość
+foundera w prywatnym portalu została pobrana przez outbound relay, obsłużona
+przez kontrolowany endpoint LLM i zwrócona wyłącznie do rozmowy tego użytkownika.
+`chat.subactor.com` nie jest jeszcze wdrożonym portalem: obecny DNS kieruje do
+GitHub Pages, a certyfikat nie pasuje do tej nazwy. Bezpieczny układ docelowy to
+portal na publicznym hostingu oraz wychodzący relay do agenta — bez reverse
+proxy z Internetu do lokalnego hosta.
+
+Kanał e-mail jest `waiting_credentials`: brakuje lease'ów
+`agent-mailbox-runtime` i `smtp-system-email`; lokalny Mailpit nie wysyła poczty
+do foundera. Powstał osobny `urirun-connector-twilio-voice` (5/5 testów,
+widoczny w live node: 539 tras). Doctor działa fail-closed i zwraca
+`live_ready=false`: nadal brakuje konta/numeru, vault credentials, allowlisty
+numeru, polityki podstawy kontaktu/zgody i callbacka weryfikującego podpis
+Twilio. Nie wykonano realnego połączenia.
+
+### 9.3 Ocena autonomii
+
+System kontynuuje zadania niezablokowane i ma działający kanał czatu, lecz nie
+spełnia jeszcze definicji pełnej autonomii operacyjnej. Brakujące elementy to:
+ważny authority graph i kontrakty następców, redundantne kanały komunikacji,
+prekontraktowani dostawcy, aktywne budżety continuity, provider replacement,
+obserwowalny Resolution Continuity Engine oraz zamknięte bramki DNS/TLS/Plesk.
+
+## 9. `@subactor/founder-cli` — CLI foundera przeniesione do paczki (2026-07-19, noc)
+
+Zrealizowany punkt **3.2** (największa pozycja modularyzacji): `platform/bin/subactor` — 764 linie basha z wklejkami Pythona — jest teraz **20-liniowym wrapperem** wykonującym `packages/founder-cli/bin/subactor.mjs`.
+
+| Moduł paczki | Odpowiedzialność |
+| --- | --- |
+| `config.mjs` | env-file, URL-e, token, ANSI |
+| `api.mjs` | fetch z parytetem curl (body przy 4xx/5xx) + semantyka `jget` |
+| `lifecycle.mjs` | **czyste** mapowanie stage→lifecycle + ekstraktory dry-run/error/grant (testy jednostkowe 5/5) |
+| `prompts.mjs` | `confirmYn` (honoruje `--yes`/TTY) vs `confirmYnInteractive` (bramka produkcyjna — nigdy z flagi) |
+| `apply-grant.mjs` / `mutate-lease.mjs` | grant związany z `plan_hash`, lease TTL przez docker-exec z cleanupem na exit/INT/TERM |
+| `improvement.mjs` | klasyfikator defektów + relay do subactor-improvement |
+| `orchestrator-runner.mjs` | przebiegi ticketów, `/tmp/subactor-ask-last-orch.json` |
+| `ask.mjs` / `commands.mjs` | pełna powierzchnia komend |
+
+Zweryfikowane e2e na żywej platformie: `help/health/status/tickets/plans/get`, `ask --json`, `ask --execute --yes` — format wyjścia, semantyka bramek i pliki uboczne identyczne z bashem (łącznie z zapisem ticketu SELFDEV przy znanym ostrzeżeniu authority z §7.3). Zysk: logika lifecycle/grant/lease jest wreszcie testowalna jednostkowo i re-używalna (orchestrator może importować `@subactor/founder-cli/lifecycle` zamiast duplikować mapowanie).
+
+**Stan planu paczek (§8.1):** founder-cli ✅ · site-publish → po osadzeniu digital-twin · capability-gate merge → otwarte · delegation → otwarte.
