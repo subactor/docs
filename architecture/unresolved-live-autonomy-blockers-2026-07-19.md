@@ -29,6 +29,7 @@ nieumocowanej osoby ani uznanie testu mock za dowód działania produkcyjnego.
 
 | Priorytet | Blokada | Właściciel zewnętrznego działania | Wpływ |
 | --- | --- | --- | --- |
+| P0 | Endpoint Plesk skonfigurowany po HTTP, podczas gdy auth probe wymaga HTTPS | operator Plesk / infrastruktury | `auth/query/status` kończy się `plesk_https_required`; brak produkcyjnego scope proof |
 | P0 | Nieznany limit domen subskrypcji Plesk | właściciel konta Plesk / hosting | brak bezpiecznego utworzenia nowej domeny |
 | P0 | Brak docelowego DNS i certyfikatów TLS | właściciel stref DNS / operator Plesk | brak publicznego HTTPS i proxy dla chatu |
 | P0 | Brak aktywacji produkcyjnych mandatów mutacji | constitutional authority | apply pozostaje prawidłowo zablokowane |
@@ -42,6 +43,17 @@ nieumocowanej osoby ani uznanie testu mock za dowód działania produkcyjnego.
 | P1 | Brak kontrolowanego testu live end-to-end | właściciele powyższych zasobów | zielony TestQL nie dowodzi gotowości produkcyjnej |
 
 ## 3. Nieznany limit domen subskrypcji Plesk
+
+### Blokada transportu auth probe
+
+Po wdrożeniu auth conformance żywy runtime urirun poprawnie odkrywa i wykonuje
+`plesk://host/auth/query/acquisition-methods`. Odczytowe
+`plesk://host/auth/query/status` dociera do connectora, ale zwraca
+`plesk_https_required`, ponieważ bieżący endpoint Plesk jest skonfigurowany po
+HTTP. Jest to poprawna odmowa fail-closed. Operator musi udostępnić zaufany
+endpoint HTTPS z prawidłową walidacją certyfikatu; wyłączenie kontroli TLS nie
+jest akceptowalną naprawą. Dopiero wtedy można wykonać scope probe i dołączyć
+jego wynik do evidence.
 
 ### Dowód
 

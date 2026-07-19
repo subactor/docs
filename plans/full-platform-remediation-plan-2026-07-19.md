@@ -169,11 +169,18 @@ EVIDENCE`:
 - `platform@c605b47` przypina nowe runtime i contracts w source lock.
 
 Testy: runtime 70/70, Orchestrator 86/86, contracts 4/4, generator kontraktów
-10/10, Plesk 80/80 oraz pełny `npm test` Platformy. Pętla nie jest jeszcze
-produkcyjnie podłączona do live `/routes` i connector auth adapters. DNS,
-GitHub, e-mail, voice i e-sign wymagają kolejnych implementacji conformance.
-Do czasu tego podłączenia brak credentiala nie może być raportowany jako
-automatycznie rozwiązany.
+10/10, Plesk 80/80 oraz pełny `npm test` Platformy. Po restarcie żywy runtime
+urirun odkrył trzy trasy auth Plesk. Autoryzowane, odczytowe wywołanie
+`auth/query/acquisition-methods` zakończyło się powodzeniem i zwróciło
+secret-free strategię `bootstrap-api-key`. `auth/query/status` dotarło do
+connectora, lecz zakończyło się typowanym `plesk_https_required`, ponieważ
+aktualny endpoint środowiska jest HTTP. Nie wykonano bootstrapu ani mutacji.
+
+Sam Access Resolver nie jest jeszcze podłączony do live `/routes`, adapterów
+auth i magazynu evidence; obecny test dowodzi rejestracji i wykonania tras, a
+nie kompletnej automatycznej pętli. DNS, GitHub, e-mail, voice i e-sign
+wymagają kolejnych implementacji conformance. Do czasu tego podłączenia brak
+credentiala nie może być raportowany jako automatycznie rozwiązany.
 
 E-mail do Foundera nie jest globalnym fallbackiem każdego błędu. Powiadomienie
 powstaje dopiero dla typowanego `AQL_ALLOW_REQUIRED`, native provider consent,
