@@ -125,6 +125,43 @@ SUBACTOR_DEPLOY_CONFIRM=1 ./deploy.sh deploy \
 Skrypt ponownie wykona pełny preflight i przerwie działanie, jeśli konfiguracja
 lub certyfikaty nie będą zgodne z kontraktem.
 
+## Aktualizacja 2026-07-21 — PLF-592 i obiekt Plesk
+
+Founder zatwierdził rozpoczęcie procesu od utworzenia domeny w Plesku. `PLF-592`
+został przeniesiony z ogólnego `waiting_input` do kolejki
+`project-operator-bot/ready` i otrzymał pełny envelope v2 z uporządkowanymi
+definicjami AQL, EQL, OQL oraz URI. Reużywalna recepta znajduje się w
+`deployment/founder-ingress-plesk.urirun.json`.
+
+Wykonanie produkcyjne użyło kolejno:
+
+1. `plesk://host/doctor/query/report` — connector `0.12.4` gotowy (`PLF-750`);
+2. `plesk://host/subscription/query/capabilities` — uwierzytelniony profil
+   subskrypcji `subactor.com` (`PLF-751`);
+3. `plesk://host/site/command/subdomain-ensure` — dry-run i niezmienny
+   `plan_hash` (`PLF-752`);
+4. tę samą komendę w trybie apply z jednorazowym grantem ryzyka `boundary` —
+   utworzono i odczytowo potwierdzono `founder.subactor.com`, Plesk object ID
+   `314`, docroot `founder.subactor.com`; receipt znajduje się bezpośrednio w
+   `PLF-592`;
+5. `plesk://host/dns/query/authority` — autorytatywnym providerem pozostaje
+   Cloudflare.
+
+Po wykonaniu bramki wróciły do `AUTONOMY_MUTATIONS_ENABLED=0` oraz pustego
+`PLESK_SUBDOMAIN_APPLY`. Bezpośrednie sprawdzenie originu
+`217.160.250.222` z nagłówkiem `Host: founder.subactor.com` potwierdza działający
+vhost: HTTP przekierowuje na HTTPS, HTTPS zwraca jeszcze `404`, a origin
+prezentuje domyślny certyfikat Pleska bez SAN.
+
+Następna zależność jest jawna: przed publicznym cutoverem DNS i ACME trzeba
+zapewnić osiągalny, uwierzytelniony upstream aplikacji oraz zaimplementować
+recenzowaną trasę connectora
+`plesk://host/site/command/reverse-proxy-ensure`. Lokalny
+`http://127.0.0.1:8091` na Lenovo nie jest osiągalny z serwera Plesk i nie może
+być wpisany jako upstream Pleska. Dopiero po zielonym teście upstreamu wolno
+wykonać `dns/command/reconcile`, `site/command/ssl-ensure`, propagację i strict
+HTTPS postflight.
+
 ## Aktualizacja 2026-07-21 — dynamiczne rozszerzenia Plesk
 
 Wniosek o „braku profilu Plesk” opisuje historyczny stan z 2026-07-20. W dniu
