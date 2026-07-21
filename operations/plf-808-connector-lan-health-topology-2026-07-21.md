@@ -38,7 +38,9 @@ monitorującym. Sieć executora nadal jest `internal: true`.
 
 Control nadal raportował 14/15 z jednego niezależnego powodu:
 `inbound-email` ma stan `waiting_credentials`. Nie jest to regresja LAN i
-pozostaje oddzielnym problemem operacyjnym.
+pozostaje oddzielnym problemem operacyjnym. Został zapisany i przypisany do
+`administrator-bot` jako `PLF-818`; ticket obejmuje także ujednolicenie
+funkcjonalnej semantyki readiness między oboma dashboardami.
 
 ## Artefakty
 
