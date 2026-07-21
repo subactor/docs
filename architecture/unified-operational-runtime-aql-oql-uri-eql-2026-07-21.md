@@ -246,6 +246,13 @@ jeszcze ukończenia całej konsolidacji: domenowe handlery Bridge czekają na P1
 a jednolity fingerprint kontraktu aktora i wykonywalny receipt EQL dla każdego
 typu procesu pozostają zakresem P4.
 
+Zdalną granicę runtime sprawdzono dodatkowo symulacją Connector LAN. Test
+`PLF-667` przeszedł przez mTLS i Bridge do tego samego `urirun-node`, potwierdził
+role klientów, filtrowanie tras, brak bezpośredniego dostępu klienta LAN do noda
+oraz brak sekretnego markera w audycie. Topologia pozostawia node wyłącznie w
+sieci `uri-executor`; tylko Bridge łączy ją z izolowaną siecią
+`connector-execution`, a gateway wystawia na LAN zawężony kontrakt mTLS.
+
 ## Decyzja architektoniczna
 
 Docelowy standard to **jeden runtime efektów, jeden gateway polityki, wiele
