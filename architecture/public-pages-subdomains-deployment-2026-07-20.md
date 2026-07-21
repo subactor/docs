@@ -1,0 +1,126 @@
+# Raport subdomen i wdrożeń stron Subactor — 2026-07-20
+
+## Werdykt
+
+Nie wszystkie strony używane przez system mają obecnie działające publiczne
+subdomeny. Cztery hosty są poprawne (`subactor.com`, `docs.subactor.com`,
+`docs-stage.subactor.com`, `logo.subactor.com`), trzy publiczne hosty mają
+niepoprawny certyfikat dla swojej nazwy (`www`, `contracts`, `founder`), a
+`status.subactor.com` jest publicznie rozwiązywany mimo zadeklarowanej polityki
+`private`.
+
+Nie każda lokalna usługa powinna dostać publiczną subdomenę. Planfile, Mailpit,
+Grafana, Prometheus, browser/vault agent, LLM gateway, mock Plesk, konektory i
+pozostałe runtime'y zawierają dane lub funkcje administracyjne. Pozostają na
+`127.0.0.1` albo mogą otrzymać wyłącznie prywatny DNS/VPN.
+
+Produkcja nie została zmieniona podczas tego zadania. Nowy mechanizm wdrożenia
+odmówił publikacji przed mutacją, ponieważ aktywny Plesk ma niespójną
+konfigurację: katalog konektorów zwraca `configured:false`, a
+`PLESK_BASE_URL=http://mock-plesk:8082`, mimo że ogólny doctor URI deklaruje
+`production_publish_ready:true`.
+
+## Jawny ślad procesu
+
+Operacja została rozpoczęta ticketem nadrzędnym `PLF-584`, utworzonym przed
+inwentaryzacją. Ticket zawiera `SUBACTOR_PROCESS_MANIFEST_V1` oraz definicje
+AQL, EQL, OQL i URI. Preflight konektora utworzył osobny wykonawczy ticket
+`PLF-585` z rezultatem i odwołaniami do logów.
+
+`deploy.sh tickets` utworzył idempotentnie tickety docelowe:
+
+| Ticket | Host | Stan | Powód oczekiwania |
+|---|---|---|---|
+| PLF-586 | `subactor.com` | `waiting_input` | realny profil Plesk nie jest skonfigurowany |
+| PLF-587 | `www.subactor.com` | `waiting_input` | zmiana DNS i zapewnienie TLS wymagają decyzji człowieka |
+| PLF-588 | `docs.subactor.com` | `waiting_input` | realny profil Plesk nie jest skonfigurowany |
+| PLF-589 | `docs-stage.subactor.com` | `waiting_input` | realny profil Plesk nie jest skonfigurowany |
+| PLF-590 | `logo.subactor.com` | `waiting_input` | realny profil Plesk nie jest skonfigurowany |
+| PLF-591 | `contracts.subactor.com` | `waiting_input` | brak profilu Plesk, recepty PHP, DNS i TLS |
+| PLF-592 | `founder.subactor.com` | `waiting_input` | brak publicznego ingressu, DNS i TLS |
+| PLF-593 | `status.subactor.com` | `waiting_input` | wymagana decyzja: usunąć publiczny rekord albo dodać chroniony status |
+
+Powtórne uruchomienie `tickets` wykorzystało istniejące tickety zamiast tworzyć
+duplikaty.
+
+## Stan hostów (strict DNS/TLS/HTTPS)
+
+| Host | DNS | Strict TLS/HTTP | Ocena |
+|---|---|---|---|
+| `subactor.com` | A `217.160.250.222` | 200 | działa |
+| `www.subactor.com` | CNAME `subactor.github.io` | `ERR_TLS_CERT_ALTNAME_INVALID` | nie działa poprawnie |
+| `docs.subactor.com` | A `217.160.250.222` | 200 | działa |
+| `docs-stage.subactor.com` | A `217.160.250.222` | 200 | działa |
+| `logo.subactor.com` | A `217.160.250.222` | 200 | działa |
+| `contracts.subactor.com` | CNAME `subactor.github.io` | `ERR_TLS_CERT_ALTNAME_INVALID` | nie działa publicznie; lokalnie `/health.php` zwraca OK |
+| `founder.subactor.com` | CNAME `subactor.github.io` | `ERR_TLS_CERT_ALTNAME_INVALID` | nie działa publicznie; lokalny control zwraca OK |
+| `status.subactor.com` | CNAME `subactor.github.io` | publiczny rekord przy polityce `private` | naruszenie polityki ekspozycji; lokalny status zwraca OK |
+
+## Wprowadzone rozwiązanie
+
+1. `platform/config/public-pages.json` jest kanonicznym rejestrem stron,
+   ekspozycji, lokalnych źródeł, sposobu wdrożenia i wymagań granicznych.
+2. `platform/deploy.sh` obsługuje `inventory`, `tickets`, `verify` i `deploy`.
+   Każde uruchomienie wymaga istniejącego aktywnego ticketu nadrzędnego albo
+   tworzy go przed pierwszym zapytaniem do publicznego URI.
+3. Publikacja jest dozwolona dopiero po jednoczesnym spełnieniu warunków:
+   jawne `SUBACTOR_DEPLOY_CONFIRM=1`, `PLESK_MODE=live`, zewnętrzny (nie mock)
+   `PLESK_BASE_URL`, `connectors.plesk.configured=true` i zielony capability
+   preflight. Sam ogólny doctor nie wystarcza.
+4. Wspierane publikacje statyczne są wykonywane przez `subactor ask --apply
+   --yes`; ten przepływ tworzy plan i ticket URI Process przed efektem, wydaje
+   ograniczony grant/lease, a potem zapisuje wynik.
+5. Weryfikacja HTTPS nigdy nie używa `curl -k` ani wyłączonej walidacji TLS.
+   Stary `bin/subactor-live-publish.sh` deleguje teraz do kanonicznego,
+   fail-closed `deploy.sh`.
+6. Dodano publiczny wariant Caddy dla Panelu Foundera z automatycznym ACME,
+   Basic Auth i nagłówkami bezpieczeństwa. Domyślny ingress nadal wiąże się
+   wyłącznie z `127.0.0.1`; publiczne wystawienie wymaga jawnej zmiany.
+7. Wszystkie zmienne ingressu są obecne w `.env.example`; kontrakt środowiska
+   został zsynchronizowany bez kopiowania realnych sekretów.
+
+## Testy
+
+- testy jednostkowe `deploy-public-pages`: 7/7;
+- test kontraktu środowiska i metadanych platformy: 3/3;
+- konfiguracja Docker Compose z overlayem ingressu: poprawna;
+- publiczny Caddyfile: `Valid configuration`;
+- próba `SUBACTOR_DEPLOY_CONFIRM=1 ./deploy.sh deploy --target main`:
+  oczekiwana odmowa z kodem 2 i przyczynami
+  `plesk_live_profile_not_configured` oraz
+  `plesk_base_url_is_mock_or_loopback`;
+- lokalny control, Contractor Portal i System Status: health OK;
+- cały system: 15/16 usług zdrowych, 0 krytycznych błędów,
+  `operational_with_degraded_services`, `autonomy_ready=false`.
+
+## Co pozostało do realnego wdrożenia
+
+1. Founder powinien wprowadzić prawdziwy profil Plesk przez bezpieczny formularz
+   integracji/secret intake w Panelu Foundera. Loginów i haseł nie należy
+   podawać w tickecie, poleceniu CLI ani w rozmowie z LLM.
+2. Po uzyskaniu `connectors.plesk.configured=true` można wznowić `PLF-586`,
+   `PLF-588`, `PLF-589`, `PLF-590` i uruchomić publikację statyczną.
+3. Dla `contracts.subactor.com` trzeba dodać do kontraktu bota receptę
+   bezpiecznego bundla PHP, backup/rollback, docroot `app/public`, sekrety poza
+   httpdocs oraz test `/health.php`. Dopiero potem wykonać zatwierdzony cutover
+   DNS i certyfikat.
+4. Dla `founder.subactor.com` trzeba wskazać publiczny host ingressu, ustawić
+   hash hasła poza repozytorium, skierować DNS na właściwy serwer i dopiero
+   wtedy uruchomić publiczny Caddyfile/ACME. Link magiczny Foundera pozostaje
+   drugą warstwą logowania aplikacyjnego.
+5. Founder musi zdecydować, czy `status.subactor.com` ma zostać usunięty z
+   publicznego DNS, czy wdrożony jako osobny, ograniczony i niezawierający
+   danych administracyjnych status page. Obecnego lokalnego panelu nie należy
+   publikować bezpośrednio.
+
+Po uzupełnieniu profilu Plesk bezpieczna komenda dla wspieranych stron
+statycznych to:
+
+```bash
+cd /home/tom/github/subactor/platform
+SUBACTOR_DEPLOY_CONFIRM=1 ./deploy.sh deploy \
+  --parent PLF-584 --target managed-static
+```
+
+Skrypt ponownie wykona pełny preflight i przerwie działanie, jeśli konfiguracja
+lub certyfikaty nie będą zgodne z kontraktem.

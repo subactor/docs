@@ -81,17 +81,17 @@ function modelLabel(plan) {
   return via ? `${base} (${via}${source})` : `${base}${source}`;
 }
 
-function resultSummary(plan) {
+function formatResultLine(r) {
+  const files = r?.files_planned ?? r?.urirun?.files_planned;
+  const mode = r?.mode || r?.urirun?.mode || r?.status;
+  const bits = [r?.id || r?.op, mode, files != null ? `${files} files` : null].filter(Boolean);
+  return bits.join(" · ");
+}
+
+export function resultSummary(plan) {
   const results = Array.isArray(plan.results) ? plan.results : [];
   if (!results.length) return plan.status === "executed" ? "executed, no step detail recorded" : "";
-  return results
-    .map((r) => {
-      const files = r?.files_planned ?? r?.urirun?.files_planned;
-      const mode = r?.mode || r?.urirun?.mode || r?.status;
-      const bits = [r?.id || r?.op, mode, files != null ? `${files} files` : null].filter(Boolean);
-      return bits.join(" · ");
-    })
-    .join("; ");
+  return results.map(formatResultLine).join("; ");
 }
 
 function planSection(plan) {
@@ -169,7 +169,9 @@ async function main() {
   console.log(`rendered ${plans.length} operation(s) across ${Object.keys(byDay).length} day(s) → docs/operations/`);
 }
 
-main().catch((error) => {
-  console.error(error.message);
-  process.exit(1);
-});
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main().catch((error) => {
+    console.error(error.message);
+    process.exit(1);
+  });
+}
