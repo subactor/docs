@@ -32,10 +32,10 @@ Dowolne komunikaty wyjątków, stack trace, sekrety i query string nie są
 publikowane jako `detail`.
 
 Wspólny helper automatycznie podnosi ręczne odpowiedzi HTTP 4xx/5xx do Problem
-Profile i zachowuje ich rozszerzenia. Czasowy wyjątek stanowią odpowiedzi, w
-których stare API używa tekstowego pola `status` jako statusu lifecycle. RFC
-9457 rezerwuje `status` dla liczby HTTP, dlatego te odpowiedzi pozostają JSON do
-chwili jawnej migracji tego pola na `lifecycle_status`.
+Profile i zachowuje ich rozszerzenia. Odpowiedzi, w których stare API używało
+tekstowego pola `status` jako statusu lifecycle, publikują tę wartość jako
+`lifecycle_status`. Pole `status` jest zawsze liczbą HTTP wymaganą przez RFC
+9457.
 
 Kod kanoniczny ma format `subactor.<domain>.<component>.<condition>`. HTTP status
 opisuje transport i nie służy samodzielnie do wyboru reakcji. Severity używa
@@ -61,7 +61,8 @@ każdego timeoutu.
 ## Klasyfikacja reakcji
 
 Process pack `problem.reaction.observer` wykonuje wyłącznie obserwację,
-deduplikację i klasyfikację `problem.detected`. Stan okien jest trwały w
+deduplikację i klasyfikację `problem.detected`. Request-scoped observer obejmuje
+zarówno wyjątki, jak i kontrolowane odpowiedzi HTTP Problem Profile. Stan okien jest trwały w
 `problem-reactions.json`, a operator z zakresem `audit:read` odczytuje go przez:
 
 ```text
