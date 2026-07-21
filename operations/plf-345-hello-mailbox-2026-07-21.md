@@ -42,8 +42,9 @@ wykonaniu obie bramki wróciły do stanu zamkniętego.
 - SMTP: transport `external`, expectation `transport == external` spełnione;
 - pętla SMTP → IMAP: wiadomość `[PLF-345 E2E 20260721T1455Z]` odebrana i
   zarejestrowana jako ticket `PLF-763`;
-- `PLF-763`: `classification=customer`, `command_authorized=false`, kolejka
-  `customer-support`, stan `waiting_input`;
+- `PLF-763`: utworzony w kolejce `customer-support` ze stanem `waiting_input`,
+  `classification=customer` i `command_authorized=false`; po weryfikacji jako
+  syntetyczny test został zamknięty bez wykonania treści;
 - syntetyczny test nagłówka `X-Spam-Flag: YES`: `classification=spam`,
   `quarantined=true`, bez utworzenia ticketu;
 - wiadomość testowa do `tom@prototypowanie.pl` została zaakceptowana przez SMTP;
