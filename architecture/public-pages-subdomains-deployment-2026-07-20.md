@@ -152,6 +152,27 @@ Root SSH/CLI pozostaje osobną przyszłą powierzchnią uprawnień. Konto system
 subskrypcji używane przez SFTP nie może zostać automatycznie podniesione do
 administratora serwera Plesk.
 
+## Aktualizacja 2026-07-21 — status produkcyjny i DNS API
+
+Founder zdecydował o publicznym `status.subactor.com`. Nie jest publikowany lokalny
+panel z portu `8199`, ponieważ zawiera nazwy kontenerów, adresy wewnętrzne i szczegóły
+odpowiedzi usług. Zamiast niego powstał ograniczony serwis PHP w
+`observability/services/public-status`, który odpytuje wyłącznie stałą listę publicznych
+HTTPS, wymusza ścisłą walidację TLS i zwraca tylko nazwę hosta, kod HTTP, opóźnienie i
+znormalizowany błąd. Nie przyjmuje URL od użytkownika, więc nie może działać jako SSRF.
+
+Rekord DNS nie jest już ręcznym krokiem panelowym. Connector Plesk udostępnia:
+
+- `plesk://host/dns/query/records` — filtrowany odczyt `dns.get_rec`;
+- `plesk://host/dns/command/replace` — konfliktowe A/AAAA/CNAME → jeden rekord
+  docelowy przez `dns.del_rec` + `dns.add_rec`.
+
+Mutacja wymaga dry-run, identycznego `plan_hash`, podpisanego jednorazowego grantu
+ryzyka `boundary`, master gate i osobnego `PLESK_DNS_APPLY=1`. Po zapisie connector
+ponownie pobiera strefę i potwierdza dokładnie jeden rekord docelowy. Zasób publikacji
+jest rejestrowany jako `workspace:status`, a `health.php` jest ścieżką niezależnej
+weryfikacji strict HTTPS.
+
 Odczyt live `extensions/query/capabilities` zwrócił aktywny
 `panel-migrator 2.34.0` jako `discovery-only`. SSL It! nie został zwrócony przez
 oficjalny `extension.get`, mimo że jego ekran jest dostępny w panelu. To jest
