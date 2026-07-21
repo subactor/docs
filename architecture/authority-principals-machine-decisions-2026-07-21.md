@@ -90,3 +90,9 @@ na `authority action`, bez zmiany istniejących URL-i do czasu migracji klientó
 Maszyna po drugiej stronie powinna posiadać osobny, rotowany token związany z
 jej principal. Nie należy współdzielić bootstrapowego tokenu administratora ani
 przenosić credentiali w treści ticketu.
+
+Tożsamość `machine`, `service` lub `provider` jest rejestrowana z kontraktem
+`aql:contract/v1`. Kompilator dopuszcza te typy zarówno jako principal, jak i
+delegatora, ale delegacja nadal wymaga aktywnego kontraktu nadrzędnego,
+capability `autonomy.contract.delegate` oraz niewykraczania poza jego zakres.
+Typ tożsamości sam w sobie nie stanowi authority.
