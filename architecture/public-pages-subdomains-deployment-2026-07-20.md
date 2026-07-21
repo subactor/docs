@@ -223,3 +223,19 @@ Narzędzie `deploy-public-pages.mjs` domyka teraz read-only tickety
 Stan `findings_detected` jest prawidłowym wynikiem zakończonego audytu, a nie
 powodem pozostawienia ticketu w `running`. Kod procesu nadal zwraca niezerowy
 exit code, aby CI i operator zauważyli czerwone hosty.
+
+### Scope profilu SFTP
+
+Read-only proces `PLF-690` wykazał, że wspólny profil SFTP z parametrami
+`host=prototypowanie.pl`, `domain=autonomicznosc.pl`, `remote_path=/httpdocs`
+otwierał katalog zawierający 21 plików innego wdrożenia, a nie oczekiwane 9
+plików projektu. Sam argument `domain` nie zmienia chrootu konta SFTP.
+
+Od `urirun-connector-plesk` v0.12.4 (`PLF-736`) read-only remote inventory
+odrzuca taki niejednoznaczny zakres kodem
+`plesk_site_inventory_scope_unbound` przed pobraniem credentiala. `/httpdocs`
+jest dozwolone tylko wtedy, gdy hostname efektywnego `credential_origin` w
+vault odpowiada żądanej domenie. Alternatywą jest jawna ścieżka domenowa, np.
+`/var/www/vhosts/autonomicznosc.pl/httpdocs`. `PLF-690` pozostaje otwarty do
+czasu utworzenia domenowo związanego profilu lub potwierdzenia jawnej ścieżki;
+nie wykonano mutacji.
