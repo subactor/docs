@@ -172,7 +172,7 @@ node bin/subactor-run.mjs --nl &quot;zsynchronizuj www&quot;    # phrase stub on
 <tr><td>Dry-run sync</td><td>Reviews file plan / hashes</td><td>Plan only</td><td>URI sync <code>apply=false</code></td></tr>
 <tr><td>Live sync</td><td>Sets <code>PLESK_SYNC_APPLY=1</code> on node (or founder policy)</td><td>Upload via SFTP/FTP</td><td>URI sync <code>apply=true</code></td></tr>
 <tr><td>Verify</td><td>Spot-check browser</td><td>Optional automated GET</td><td><code>curl -fsS https://docs.subactor.com/</code></td></tr>
-<tr><td>Out of scope</td><td>Answers <code>waiting_input</code> ticket</td><td>Escalates to <code>human:founder</code></td><td>Planfile + <code>subactor tickets</code></td></tr>
+<tr><td>Out of scope</td><td>Maintains preauthorized mandates/providers</td><td>Resolution Engine selects actor/provider and monitors SLA</td><td>Planfile + authority graph</td></tr>
 </tbody></table>
 <h3>Languages / packages (no secrets in docs)</h3>
 <table>

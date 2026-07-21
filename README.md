@@ -4,9 +4,13 @@
 
 Publiczna dokumentacja Subactor.
 
-## Stan live (2026-07-19)
+## Stan live (2026-07-21)
 
-Aktualny raport Plesk i autonomii: [architecture/plesk-publish-status-report-2026-07-19.md](architecture/plesk-publish-status-report-2026-07-19.md).
+Aktualny przegląd wykonanych prac, dowodów produkcyjnych, otwartych ticketów i
+planu refaktoryzacji:
+[operations/operational-review-2026-07-21.md](operations/operational-review-2026-07-21.md).
+
+Historyczny raport Plesk i autonomii: [architecture/plesk-publish-status-report-2026-07-19.md](architecture/plesk-publish-status-report-2026-07-19.md).
 Szczegółowy rejestr zależności, których platforma nie może utworzyć samodzielnie:
 [architecture/unresolved-live-autonomy-blockers-2026-07-19.md](architecture/unresolved-live-autonomy-blockers-2026-07-19.md).
 Plan usunięcia blokad i uruchomienia pierwszego kontrolowanego pilota:
