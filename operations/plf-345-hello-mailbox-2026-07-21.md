@@ -1,5 +1,11 @@
 # PLF-345 — skrzynka `hello@subactor.com`
 
+> Aktualizacja: utworzenie opisane poniżej pozostaje faktem historycznym, ale
+> `hello@subactor.com` nie jest już kanoniczną tożsamością agenta. Ticket
+> PLF-767 ustawił `agent@subactor.com` jako skrzynkę IMAP/SMTP runtime'u i
+> zachował tę skrzynkę bez usuwania. Szczegóły:
+> `docs/operations/plf-767-canonical-agent-mailbox-2026-07-21.md`.
+
 Data wykonania: 2026-07-21. Decydent: `authority:founder`.
 
 ## Rezultat
