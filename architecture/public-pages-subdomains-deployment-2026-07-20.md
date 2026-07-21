@@ -276,3 +276,12 @@ vault odpowiada żądanej domenie. Alternatywą jest jawna ścieżka domenowa, n
 `/var/www/vhosts/autonomicznosc.pl/httpdocs`. `PLF-690` pozostaje otwarty do
 czasu utworzenia domenowo związanego profilu lub potwierdzenia jawnej ścieżki;
 nie wykonano mutacji.
+
+## Aktualizacja 2026-07-21 — publikacja statusu i realny bloker Foundera
+
+Nowszy live audit oraz wykonanie opisuje
+[`../operations/public-ingress-ticket-runtime-review-2026-07-21.md`](../operations/public-ingress-ticket-runtime-review-2026-07-21.md).
+`status.subactor.com` jest już opublikowany i ma receipts PLF-685/PLF-593.
+`founder.subactor.com` ma poprawny DNS i TLS, lecz nadal nie ma osiągalnego
+upstreamu aplikacyjnego; dlatego PLF-592 pozostaje `waiting_input`, a nie
+`ready`.
