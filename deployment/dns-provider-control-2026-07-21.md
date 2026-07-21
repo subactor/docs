@@ -45,7 +45,8 @@ API i wynik propagacji są dwoma różnymi dowodami.
 W vault potrzebny jest wpis `cloudflare-dns` związany dokładnie z originem
 `https://api.cloudflare.com`, zawierający pola:
 
-- `api_token` — token ograniczony do właściwej strefy z DNS Read i DNS Write;
+- `api_token` — token ograniczony do właściwej strefy z Zone DNS Edit oraz Zone
+  Read (odczyt strefy służy do sprawdzenia powiązania `zone_id` przed zmianą);
 - `zone_id` — identyfikator strefy `subactor.com`.
 
 Tokenu ani `zone_id` nie wolno umieszczać w tickecie, pliku `.env`, payloadzie URI,

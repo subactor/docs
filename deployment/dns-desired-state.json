@@ -86,7 +86,7 @@
     "blocker": "Cloudflare API token and zone_id are not yet present in the platform vault, so Subactor can observe authority/propagation but cannot issue a provider API receipt for future changes."
   },
   "needs_human": [
-    "Provide a scoped Cloudflare API token with DNS Read and DNS Write plus the subactor.com zone_id through one-time secret intake.",
+    "Provide a scoped Cloudflare API token with Zone DNS Edit and Zone Read plus the subactor.com zone_id through one-time secret intake.",
     "Keep all future boundary DNS changes on the provider-aware dry-run → exact plan_hash → one-time apply grant path."
   ],
   "subscription_rights_note": "Customer subactor_customer on webspace subactor.com: manage_subdomains=true, create_domains=true, max_subdom=-1. Connector subdomain-ensure wired. LE XML ApiRpc not implemented; certificate get-pool denied for subscription."
