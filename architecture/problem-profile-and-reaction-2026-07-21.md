@@ -1,7 +1,7 @@
 # Problem Profile v1 i reakcje na błędy
 
-Status: wdrożona podstawa kontraktu błędu; automatyczne strategie mutujące
-pozostają fail-closed  
+Status: wdrożony kontrakt błędu, deduplikacja i klasyfikacja obserwacyjna;
+automatyczne strategie mutujące pozostają fail-closed
 Data: 2026-07-21
 
 ## Decyzja
@@ -31,6 +31,12 @@ istniejące klienty mogły przejść na `code` bez jednoczesnego breaking change
 Dowolne komunikaty wyjątków, stack trace, sekrety i query string nie są
 publikowane jako `detail`.
 
+Wspólny helper automatycznie podnosi ręczne odpowiedzi HTTP 4xx/5xx do Problem
+Profile i zachowuje ich rozszerzenia. Czasowy wyjątek stanowią odpowiedzi, w
+których stare API używa tekstowego pola `status` jako statusu lifecycle. RFC
+9457 rezerwuje `status` dla liczby HTTP, dlatego te odpowiedzi pozostają JSON do
+chwili jawnej migracji tego pola na `lifecycle_status`.
+
 Kod kanoniczny ma format `subactor.<domain>.<component>.<condition>`. HTTP status
 opisuje transport i nie służy samodzielnie do wyboru reakcji. Severity używa
 wartości zgodnych z telemetryką (`warn`, `error`, `fatal`), a incydent
@@ -52,14 +58,30 @@ code + component + environment + resource
 Pozwala grupować powtórzenia bez tworzenia osobnego ticketu i e-maila dla
 każdego timeoutu.
 
+## Klasyfikacja reakcji
+
+Process pack `problem.reaction.observer` wykonuje wyłącznie obserwację,
+deduplikację i klasyfikację `problem.detected`. Stan okien jest trwały w
+`problem-reactions.json`, a operator z zakresem `audit:read` odczytuje go przez:
+
+```text
+GET /api/problems/reactions
+GET /api/problems/reactions?fingerprint=<sha256>
+```
+
+Klasyfikator zwraca jedną z decyzji `observe`, `retry_candidate`,
+`escalate_candidate` lub `containment_candidate`. Każda ma
+`automatic_mutation_allowed=false`. Dla transient failure dwa pierwsze
+wystąpienia w pięciominutowym oknie wskazują bounded exponential backoff, a
+trzecie wskazuje eskalację. To nadal sugestia strategii, nie wykonanie.
+
 ## Następny przyrost
 
-Kolejny process pack powinien wykonywać wyłącznie obserwację, deduplikację i
-klasyfikację `problem.detected`. Osobny deterministyczny katalog połączy
-klasy problemów z istniejącymi strategiami: retry z idempotency key, circuit
-breaker, secure credential intake, kompensacja, containment albo eskalacja do
-właściwej authority. LLM może porządkować zatwierdzone strategie, ale nie może
-wymyślać kodu, URI, odbiorcy, authority ani operacji.
+Kolejny process pack może połączyć klasy problemów z wykonywalnymi strategiami:
+retry z idempotency key, circuit breaker, secure credential intake, kompensacja,
+containment albo eskalacja do właściwej authority. LLM może porządkować
+zatwierdzone strategie, ale nie może wymyślać kodu, URI, odbiorcy, authority ani
+operacji.
 
 Automatyczny apply pozostaje zabroniony bez wcześniejszego ticketu, aktualnego
 AQL/EQL, dry-run, dokładnego plan hash i jednorazowego grantu.
