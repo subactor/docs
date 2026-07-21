@@ -189,3 +189,37 @@ Odczyt live `extensions/query/capabilities` zwrócił aktywny
 oficjalny `extension.get`, mimo że jego ekran jest dostępny w panelu. To jest
 dodatkowy argument, by nie uzależniać obsługi certyfikatów od samej listy
 extensions i zachować osobny, weryfikowany proces `ssl-ensure`.
+
+## Aktualizacja 2026-07-21 — stan po PLF-730
+
+Read-only inventory został powtórzony po uruchomieniu profilu live Plesk. Ticket
+`PLF-730` zawiera receipt audytu 8 hostów. Platforma lokalna ma 16/16 zdrowych
+usług, a bramka odczytowa Plesk jest zielona.
+
+Publicznie działają cztery hosty:
+
+- `subactor.com`, `docs.subactor.com`, `docs-stage.subactor.com` i
+  `logo.subactor.com` wskazują na `217.160.250.222`, przechodzą strict TLS i
+  zwracają HTTP 200;
+- `www.subactor.com`, `contracts.subactor.com`, `founder.subactor.com` i
+  `status.subactor.com` nadal dziedziczą publiczny CNAME
+  `subactor.github.io` i kończą się `ERR_TLS_CERT_ALTNAME_INVALID`.
+
+Edycja strefy subskrypcji w Plesku nie wymaga credentiala Cloudflare i może być
+wykonana przez panel lub `plesk://host/dns/command/replace`. Nie oznacza to
+jednak, że strefa Pleska jest publicznym autorytetem. Delegacja `subactor.com`
+wskazuje obecnie na `addyson.ns.cloudflare.com` i `roman.ns.cloudflare.com`,
+więc resolver publiczny nie odczytuje rekordów z lokalnej strefy Pleska.
+
+Zgodnie z ostatnią decyzją Foundera rekord `*.subactor.com` pozostaje nieobecny
+w lokalnej strefie Pleska. Nie należy go automatycznie odtwarzać. Publiczny
+wildcard/CNAME widoczny przez resolvery jest osobnym stanem u obecnego
+autorytetu DNS. Cutover konkretnych hostów wymaga albo zmiany rekordów w
+autorytatywnej strefie, albo świadomej zmiany delegacji całej domeny; tych dwóch
+operacji nie wolno przedstawiać jako lokalnej edycji Pleska.
+
+Narzędzie `deploy-public-pages.mjs` domyka teraz read-only tickety
+`inventory`/`verify` z completion receiptem również wtedy, gdy wykryje problemy.
+Stan `findings_detected` jest prawidłowym wynikiem zakończonego audytu, a nie
+powodem pozostawienia ticketu w `running`. Kod procesu nadal zwraca niezerowy
+exit code, aby CI i operator zauważyli czerwone hosty.
