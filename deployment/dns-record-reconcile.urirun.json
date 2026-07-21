@@ -1,7 +1,7 @@
 {
   "id": "dns-record-reconcile",
-  "name": "Reconcile DNS desired → observed (boundary HITL stub)",
-  "description": "PR9 prep stub only. Boundary-class: does NOT auto-mutate production DNS. Dry-run compares desired state (repo) to public/authoritative answers; apply requires human approval + provider connector. Prefer docs-stage.subactor.com rehearsal before docs.subactor.com.",
+  "name": "Reconcile DNS desired → observed through authoritative provider",
+  "description": "Boundary-class provider-aware process. The Plesk connector is the unified URI facade, while its receipt truthfully identifies Cloudflare or Plesk as the authoritative DNS provider. Apply requires human approval, an exact plan_hash and a provider credential leased from vault.",
   "situation": {
     "hostname": "docs.subactor.com",
     "desired_state_ref": "docs/deployment/dns-desired-state.json",
@@ -23,20 +23,12 @@
       "required": false
     },
     {
-      "id": "dns-observe-public",
-      "name": "Observe public resolvers (read-only)",
+      "id": "dns-detect-authority",
+      "name": "Detect authoritative DNS provider (read-only)",
       "actor": "bot:project-operator-bot",
-      "uri": "plesk://host/site/command/publish-verify",
+      "uri": "plesk://host/dns/query/authority",
       "payload": {
-        "hostname": "docs.subactor.com",
-        "release_id": "rel_preflight_placeholder",
-        "artifact_sha256": "preflight_placeholder",
-        "verify_origin": false,
-        "verify_public": false,
-        "check_dns": true,
-        "check_tls": true,
-        "dns_targets": ["217.160.250.222"],
-        "note": "Expect dns_mismatch + tls_san_mismatch while CNAME→subactor.github.io (Pages). That is applied_unverified, not success."
+        "zone": "subactor.com"
       },
       "depends_on": [],
       "on_fail": "halt",
@@ -44,27 +36,47 @@
     },
     {
       "id": "dns-mutate-apply",
-      "name": "Apply DNS reconcile (HITL — provider write)",
+      "name": "Prepare or apply DNS reconcile (HITL — provider write)",
       "actor": "bot:project-operator-bot",
-      "uri": "dns://host/records/command/plan",
+      "uri": "plesk://host/dns/command/reconcile",
       "payload": {
-        "hostname": "docs.subactor.com",
-        "action": "reconcile_desired",
-        "provider": "namecheap-or-panel",
-        "note": "Stub URI — requires urirun-connector-namecheap-dns (or panel) + AQL ALLOW. Never run without founder HITL."
+        "zone": "subactor.com",
+        "host": "docs.subactor.com",
+        "record_type": "A",
+        "value": "217.160.250.222",
+        "ttl": 1,
+        "proxied": false,
+        "expected_provider": "cloudflare",
+        "cloudflare_vault_entry_id": "cloudflare-dns",
+        "apply": false
       },
-      "depends_on": ["dns-observe-public"],
+      "depends_on": ["dns-detect-authority"],
       "human_approval": true,
       "on_fail": "ticket",
-      "required": false
+      "required": true
+    },
+    {
+      "id": "dns-verify-propagation",
+      "name": "Verify resolver consensus and TTL",
+      "actor": "bot:project-operator-bot",
+      "uri": "plesk://host/dns/query/propagation",
+      "payload": {
+        "host": "docs.subactor.com",
+        "record_type": "A",
+        "expected_value": "217.160.250.222"
+      },
+      "depends_on": ["dns-mutate-apply"],
+      "human_approval": false,
+      "on_fail": "ticket",
+      "required": true
     }
   ],
   "notes": [
-    "Not registered in platform/config/intent-packs yet (PR9 DNS connector + AQL ALLOW still required).",
-    "Automated cutover recipe: dry-run = dns-observe-public only (expect applied_unverified while Pages).",
+    "Connector routes exist in urirun-connector-plesk v0.12.0; urirun-node must refresh its connector image/registry before execution.",
+    "Dry-run checks authority and the provider API state; it never changes DNS.",
     "Apply mutate step stays human_approval=true — never zero-touch production DNS.",
-    "2026-07-18 public observe: docs.subactor.com CNAME→subactor.github.io; docs-stage.subactor.com A→217.160.250.222 (Plesk) with LE TLS, marker may still 404 until rehearsal release.",
-    "No Cloudflare/Namecheap API token in platform env — provider write remains HITL panel or vault token.",
-    "Pages TLS/SAN is unhealthy LKG for docs.subactor.com — DNS emergency rollback is HITL-only."
+    "2026-07-21 public observe: docs.subactor.com and docs-stage.subactor.com resolve to A 217.160.250.222 through Cloudflare authoritative nameservers.",
+    "Until the cloudflare-dns vault entry exists, authority and propagation queries work but provider API dry-run/apply fails closed.",
+    "Cloudflare batch changes are transactional in its database, but distributed DNS propagation remains observable as a separate step."
   ]
 }

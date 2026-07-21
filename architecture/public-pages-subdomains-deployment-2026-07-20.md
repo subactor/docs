@@ -161,17 +161,28 @@ odpowiedzi usług. Zamiast niego powstał ograniczony serwis PHP w
 HTTPS, wymusza ścisłą walidację TLS i zwraca tylko nazwę hosta, kod HTTP, opóźnienie i
 znormalizowany błąd. Nie przyjmuje URL od użytkownika, więc nie może działać jako SSRF.
 
-Rekord DNS nie jest już ręcznym krokiem panelowym. Connector Plesk udostępnia:
+Connector Plesk jest jednym wejściem URI, ale nie zakłada już, że lokalna strefa
+Pleska jest autorytatywna. `subactor.com`, `autonomicznosc.pl` i
+`prototypowanie.pl` są delegowane do Cloudflare. Zmiana lokalnej strefy Pleska
+dla tych domen nie zmienia publicznego DNS. Connector udostępnia:
 
 - `plesk://host/dns/query/records` — filtrowany odczyt `dns.get_rec`;
 - `plesk://host/dns/command/replace` — konfliktowe A/AAAA/CNAME → jeden rekord
-  docelowy przez `dns.del_rec` + `dns.add_rec`.
+  docelowy przez `dns.del_rec` + `dns.add_rec` dla stref Pleska;
+- `plesk://host/dns/query/authority` — consensus NS z Cloudflare i Google;
+- `plesk://host/dns/command/reconcile` — provider-aware dry-run/apply, delegujący
+  zapis do Cloudflare API, gdy Cloudflare jest autorytatywny;
+- `plesk://host/dns/query/propagation` — porównanie oczekiwanej wartości i TTL
+  między publicznymi resolverami.
 
-Mutacja wymaga dry-run, identycznego `plan_hash`, podpisanego jednorazowego grantu
-ryzyka `boundary`, master gate i osobnego `PLESK_DNS_APPLY=1`. Po zapisie connector
-ponownie pobiera strefę i potwierdza dokładnie jeden rekord docelowy. Zasób publikacji
-jest rejestrowany jako `workspace:status`, a `health.php` jest ścieżką niezależnej
-weryfikacji strict HTTPS.
+Każdy receipt podaje faktyczny `provider`, strefę i nameservery. Cloudflare token
+oraz `zone_id` są pobierane z wpisu vault `cloudflare-dns` dla originu
+`https://api.cloudflare.com` i nigdy nie trafiają do payloadu ani wyniku. Mutacja
+wymaga dry-run, identycznego `plan_hash`, podpisanego jednorazowego grantu ryzyka
+`boundary`, master gate oraz odpowiednio `PLESK_DNS_APPLY=1` lub
+`CLOUDFLARE_DNS_APPLY=1`. Weryfikacja API providera i propagacja publiczna są
+osobnymi stanami, ponieważ rozproszony DNS może zachowywać poprzednią wartość do
+wygaśnięcia cache.
 
 Odczyt live `extensions/query/capabilities` zwrócił aktywny
 `panel-migrator 2.34.0` jako `discovery-only`. SSL It! nie został zwrócony przez

@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
-  "note": "Desired DNS state for docs (ADR-002). Observed public DNS may still point at GitHub Pages until PR9 cutover. This file is SSOT for verify ladder expectations — not a claim that cutover has happened.",
-  "observed_at": "2026-07-18",
+  "note": "Desired and observed DNS state for docs (ADR-002). Cloudflare is authoritative; Plesk is the origin hosting provider, not the DNS provider. This file is SSOT for verify ladder expectations.",
+  "observed_at": "2026-07-21",
   "domains": {
     "docs.subactor.com": {
       "desired": {
-        "provider": "plesk",
+        "provider": "cloudflare",
         "records": [
           {
             "type": "A",
@@ -15,17 +15,12 @@
         ]
       },
       "observed_public": {
-        "cname": ["subactor.github.io."],
-        "a": [
-          "185.199.108.153",
-          "185.199.109.153",
-          "185.199.110.153",
-          "185.199.111.153"
-        ],
-        "tls_san": ["*.github.io", "*.github.com", "github.io", "github.com"],
-        "tls_covers_hostname": false,
-        "release_marker_reachable": false,
-        "interpretation": "GitHub Pages — expected pre-PR9. Public publish-verify must fail (dns_mismatch / tls_san_mismatch)."
+        "cname": [],
+        "a": ["217.160.250.222"],
+        "tls_san": ["docs.subactor.com"],
+        "tls_covers_hostname": true,
+        "release_marker_reachable": true,
+        "interpretation": "Cloudflare authoritative DNS points directly to the Plesk origin. Cutover is public; future changes must go through the provider-aware connector and produce a receipt."
       },
       "observed_origin": {
         "ip": "217.160.250.222",
@@ -38,7 +33,7 @@
         "interpretation": "Origin content + marker + LE domain-only cert ready. Public DNS still Pages — do not flip until explicit approval.",
         "observed_at": "2026-07-18T12:15Z"
       },
-      "observed_note": "Public docs.subactor.com still GitHub Pages. Formal origin release + LE domain-only cert active. No production DNS flip without explicit approval.",
+      "observed_note": "Public docs.subactor.com resolves to the Plesk origin through Cloudflare authoritative DNS. Connector control still requires the scoped Cloudflare vault profile.",
       "staging": {
         "hostname": "docs-stage.subactor.com",
         "purpose": "Recommended origin/public rehearsal path before production cutover.",
@@ -84,11 +79,15 @@
     "registrar": "Namecheap",
     "nameservers": ["addyson.ns.cloudflare.com", "roman.ns.cloudflare.com"],
     "dns01_ready": false,
-    "blocker": "No Cloudflare API token in platform env — DNS-01 cannot run pre-cutover without HITL credentials."
+    "connector_uri": "plesk://host/dns/command/reconcile",
+    "authority_uri": "plesk://host/dns/query/authority",
+    "propagation_uri": "plesk://host/dns/query/propagation",
+    "vault_entry_id": "cloudflare-dns",
+    "blocker": "Cloudflare API token and zone_id are not yet present in the platform vault, so Subactor can observe authority/propagation but cannot issue a provider API receipt for future changes."
   },
   "needs_human": [
-    "Provide Cloudflare API token (or panel) for DNS-01 TXT + later A-record cutover, OR accept HTTP-01 only after DNS flip to Plesk.",
-    "HITL boundary DNS mutate Pages CNAME → A 217.160.250.222 only after G0–G6 green (explicit approval). Origin LE for docs.subactor.com is already green (domain-only SAN)."
+    "Provide a scoped Cloudflare API token with DNS Read and DNS Write plus the subactor.com zone_id through one-time secret intake.",
+    "Keep all future boundary DNS changes on the provider-aware dry-run → exact plan_hash → one-time apply grant path."
   ],
   "subscription_rights_note": "Customer subactor_customer on webspace subactor.com: manage_subdomains=true, create_domains=true, max_subdom=-1. Connector subdomain-ensure wired. LE XML ApiRpc not implemented; certificate get-pool denied for subscription."
 }
