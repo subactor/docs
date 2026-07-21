@@ -124,3 +124,36 @@ SUBACTOR_DEPLOY_CONFIRM=1 ./deploy.sh deploy \
 
 Skrypt ponownie wykona pełny preflight i przerwie działanie, jeśli konfiguracja
 lub certyfikaty nie będą zgodne z kontraktem.
+
+## Aktualizacja 2026-07-21 — dynamiczne rozszerzenia Plesk
+
+Wniosek o „braku profilu Plesk” opisuje historyczny stan z 2026-07-20. W dniu
+2026-07-21 profil live `https://prototypowanie.pl:8443` działa w URI node, a
+`urirun-connector-plesk` obsługuje warstwy REST v2, XML API, SFTP/FTPS oraz
+dynamiczny katalog zainstalowanych extensions.
+
+Nowe procesy URI:
+
+- `plesk://host/extensions/query/catalog` — oficjalny XML `extension.get`;
+- `plesk://host/extensions/query/capabilities` — połączenie stanu live z
+  zatwierdzonymi profilami operacji;
+- `plesk://host/extension/query/call` — wyłącznie profilowane zapytania XML;
+- `plesk://host/extension/command/call` — dry-run i mutacja dopiero po bramkach,
+  dokładnym `plan_hash` i jednorazowym podpisanym grancie.
+
+Zainstalowany moduł jest obiektem dynamicznym: pojawia się automatycznie w
+discovery, lecz pozostaje `discovery-only`, dopóki jego operacja nie otrzyma
+przejrzanego profilu. Zapobiega to utożsamianiu przycisku GUI z bezpiecznym,
+stabilnym API. SSL It! jest modelowany jako extension, ale operacje certyfikatu
+delegują do istniejącego `plesk://host/site/command/ssl-ensure`, zamiast wywoływać
+nieudokumentowane endpointy panelu.
+
+Root SSH/CLI pozostaje osobną przyszłą powierzchnią uprawnień. Konto systemowe
+subskrypcji używane przez SFTP nie może zostać automatycznie podniesione do
+administratora serwera Plesk.
+
+Odczyt live `extensions/query/capabilities` zwrócił aktywny
+`panel-migrator 2.34.0` jako `discovery-only`. SSL It! nie został zwrócony przez
+oficjalny `extension.get`, mimo że jego ekran jest dostępny w panelu. To jest
+dodatkowy argument, by nie uzależniać obsługi certyfikatów od samej listy
+extensions i zachować osobny, weryfikowany proces `ssl-ensure`.
