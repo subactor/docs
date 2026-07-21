@@ -72,7 +72,7 @@
     }
   ],
   "notes": [
-    "Connector routes exist in urirun-connector-plesk v0.12.0; urirun-node must refresh its connector image/registry before execution.",
+    "Connector routes exist in urirun-connector-plesk v0.12.1; urirun-node must refresh its connector image/registry before execution.",
     "Dry-run checks authority and the provider API state; it never changes DNS.",
     "Apply mutate step stays human_approval=true — never zero-touch production DNS.",
     "2026-07-21 public observe: docs.subactor.com and docs-stage.subactor.com resolve to A 217.160.250.222 through Cloudflare authoritative nameservers.",

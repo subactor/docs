@@ -20,7 +20,7 @@ poza kontrolą: nie miał planu, apply-grantu ani receiptu providera.
 
 ## Nowy kontrakt URI
 
-Connector Plesk `v0.12.0` pozostaje pojedynczym wejściem operacyjnym:
+Connector Plesk `v0.12.1` pozostaje pojedynczym wejściem operacyjnym:
 
 1. `plesk://host/dns/query/authority` ustala strefę i wymaga zgodności dwóch
    niezależnych resolverów co do NS.
@@ -32,7 +32,8 @@ Connector Plesk `v0.12.0` pozostaje pojedynczym wejściem operacyjnym:
 4. Apply wymaga globalnej bramki mutacji, bramki providera, podpisanego grantu
    `boundary` z dokładnym targetem i jednokrotnego JTI.
 5. `plesk://host/dns/query/propagation` raportuje osobno consensus wartości oraz
-   zakres pozostałych TTL na resolverach.
+   zakres pozostałych TTL na Cloudflare DNS i Google DNS, a dla A/AAAA porównuje
+   je również z resolverem systemowym runtime.
 
 Cloudflare apply używa batch API: najpierw usuwa rekordy konfliktowe, następnie
 tworzy jeden rekord docelowy i ponownie odczytuje stan przez API. Transakcja u
@@ -53,13 +54,16 @@ propagation; provider API dry-run/apply kończy się fail-closed na etapie lease
 
 ## Stan sprawdzony
 
-`status.subactor.com` ma consensus A `217.160.250.222`. W chwili testu Cloudflare
-DNS raportował TTL `86400`, a Google DNS `21600`; wartości były zgodne, więc cutover
-był już propagowany, choć cache resolverów miał różny pozostały czas życia.
+Cloudflare DNS i Google DNS zwracają dla `status.subactor.com` A
+`217.160.250.222` (odpowiednio TTL `86400` i `21600`). Resolver systemowy runtime
+wciąż zwracał cztery adresy GitHub Pages, dlatego pełny wynik ma
+`consensus=false` i `propagated=false`. To wyjaśnia przejściowy certyfikat
+`*.github.io` widziany bez wymuszenia originu; Plesk origin odpowiada już poprawnie
+po `--resolve`. Connector nie ukrywa tego stanu jako zakończonej propagacji.
 
 Pozostałe kroki wdrożeniowe:
 
-1. opublikować connector `v0.12.0` i odświeżyć obraz/registry `urirun-node`;
+1. opublikować connector `v0.12.1` i odświeżyć obraz/registry `urirun-node`;
 2. dodać token i `zone_id` przez jednorazowy formularz vault;
 3. uruchomić provider-aware dry-run dla `status.subactor.com` — oczekiwane
    `changed=false`, ponieważ publiczny rekord jest już prawidłowy;

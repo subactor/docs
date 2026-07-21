@@ -173,7 +173,7 @@ dla tych domen nie zmienia publicznego DNS. Connector udostępnia:
 - `plesk://host/dns/command/reconcile` — provider-aware dry-run/apply, delegujący
   zapis do Cloudflare API, gdy Cloudflare jest autorytatywny;
 - `plesk://host/dns/query/propagation` — porównanie oczekiwanej wartości i TTL
-  między publicznymi resolverami.
+  między publicznymi resolverami oraz lokalnym resolverem runtime dla A/AAAA.
 
 Każdy receipt podaje faktyczny `provider`, strefę i nameservery. Cloudflare token
 oraz `zone_id` są pobierane z wpisu vault `cloudflare-dns` dla originu
