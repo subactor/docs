@@ -24,7 +24,7 @@ Plesk nie zmienia publicznego DNS, ponieważ autorytatywne nameservery domeny
 
 | Obszar | Wynik | Dowód |
 |---|---|---|
-| Dokumenty prawne Autonomiczność.pl | komplet 5/5 | `PLF-617` |
+| Dokumenty prawne Autonomiczność.pl | treść kompletna 5/5; publiczne strony jeszcze niewdrożone | `PLF-617`, `PLF-697` |
 | DNS i TLS Autonomiczność.pl | gotowe | A `217.160.250.222`; SAN `autonomicznosc.pl`, `mail`, `www` |
 | Publikacja Autonomiczność.pl | 9 plików, 41 014 B przez SFTP | `PLF-687`, plan `ec65f065…` |
 | Publiczny postflight | HTTP 200, asset 200, hash zgodny | `PLF-614` = `converged` |
@@ -34,6 +34,37 @@ Plesk nie zmienia publicznego DNS, ponieważ autorytatywne nameservery domeny
 | Ticket-first capability preflight | ticket + idempotency key przechodzą do bridge | `platform@9297ce4`, `core@f7e4cb1` |
 | Connector LAN po restartach | odtworzony z właściwym overlayem | `hr-bridge` i `urirun-lan-gateway` healthy |
 | Lokalny status platformy | 16/16 usług, 0 błędów | `127.0.0.1:8199/api/status` = `healthy` |
+
+## Rozszerzona walidacja po wdrożeniu
+
+Kolejna sesja testowa potwierdziła pełny agregat `npm test` platformy oraz:
+
+| Zestaw | Wynik |
+|---|---:|
+| Core control | 276 passed, 6 skipped, 0 failed |
+| Bridge connectors | 34/34 |
+| Plesk connector | 94/94 |
+| Observability | 5/5 |
+| Panel | 25/25 |
+| Reliability | 9/9 |
+| Connector LAN live mTLS/ACL | PASS |
+
+Negatywne wywołanie dozwolonego URI bez `ticket_id` zwróciło HTTP 409
+`process_ticket_required`. Bramki mutacji pozostały wyłączone, a lease mutacji
+nie istniał. Publiczny hash Autonomiczność.pl nadal wynosi
+`5bb84efbf8bee4d19691cca012a2a9d75840360a377d77f0763036eab4b93ce1`.
+
+Test obserwowalności wykrył fałszywie otwarty historyczny incydent. Planfile
+zwracał zamknięty `PLF-107` po dokładnym ID, ale nie umieszczał archiwalnego
+ticketu na bieżącej liście. Observer traktował brak na liście jako stan otwarty.
+Po poprawce wykonuje ograniczony lookup po ID, zachowując fail-safe przy błędzie;
+liczba otwartych incydentów spadła z 1 do 0 (`observability@f54c26a`).
+
+Test ujawnił też lukę publikacyjną: zatwierdzone dokumenty z `projekty/06_legal`
+nie należą do synchronizowanego katalogu `projekty/02_landing`, więc nie mają
+publicznych URL-i ani odnośników w stopce. Cały katalog `projekty/` jest ponadto
+poza repozytorium Git. `PLF-697` wymaga najpierw wersjonowanego źródła, następnie
+pięciu stron HTML, dry-runu, grantu i publicznego postflightu.
 
 ## Dlaczego wcześniejsza publikacja nie zadziałała
 
@@ -95,6 +126,7 @@ ale nie wykonuje publicznego cutover.
 | high | `PLF-591` | deploy/cutover `contracts.subactor.com` po obsłudze autorytatywnego DNS |
 | high | `PLF-592` | cutover `founder.subactor.com`, potem strict TLS i ingress |
 | high | `PLF-690` | ograniczenie profilu SFTP do docrootu; brak listowania systemowego `/` |
+| high | `PLF-697` | wersjonowane źródło i pięć publicznych stron prawnych Autonomiczność.pl |
 | high | `PLF-682` | exact URI komunikacji i odpowiedzi Foundera |
 | normal | `PLF-683` | exact URI dashboardu, reconciliation i recruitment |
 | high | `PLF-684` | exact URI secret intake i dowodów vault |

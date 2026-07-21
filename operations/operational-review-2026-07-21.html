@@ -44,7 +44,7 @@
 <table>
 <thead><tr><th>Obszar</th><th>Wynik</th><th>Dowód</th></tr></thead>
 <tbody>
-<tr><td>Dokumenty prawne Autonomiczność.pl</td><td>komplet 5/5</td><td><code>PLF-617</code></td></tr>
+<tr><td>Dokumenty prawne Autonomiczność.pl</td><td>treść kompletna 5/5; publiczne strony jeszcze niewdrożone</td><td><code>PLF-617</code>, <code>PLF-697</code></td></tr>
 <tr><td>DNS i TLS Autonomiczność.pl</td><td>gotowe</td><td>A <code>217.160.250.222</code>; SAN <code>autonomicznosc.pl</code>, <code>mail</code>, <code>www</code></td></tr>
 <tr><td>Publikacja Autonomiczność.pl</td><td>9 plików, 41 014 B przez SFTP</td><td><code>PLF-687</code>, plan <code>ec65f065…</code></td></tr>
 <tr><td>Publiczny postflight</td><td>HTTP 200, asset 200, hash zgodny</td><td><code>PLF-614</code> = <code>converged</code></td></tr>
@@ -55,6 +55,22 @@
 <tr><td>Connector LAN po restartach</td><td>odtworzony z właściwym overlayem</td><td><code>hr-bridge</code> i <code>urirun-lan-gateway</code> healthy</td></tr>
 <tr><td>Lokalny status platformy</td><td>16/16 usług, 0 błędów</td><td><code>127.0.0.1:8199/api/status</code> = <code>healthy</code></td></tr>
 </tbody></table>
+<h2>Rozszerzona walidacja po wdrożeniu</h2>
+<p>Kolejna sesja testowa potwierdziła pełny agregat <code>npm test</code> platformy oraz:</p>
+<table>
+<thead><tr><th>Zestaw</th><th>Wynik</th></tr></thead>
+<tbody>
+<tr><td>Core control</td><td>276 passed, 6 skipped, 0 failed</td></tr>
+<tr><td>Bridge connectors</td><td>34/34</td></tr>
+<tr><td>Plesk connector</td><td>94/94</td></tr>
+<tr><td>Observability</td><td>5/5</td></tr>
+<tr><td>Panel</td><td>25/25</td></tr>
+<tr><td>Reliability</td><td>9/9</td></tr>
+<tr><td>Connector LAN live mTLS/ACL</td><td>PASS</td></tr>
+</tbody></table>
+<p>Negatywne wywołanie dozwolonego URI bez <code>ticket_id</code> zwróciło HTTP 409 <code>process_ticket_required</code>. Bramki mutacji pozostały wyłączone, a lease mutacji nie istniał. Publiczny hash Autonomiczność.pl nadal wynosi <code>5bb84efbf8bee4d19691cca012a2a9d75840360a377d77f0763036eab4b93ce1</code>.</p>
+<p>Test obserwowalności wykrył fałszywie otwarty historyczny incydent. Planfile zwracał zamknięty <code>PLF-107</code> po dokładnym ID, ale nie umieszczał archiwalnego ticketu na bieżącej liście. Observer traktował brak na liście jako stan otwarty. Po poprawce wykonuje ograniczony lookup po ID, zachowując fail-safe przy błędzie; liczba otwartych incydentów spadła z 1 do 0 (<code>observability@f54c26a</code>).</p>
+<p>Test ujawnił też lukę publikacyjną: zatwierdzone dokumenty z <code>projekty/06_legal</code> nie należą do synchronizowanego katalogu <code>projekty/02_landing</code>, więc nie mają publicznych URL-i ani odnośników w stopce. Cały katalog <code>projekty/</code> jest ponadto poza repozytorium Git. <code>PLF-697</code> wymaga najpierw wersjonowanego źródła, następnie pięciu stron HTML, dry-runu, grantu i publicznego postflightu.</p>
 <h2>Dlaczego wcześniejsza publikacja nie zadziałała</h2>
 <p>Wystąpiły cztery niezależne problemy, które wcześniej zlewały się w jeden status:</p>
 <ol>
@@ -108,6 +124,7 @@
 <tr><td>high</td><td><code>PLF-591</code></td><td>deploy/cutover <code>contracts.subactor.com</code> po obsłudze autorytatywnego DNS</td></tr>
 <tr><td>high</td><td><code>PLF-592</code></td><td>cutover <code>founder.subactor.com</code>, potem strict TLS i ingress</td></tr>
 <tr><td>high</td><td><code>PLF-690</code></td><td>ograniczenie profilu SFTP do docrootu; brak listowania systemowego <code>/</code></td></tr>
+<tr><td>high</td><td><code>PLF-697</code></td><td>wersjonowane źródło i pięć publicznych stron prawnych Autonomiczność.pl</td></tr>
 <tr><td>high</td><td><code>PLF-682</code></td><td>exact URI komunikacji i odpowiedzi Foundera</td></tr>
 <tr><td>normal</td><td><code>PLF-683</code></td><td>exact URI dashboardu, reconciliation i recruitment</td></tr>
 <tr><td>high</td><td><code>PLF-684</code></td><td>exact URI secret intake i dowodów vault</td></tr>
