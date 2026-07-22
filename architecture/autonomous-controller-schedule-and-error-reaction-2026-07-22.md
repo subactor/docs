@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.architecture.autonomous-controller-schedule-and-error-reaction-2026-07-22",
-  "version": 5,
+  "version": 6,
   "status": "current",
   "updated": "2026-07-22"
 }
@@ -327,11 +327,59 @@ Nie działa, albo działa inaczej, niż można oczekiwać:
    domysł i był błędny** — sprawdzone i sprostowane, patrz „Skąd wziął się
    wolumen wykryć" niżej. Krótko: 91,8 % pochodziło z jednego wewnętrznego
    endpointu, a przyczyna została naprawiona commitem `3a7dfa7` o 14:47.
-3. **Harmonogram jest niewidoczny w `.env`** — patrz luka konfiguracyjna
-   wyżej.
-4. **46 ticketów nieterminalnych, 0 wykonywalnych.** To poprawne zachowanie
-   fail-closed: 43 czekają na wejście człowieka, 3 nie mają pasującej reguły
-   i spadają na foundera. Kontroler odmawia zgadywania właściciela.
+3. **Widoczność harmonogramu w `.env` została naprawiona.** Automigracja
+   kontraktu środowiska uzupełnia wszystkie klucze kontrolera; patrz opis
+   zamkniętej luki wyżej.
+4. **28 ticketów pozostaje aktywnych, 0 jest wykonywalnych automatycznie.**
+   Stan z 2026-07-22 23:16 CEST: 24 `waiting_input`, 2 `ready` i 2 `running`.
+   Dwa tickety `ready` mają wykonawców ludzkich, więc kontroler poprawnie
+   kieruje powiadomienie zamiast wykonywać ich pracę.
+
+## Ponowny preflight aktualizuje diagnozę blokady
+
+Do wersji wdrożonej przed 2026-07-22 23:13 kontroler ponownie sprawdzał
+tickety botów w `waiting_input`, ale zachowywał tylko wynik pozytywny. Gdy
+kontrakt lub topologia zmieniły się po pierwotnym odrzuceniu, pole
+`execution.last_error` nadal pokazywało historyczną przyczynę. Nie prowadziło
+to do niebezpiecznego wykonania, ale utrudniało naprawę właściwej zależności.
+
+Od commita Core `3fa32ad` recheck zwraca zarówno kandydatów do promocji, jak
+i odrzucone decyzje. Dla odrzuconego ticketu kontroler:
+
+1. buduje aktualny `readiness_preflight:<reason>` wraz z listą brakujących
+   exact URI, jeśli decyzja ją zawiera;
+2. odczytuje ponownie ticket i porównuje `updated_at`, aby nie nadpisać
+   równoległej decyzji;
+3. zapisuje tylko zmieniony `last_error`, pozostawiając stan
+   `waiting_input` i nie wykonując efektów;
+4. emituje `ticket_lifecycle.readiness_diagnosis_refreshed`, a cykl raportuje
+   licznik `readiness_refreshed`.
+
+Test live po przebudowie `hr-control`:
+
+```text
+PLF-690 przed:
+  readiness_preflight:process_actor_not_registered:research
+
+PLF-690 po autonomicznym cyklu:
+  readiness_preflight:actor_contract_gap:research:
+  uri_process_not_allowed:plesk://host/ftpuser/query/capabilities
+
+autor historii: autonomous-queue-controller
+stan: waiting_input
+efekty zewnętrzne: 0
+```
+
+Wynik rozdziela dwie zależności, których nie wolno naprawiać jednym skrótem:
+
+- AQL `security-bot` nie dopuszcza obecnie URI Pleska; rozszerzenie tego
+  kontraktu jest zmianą granicy bezpieczeństwa, a nie zwykłą korektą danych;
+- `plesk://host/ftpuser/query/capabilities` nadal ma klasyfikację
+  `blueprint-only` i wymaga read-only implementacji w konektorze Pleska.
+
+Pełna walidacja Core po zmianie: 462 testy zaliczone, 7 pominiętych, 0
+błędów. Audyt tras aktywnych ticketów: 0 tras `unsupported`, 15
+`blueprint-only`, 1 nierozwiązany placeholder (PLF-592), 0 `false_ready`.
 
 ## Skąd wziął się wolumen wykryć — dochodzenie i sprostowanie
 
