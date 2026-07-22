@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.architecture.autonomous-controller-schedule-and-error-reaction-2026-07-22",
-  "version": 3,
+  "version": 5,
   "status": "current",
   "updated": "2026-07-22"
 }
@@ -44,22 +44,46 @@ Pokrętła czytane ze środowiska (`server.mjs:154-162`):
 | `AUTONOMOUS_QUEUE_ERROR_TRIGGER_ENABLED` | `1` | — |
 | `AUTONOMOUS_QUEUE_ERROR_TRIGGER_DELAY_MS` | `1000` | zakres 100–60 000; poza nim `autonomous_queue_error_trigger_delay_invalid` |
 
-> **Luka konfiguracyjna.** Trzy pierwsze klucze są w `platform/.env.example`
-> (linie 107–109), ale **nie ma ich w `platform/.env`**. Działający stos chodzi
-> na domyślnych z kodu, a operator szukający harmonogramu w `.env` niczego tam
-> nie znajdzie. Warto je dopisać jawnie, nawet z wartościami identycznymi jak
-> domyślne.
+> **Luka konfiguracyjna — ZAMKNIĘTA 2026-07-22 20:17.** Wszystkie sześć kluczy
+> istniało w `platform/.env.example`, ale **żadnego nie było w
+> `platform/.env`**: stos chodził na domyślnych z kodu, a operator szukający
+> harmonogramu w `.env` niczego tam nie znajdował.
+>
+> **Nie edytuje się `.env` ręcznie.** `scripts/validate-env.mjs` woła
+> `initializeEnv({templateFile, contractFile, targetFile})`, które
+> automigruje brakujące klucze z kanonicznego kontraktu
+> (`config/env-contract.json`) i raportuje `Environment auto-migrated: added N
+> variables.` Wystarczy:
+>
+> ```bash
+> cd platform && node scripts/validate-env.mjs   # albo: make env-check
+> ```
+>
+> Dopisało 20 zmiennych, w tym wszystkie sześć powyższych, z wartościami
+> identycznymi jak domyślne w kodzie — czyli **bez zmiany zachowania**.
+> Zweryfikowane: bramka CI zielona, kontener `hr-control` zdrowy.
+>
+> Jeden skutek uboczny wart odnotowania: migracja wnosi też
+> `ANALYTICS_SERVICE_TOKEN=__GENERATE_ANALYTICS_TOKEN__`. Przed migracją `.env`
+> nie miał ani jednego placeholdera, po niej ma jeden. Jest bezpieczny —
+> w `docker-compose.yml` nie ma usługi `analytics`, a żaden kod nie czyta tej
+> zmiennej — ale gdy taka usługa powstanie, token trzeba wygenerować, zanim
+> ruszy.
 
 ### Wszystkie pętle czasowe w control
 
 | linia | pętla | odstęp |
 |---|---|---|
-| `:2015` | (anonimowa) | — |
-| `:2040` | konsument autonomicznej kolejki | `AUTONOMOUS_QUEUE_CONSUMER_INTERVAL_MS` |
-| `:2047` | dzienny digest foundera | `FOUNDER_DAILY_DIGEST_INTERVAL_MS` |
-| `:2120` | pilne sprawy foundera | `FOUNDER_URGENT_INTERVAL_MS` |
-| `:2140` | watchdog zawieszonych wykonań | `STALE_EXECUTION_WATCHDOG_INTERVAL_MS` |
-| `:2148` | rekoncyliacja projektów | `PROJECT_RECONCILIATION_INTERVAL_MS` |
+| `:2057` | cykl delegacji (anonimowa, własna bramka czasowa) | stała w kodzie |
+| `:2082` | konsument autonomicznej kolejki | `AUTONOMOUS_QUEUE_CONSUMER_INTERVAL_MS` |
+| `:2089` | dzienny digest foundera | `FOUNDER_DAILY_DIGEST_INTERVAL_MS` |
+| `:2162` | pilne sprawy foundera | `FOUNDER_URGENT_INTERVAL_MS` |
+| `:2182` | watchdog zawieszonych wykonań | `STALE_EXECUTION_WATCHDOG_INTERVAL_MS` |
+| `:2190` | rekoncyliacja projektów | `PROJECT_RECONCILIATION_INTERVAL_MS` |
+
+Numery linii w `server.mjs` przesuwają się szybko — plik urósł o ~50 linii w
+ciągu jednej sesji. Szukaj po nazwie funkcji (`autonomousQueueConsumerCycle`,
+`founderDailyDigestCycle`, …), a nie po numerze.
 
 ### „Raz na dzień" to nie odstęp, tylko bramka zegarowa
 
@@ -118,7 +142,8 @@ tyka co 30 s jako siatka bezpieczeństwa, a zdarzenie skraca oczekiwanie do
 serię błędów — bez niego każdy z nich budziłby osobny cykl.
 
 Zwrotka: **każda** błędna odpowiedź HTTP z control staje się `problem.detected`.
-Stąd wolumen — w chwili pisania 1577 wykryć w dzienniku audytu.
+Stąd wolumen — 1595 wykryć w dzienniku audytu z 26 godzin. Skąd naprawdę
+pochodziły, opisuje osobna sekcja niżej.
 
 Odcisk palca to `sha256(code, component, environment, resource)`
 (`runtime/src/problem-details.mjs:193`), gdzie `resource` to ścieżka URL bez
@@ -156,9 +181,9 @@ Strategie w kolejności priorytetu (wygrywa najwyższy):
 
 Kluczowa konsekwencja: **HTTP 404 nigdy nie eskaluje sam z siebie.** Ma
 kategorię `not_found` i severity `warn` (`runtime/src/problem-details.mjs:85-87`),
-więc nie łapie się na żaden warunek poza fallbackiem. Dlatego przy 1577
-wykryciach dominującą klasyfikacją jest `problem.observe` — to zachowanie
-zgodne z polityką, nie zator.
+więc nie łapie się na żaden warunek poza fallbackiem. Dlatego dominującą
+klasyfikacją jest `problem.observe` — to zachowanie zgodne z polityką, nie
+zator.
 
 ## Test kontrolowany — przebieg i wynik
 
@@ -297,16 +322,100 @@ Nie działa, albo działa inaczej, niż można oczekiwać:
    `diagnosis-only`. Nie istnieje krok „diagnoza → naprawa" i to jest
    świadoma granica, a nie usterka — ale trzeba ją znać, zanim ktoś uzna, że
    system „sam się naprawia".
-2. **1577 wykryć, dominująca klasyfikacja `problem.observe`.** Zgodne z
-   polityką (404 nie eskaluje), ale oznacza, że telemetria jest zdominowana
-   przez jeden nierozwiązany upstream. W ostatnich zdarzeniach kategorie:
-   `not_found` 452, `conflict` 60, `dependency` 32, `validation` 26,
-   `authentication` 26.
+2. **~~1577 wykryć zdominowanych przez nierozwiązany upstream.~~** Pierwsza
+   wersja tego dokumentu przypisywała wolumen blockerowi PLF-592. **To był
+   domysł i był błędny** — sprawdzone i sprostowane, patrz „Skąd wziął się
+   wolumen wykryć" niżej. Krótko: 91,8 % pochodziło z jednego wewnętrznego
+   endpointu, a przyczyna została naprawiona commitem `3a7dfa7` o 14:47.
 3. **Harmonogram jest niewidoczny w `.env`** — patrz luka konfiguracyjna
    wyżej.
 4. **46 ticketów nieterminalnych, 0 wykonywalnych.** To poprawne zachowanie
    fail-closed: 43 czekają na wejście człowieka, 3 nie mają pasującej reguły
    i spadają na foundera. Kontroler odmawia zgadywania właściciela.
+
+## Skąd wziął się wolumen wykryć — dochodzenie i sprostowanie
+
+Pierwsza wersja tego dokumentu stwierdzała, że 1577 wykryć „wygląda na
+nierozwiązany blocker PLF-592 mielony w kółko". **To był domysł, nie pomiar, i
+okazał się nieprawdziwy.** Poniżej faktyczny rozkład.
+
+### Pomiar
+
+Z 1595 wpisów `problem.detected` obejmujących 2026-07-21 18:18 → 2026-07-22 20:00:
+
+| udział | zasób |
+|---|---|
+| **1465 (91,8 %)** | `/api/internal/integrations/resolve` |
+| 13 (0,8 %) | `/api/founder/delegations/respond` |
+| 12 (0,8 %) | `/api/projects/reconciliation/run` |
+| 12 (0,8 %) | `/api/processes/run` |
+| 12 (0,8 %) | `/api/delegation/manager` |
+
+Unikalnych odcisków palca: 52. PLF-592 nie występuje w czołówce w ogóle.
+
+### Mechanizm
+
+Wykrycia przychodziły **seriami po pięć w ciągu milisekund**. Źródłem jest
+`connectors/services/bridge/src/server.mjs:1387`:
+
+```js
+const [email, slack, teams, webhook] =
+  await Promise.all(["email", "slack", "teams", "webhook"].map(dynamicProfile));
+```
+
+Cztery rozwiązania równolegle plus wcześniejsze `plesk` — dokładnie pięć.
+Każde woła `/api/internal/integrations/resolve`. Gdy integracja nie jest
+skonfigurowana, control odpowiadał 404 `integration_not_found`, a
+`observeProblemResponses` zapisywało to jako problem. Brak skonfigurowanej
+integracji opcjonalnej jest **normalnym stanem**, więc telemetria pokazywała
+tysiąc zdarzeń o niczym.
+
+### Naprawa i weryfikacja
+
+Naprawione commitem `3a7dfa7` „fix(connectors): preserve evidence after
+external effects" (2026-07-22 14:47):
+
+```diff
+-    resolveDynamicIntegration(null, {system_provider: provider})
++    resolveDynamicIntegration(null, {system_provider: provider, optional: true})
+```
+
+Control ma dla tego jawną gałąź (`routes/integrations.mjs:16`): gdy
+`optional === true` i nie podano `integration_id`, zwraca **200** z
+`integration: null` zamiast 404. Zweryfikowane bezpośrednio na wdrożonym
+kodzie:
+
+```
+{system_provider:"plesk", optional:true}          -> 200  {"integration": null}
+{system_provider:"plesk"}                         -> 404  integration_not_found
+{integration_id:"nope", optional:true}            -> 404  integration_not_found
+```
+
+Rozkład godzinowy potwierdza skutek:
+
+```
+07-21 19:00   716   ← szczyt
+07-21 21:00    40
+07-22 06:00    72
+07-22 07:00    35
+07-22 08:00+    0   ← koniec
+```
+
+Po 07:25 nie ma ani jednego wpisu z tego zasobu. Dwa widoczne o 20:00:48 to
+artefakty powyższej sondy weryfikacyjnej — celowe 404 wywołane, żeby
+udowodnić, że gałąź `optional` działa.
+
+### Co z tego zostaje
+
+- **Bieżąca telemetria jest czysta.** Liczba 91,8 % jest prawdziwa
+  historycznie i myląca jako opis stanu na dziś.
+- Trzeci wiersz tabeli weryfikacyjnej pokazuje, że `optional: true` **nie**
+  tłumi 404, gdy podano konkretne `integration_id`. To wygląda na decyzję
+  celową — nazwanie konkretnej integracji, której nie ma, jest błędem, a nie
+  brakiem opcjonalnej konfiguracji. Zostawione bez zmian.
+- Wniosek ogólny: przy tej architekturze **każdy nowy wewnętrzny endpoint
+  zwracający 4xx dla stanu normalnego zamienia się w telemetryczny szum**.
+  Warto to sprawdzać przy dodawaniu tras, a nie po fakcie w dzienniku.
 
 ## Jak powtórzyć test
 
