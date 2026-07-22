@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.architecture.adr.008-resource-lifecycle-control-plane",
-  "version": 1,
+  "version": 2,
   "status": "current",
   "updated": "2026-07-22"
 }
@@ -90,6 +90,8 @@ Orchestrator udostępnia:
   następnych działań;
 - fail-closed kontrolę credentiali w projekcji;
 - routing następnego działania według odpowiedzialności przypisanej do typu.
+- observation-only CLI `subactor-resource-lifecycle`, które przyjmuje ograniczony
+  JSON przez stdin i emituje snapshot bez wykonywania mutacji.
 
 JSON Schema opisuje wire contract. Moduł Orchestratora jest implementacją reguł
 semantycznych, których sam JSON Schema nie wyraża: derivation stanu, przejścia,
