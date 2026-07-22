@@ -2,6 +2,9 @@
 
 ## 2026-07-22
 
+- Restored DOQL as a distinct Digital Twin situation layer between domain
+  objects and DQL/Strategy DSL, and documented the working eight-project
+  aggregate read-back plus its non-executable security boundary.
 - Documented DQL/1 as a read-only diagnostic profile over TestQL expressions,
   system snapshots, dependency graphs and immutable artifact references, with
   an explicit continuation plan for Doctor/Repair/Validator.
