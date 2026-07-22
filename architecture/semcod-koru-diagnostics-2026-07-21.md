@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.architecture.semcod-koru-diagnostics-2026-07-21",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-21"
+}
+---
+
 # Diagnostyka Subactor przez Koru i semcod — 2026-07-21
 
 ## Wynik

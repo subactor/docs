@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.architecture.unresolved-live-autonomy-blockers-2026-07-19",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-19"
+}
+---
+
 # Blokery pełnej autonomii, których nie można zamknąć lokalnie
 
 **Stan na:** 2026-07-19, Europe/Warsaw

@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.operations.index",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-18"
+}
+---
+
 # Operations log
 
 Every `subactor ask` and founder command, from the control plan store. 610 operation(s) across 5 day(s).

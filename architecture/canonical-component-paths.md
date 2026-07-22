@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.architecture.canonical-component-paths",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-18"
+}
+---
+
 # Canonical component paths vs `platform/components/`
 
 **Status:** decided (Workstream 1 / roadmap unit 1)  

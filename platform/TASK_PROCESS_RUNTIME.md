@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.platform.task.process.runtime",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-16"
+}
+---
+
 # Integracja listy zadań (planfile) i runtime procesów (urirun)
 
 Relcom może opcjonalnie oprzeć **listę zadań** o standard ticketów

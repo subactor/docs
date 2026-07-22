@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.operations.public-ingress-ticket-runtime-review-2026-07-21",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-21"
+}
+---
+
 # Public ingress i wykonanie ticketów — przegląd 2026-07-21
 
 ## Wynik

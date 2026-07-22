@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.platform.business.operating.system",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-15"
+}
+---
+
 # Project Business Operating System
 
 Celem modułu jest zamiana wiedzy o projekcie w kontrolowany system prowadzenia

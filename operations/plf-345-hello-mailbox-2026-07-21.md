@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.operations.plf-345-hello-mailbox-2026-07-21",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-21"
+}
+---
+
 # PLF-345 — skrzynka `hello@subactor.com`
 
 > Aktualizacja: utworzenie opisane poniżej pozostaje faktem historycznym, ale

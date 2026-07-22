@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.plans.full-platform-remediation-plan-2026-07-19",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-19"
+}
+---
+
 # Szczegółowy plan naprawczy platformy Subactor
 
 **Stan planu:** 2026-07-19, Europe/Warsaw

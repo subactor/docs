@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.operations.plf-806-delegation-capacity-and-routing-2026-07-21",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-21"
+}
+---
+
 # PLF-806 — pojemność wykonawców i bezpieczne delegowanie
 
 ## Wynik

@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.architecture.capability-tooling-evaluation",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-18"
+}
+---
+
 # Capability tooling evaluation (touri / uri2verify / TestQL / dockfra / hypervisor)
 
 **Date:** 2026-07-18  

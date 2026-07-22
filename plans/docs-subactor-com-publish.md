@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.plans.docs-subactor-com-publish",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-18"
+}
+---
+
 # Plan: docs → docs.subactor.com (NL → publish)
 
 Goal: make this founder CLI prompt work end-to-end:

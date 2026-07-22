@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.architecture.testing-intents-and-deploy-results",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-18"
+}
+---
+
 # Testowanie intentów i wyników deployu
 
 **Status:** nota architektoniczna (pointer).  

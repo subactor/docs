@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.architecture.autonomy-ops-status-and-open-questions",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-18"
+}
+---
+
 # Autonomia ops — status i pytania otwarte
 
 **Data testów:** 2026-07-18  

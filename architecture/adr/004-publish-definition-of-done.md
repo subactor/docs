@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.architecture.adr.004-publish-definition-of-done",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-18"
+}
+---
+
 # ADR-004: Definition of Done publikacji (verify)
 
 - **Status:** Accepted  

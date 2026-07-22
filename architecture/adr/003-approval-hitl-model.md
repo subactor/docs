@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.architecture.adr.003-approval-hitl-model",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-18"
+}
+---
+
 # ADR-003: Model zatwierdzania i Human-in-the-loop
 
 - **Status:** Accepted  

@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.autonomy-cli-runbook",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-19"
+}
+---
+
 # Autonomy CLI runbook — connector goals from the shell
 
 Practical runbook: how Subactor turns a natural-language (NL) goal into

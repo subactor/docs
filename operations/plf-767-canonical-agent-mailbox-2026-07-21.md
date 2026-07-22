@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.operations.plf-767-canonical-agent-mailbox-2026-07-21",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-21"
+}
+---
+
 # PLF-767 — kanoniczna skrzynka `agent@subactor.com`
 
 Data wykonania: 2026-07-21. Decydent: `authority:founder`.

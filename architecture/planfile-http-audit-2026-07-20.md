@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.architecture.planfile-http-audit-2026-07-20",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-21"
+}
+---
+
 # Audyt i naprawa Planfile HTTP `127.0.0.1:8765`
 
 Data: 2026-07-20

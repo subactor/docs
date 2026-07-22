@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.architecture.autonomous-anomaly-loop-roadmap",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-18"
+}
+---
+
 # Autonomiczna pętla anomalii — stan i roadmapa refaktoryzacji
 
 **Data:** 2026-07-18

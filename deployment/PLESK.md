@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.deployment.plesk",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-18"
+}
+---
+
 # Plesk deployment (docs.subactor.com httpdocs)
 
 Static docs tree in this repository (`index.html`, markdown under `platform/`,

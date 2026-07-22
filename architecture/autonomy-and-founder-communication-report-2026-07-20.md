@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.architecture.autonomy-and-founder-communication-report-2026-07-20",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-21"
+}
+---
+
 # Raport autonomii i kanałów komunikacji z Founderem
 
 **Stan na:** 2026-07-20, Europe/Warsaw

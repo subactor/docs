@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.architecture.adr.readme",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-18"
+}
+---
+
 # ADR — indeks decyzji autonomii
 
 **Cel:** krótkie ADR-y zaakceptowane jako SSOT decyzji (Faza 0 + luki grant/rollback/vault).  

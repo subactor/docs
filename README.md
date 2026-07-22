@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.readme",
+  "version": 2,
+  "status": "current",
+  "updated": "2026-07-21"
+}
+---
+
 # docs.subactor.com
 
 ![img.png](img.png)
@@ -23,6 +33,7 @@ agent autonomii działają; realny e-mail i telefon nie są jeszcze gotowe live.
 
 | Dokument | Opis |
 |----------|------|
+| [architecture/versioned-knowledge-strategy-and-error-runtime-2026-07-22.md](architecture/versioned-knowledge-strategy-and-error-runtime-2026-07-22.md) | Wersjonowana baza wiedzy i registry tekstów, Strategy DSL, Plesk/Cloudflare DNS oraz rzeczywisty stan pętli reakcji ERROR |
 | [architecture/autonomy-recommended-solution.md](architecture/autonomy-recommended-solution.md) | **Rekomendacja kanoniczna:** kontrolowany katalog zdolności, strumienie A/B, fazy, werdykt 4 fundamentów |
 | [architecture/adr/README.md](architecture/adr/README.md) | ADR Phase 0: zakres autonomii, DNS SSOT, HITL, DoD publish, rollback, sekrety |
 | [architecture/autonomy-ops-status-and-open-questions.md](architecture/autonomy-ops-status-and-open-questions.md) | Status ops + pytania otwarte (z proponowanymi odpowiedziami); baseline `5894906` |

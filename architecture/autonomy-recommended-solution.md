@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.architecture.autonomy-recommended-solution",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-18"
+}
+---
+
 # Rekomendowane rozwiązanie — autonomia Subactor
 
 **Status:** rekomendacja kanoniczna (do akceptacji ADR-ami). Bez implementacji kodu.  

@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.operations.plf-783-founder-email-delegation-2026-07-21",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-21"
+}
+---
+
 # PLF-783 — jednoklikowa delegacja z e-maila Foundera
 
 Data: 2026-07-21. Zleceniodawca: `authority:founder`.

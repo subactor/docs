@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.ops.subactor-ask-troubleshooting",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-18"
+}
+---
+
 # Subactor ask — troubleshooting (CLI, origin, Koru)
 
 **Status:** operacyjny (P1-4)  

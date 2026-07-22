@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.plans.resolution-continuity-implementation",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-19"
+}
+---
+
 # Resolution Continuity — plan i mapa wdrożenia
 
 Status: wdrożony rdzeń P0–P3; integracje produkcyjne wymagają podpisanych mandatów i adapterów dostawców.

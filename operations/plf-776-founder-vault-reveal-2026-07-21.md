@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.operations.plf-776-founder-vault-reveal-2026-07-21",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-21"
+}
+---
+
 # PLF-776 — jednorazowy dostęp Foundera do vault
 
 Data wdrożenia: 2026-07-21. Zleceniodawca: `authority:founder`.

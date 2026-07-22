@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.architecture.public-pages-subdomains-deployment-2026-07-20",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-21"
+}
+---
+
 # Raport subdomen i wdrożeń stron Subactor — 2026-07-20
 
 ## Werdykt

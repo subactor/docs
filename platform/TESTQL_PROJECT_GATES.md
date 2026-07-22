@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.platform.testql.project.gates",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-15"
+}
+---
+
 # TestQL jako bramka projektu
 
 TestQL w tej wersji jest małym, deterministycznym runtime'em do testowania metryk i

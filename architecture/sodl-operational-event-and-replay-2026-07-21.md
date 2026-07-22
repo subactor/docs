@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.architecture.sodl-operational-event-and-replay-2026-07-21",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-21"
+}
+---
+
 # SODL/1 — wspólny dziennik decyzji, zadań i replay
 
 Status: wdrożona podstawa w ramach `PLF-819`  

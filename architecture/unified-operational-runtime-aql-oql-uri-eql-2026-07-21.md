@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.architecture.unified-operational-runtime-aql-oql-uri-eql-2026-07-21",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-21"
+}
+---
+
 # Jeden runtime operacyjny Subactor — AQL → OQL → URI → EQL
 
 Data audytu: 2026-07-21

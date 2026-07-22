@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.deployment.pr9-docs-cutover-runbook",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-18"
+}
+---
+
 # PR9 — docs.subactor.com Pages → Plesk cutover (runbook)
 
 **Status:** preparation only — **do not** flip production DNS until every gate below is green.  

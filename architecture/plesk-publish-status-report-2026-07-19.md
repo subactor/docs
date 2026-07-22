@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.architecture.plesk-publish-status-report-2026-07-19",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-19"
+}
+---
+
 # Raport stanu platformy Subactor — publikacja Plesk
 
 **Data:** 2026-07-19 · **Zakres:** ścieżka `subactor ask` → intent pack → ticket → plan → dry-run → apply (Plesk), stan po promocji generycznego packa `site-publish` (SELFDEV-062).

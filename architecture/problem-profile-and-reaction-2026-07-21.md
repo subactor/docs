@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.architecture.problem-profile-and-reaction-2026-07-21",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-21"
+}
+---
+
 # Problem Profile v1 i reakcje na błędy
 
 Status: wdrożony kontrakt błędu, deduplikacja i klasyfikacja obserwacyjna;

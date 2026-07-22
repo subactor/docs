@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.deployment.dns-provider-control-2026-07-21",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-21"
+}
+---
+
 # Provider-aware DNS przez connector Plesk
 
 Data diagnozy: 2026-07-21.

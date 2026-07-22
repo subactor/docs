@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.architecture.dynamic-capability-resolution",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-18"
+}
+---
+
 # Dynamiczne rozwiązywanie capability — specyfika projektu i mapa DSL
 
 **Data:** 2026-07-18

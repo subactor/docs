@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.todo",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-19"
+}
+---
+
 # TODO
 
 - [ ] Correct DNS/TLS for `identity.subactor.com` and `chat.subactor.com`.

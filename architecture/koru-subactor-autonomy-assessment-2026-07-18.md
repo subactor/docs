@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.architecture.koru-subactor-autonomy-assessment-2026-07-18",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-18"
+}
+---
+
 # Ocena autonomii Koru ↔ Subactor ask — raport 2026-07-18
 
 **Data:** 2026-07-18  

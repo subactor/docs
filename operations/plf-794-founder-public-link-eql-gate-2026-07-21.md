@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.operations.plf-794-founder-public-link-eql-gate-2026-07-21",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-21"
+}
+---
+
 # PLF-794 — bramka EQL dla publicznych linków Foundera
 
 Data: 2026-07-21. Zleceniodawca: `authority:founder`.

@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.architecture.intent-orchestration-and-fallbacks",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-18"
+}
+---
+
 # Architektura: intent packs, orkiestracja i fallbacki zdolności
 
 **Status:** dokument projektowy (analiza + propozycja + **aktualizacja stanu 2026-07-18**).  

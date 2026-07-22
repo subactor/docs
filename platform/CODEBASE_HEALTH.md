@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.platform.codebase.health",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-17"
+}
+---
+
 # Stan kodu i plan refaktoru (code2llm)
 
 **Data indeksu:** 2026-07-17  

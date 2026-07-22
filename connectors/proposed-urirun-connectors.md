@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.connectors.proposed-urirun-connectors",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-18"
+}
+---
+
 # Proposed urirun-connectors
 
 Which connectors to build next for the [urirun-connectors org](https://github.com/orgs/urirun-connectors/repositories),

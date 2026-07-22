@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.architecture.subactor-koru-development-bridge",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-18"
+}
+---
+
 # Subactor failure → Planfile / Koru development ticket bridge
 
 **Status:** shipped (orchestrator escalator + `subactor-improvement` recorder)  

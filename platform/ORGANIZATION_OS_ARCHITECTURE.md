@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.platform.organization.os.architecture",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-17"
+}
+---
+
 # Architektura Subactor Organization OS
 
 ## Workspace i source of truth

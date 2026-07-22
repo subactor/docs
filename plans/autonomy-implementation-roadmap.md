@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.plans.autonomy-implementation-roadmap",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-18"
+}
+---
+
 # Roadmapa implementacji autonomii
 
 **Status:** plan wdrożenia (Fazy 0–8 + kolejność PR).  

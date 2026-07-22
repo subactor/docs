@@ -1,3 +1,13 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.deployment.pr10-legacy-resolver-cleanup",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-18"
+}
+---
+
 # PR10 — legacy resolver / dual-run cleanup
 
 **Status:** in progress (2026-07-18) — cold FALLBACK_PHRASES removed; dual-run stays **shadow** until metrics OK.
