@@ -2,9 +2,9 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.architecture.unresolved-live-autonomy-blockers-2026-07-19",
-  "version": 1,
+  "version": 2,
   "status": "current",
-  "updated": "2026-07-19"
+  "updated": "2026-07-22"
 }
 ---
 
@@ -83,7 +83,7 @@ Ostatni bezpieczny probe subskrypcji zwrócił:
 ```
 
 SFTP i FTP są dostępne, ale dostęp do transportu nie jest dowodem prawa ani
-limitu utworzenia domeny. Dry-run `projekty/02_landing` dla
+limitu utworzenia domeny. Dry-run `projekty/autonomicznosc-pl/02_landing` dla
 `autonomicznosc.pl` przeszedł: 8 plików, 32 934 bajty, plan hash
 `8cec51cdbf70dcaa0c795f1b1f4e826bcdd7b62d60472435c795d3c47c794c23`.
 Nie wykonano produkcyjnego apply.

@@ -2,9 +2,9 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.operations.operational-review-2026-07-21",
-  "version": 1,
+  "version": 3,
   "status": "current",
-  "updated": "2026-07-21"
+  "updated": "2026-07-22"
 }
 ---
 
@@ -70,8 +70,9 @@ ticketu na bieżącej liście. Observer traktował brak na liście jako stan otw
 Po poprawce wykonuje ograniczony lookup po ID, zachowując fail-safe przy błędzie;
 liczba otwartych incydentów spadła z 1 do 0 (`observability@f54c26a`).
 
-Test ujawnił też lukę publikacyjną: zatwierdzone dokumenty z `projekty/06_legal`
-nie należą do synchronizowanego katalogu `projekty/02_landing`, więc nie mają
+Test ujawnił też lukę publikacyjną: zatwierdzone dokumenty z
+`projekty/autonomicznosc-pl/06_legal` nie należą do synchronizowanego katalogu
+`projekty/autonomicznosc-pl/02_landing`, więc nie mają
 publicznych URL-i ani odnośników w stopce. Cały katalog `projekty/` jest ponadto
 poza repozytorium Git. `PLF-697` wymaga najpierw wersjonowanego źródła, następnie
 pięciu stron HTML, dry-runu, grantu i publicznego postflightu.
@@ -170,6 +171,31 @@ zakres to autorytatywny DNS dla `status`, `contracts` i `founder`.
 6. Utrwalić regułę restartu: usługi należące do Connector LAN należy odtwarzać
    z `docker-compose.connector-lan.yml`; restart tylko z bazowym Compose usuwa
    sieć `connector-execution` z `hr-bridge`.
+
+## Aktualizacja architektury 2026-07-22
+
+Po przeglądzie lifecycle, reakcji na problemy i dwóch wariantów RULE-DSL
+uzgodniono następujący podział źródeł prawdy:
+
+- Planfile przechowuje stan ticketu, historię i completion receipt;
+- Runtime egzekwuje wspólny kontrakt readiness;
+- AQL, OQL, EQL i URI Process zachowują rozdzielone odpowiedzialności;
+- SODL/1 jest dziennikiem zdarzeń, a nie drugim językiem biznesowym;
+- Strategy DSL opisuje zatwierdzone strategie i bindingi capabilities;
+- nowy Intent Contract ma zachować statements człowieka i maszyny oraz ich
+  zaakceptowaną normalizację, bez nadawania authority.
+
+Wykonane elementy lifecycle obejmują współdzielony preflight Runtime,
+obserwacyjną reconciliację Control, egzekwowane przejście pojedynczego ticketu
+do `ready`, zachowanie `verified_by` w completion receipt oraz atomowy,
+idempotentny zapis evidence w Planfile. Nadal otwarte są: natywny policy hook
+Planfile dla bezpośredniego UI/API, kontrakt `ProblemCase/RepairCandidate` oraz
+wykonawcza pętla `reaction → ticket → URIrun → EQL → completion`.
+
+Decyzję i kolejność dalszych prac opisują:
+
+- [`../architecture/intent-contract-and-human-machine-source-of-truth-2026-07-22.md`](../architecture/intent-contract-and-human-machine-source-of-truth-2026-07-22.md);
+- [`../plans/intent-contract-continuation-2026-07-22.md`](../plans/intent-contract-continuation-2026-07-22.md).
 
 ## Bezpieczne wznowienie
 

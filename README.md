@@ -2,9 +2,9 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.readme",
-  "version": 2,
+  "version": 4,
   "status": "current",
-  "updated": "2026-07-21"
+  "updated": "2026-07-22"
 }
 ---
 
@@ -14,7 +14,7 @@
 
 Publiczna dokumentacja Subactor.
 
-## Stan live (2026-07-21)
+## Stan architektury i wdrożeń (2026-07-22)
 
 Aktualny przegląd wykonanych prac, dowodów produkcyjnych, otwartych ticketów i
 planu refaktoryzacji:
@@ -25,14 +25,17 @@ Szczegółowy rejestr zależności, których platforma nie może utworzyć samod
 [architecture/unresolved-live-autonomy-blockers-2026-07-19.md](architecture/unresolved-live-autonomy-blockers-2026-07-19.md).
 Plan usunięcia blokad i uruchomienia pierwszego kontrolowanego pilota:
 [plans/full-platform-remediation-plan-2026-07-19.md](plans/full-platform-remediation-plan-2026-07-19.md).
-Dry-run `projekty/02_landing` działa, ale produkcyjne utworzenie domeny blokują
-nieznany limit subskrypcji oraz brak DNS/TLS. Prywatny chat per-user i lokalny
-agent autonomii działają; realny e-mail i telefon nie są jeszcze gotowe live.
+Projekt domenowy znajduje się w niezależnym repozytorium
+`projekty/autonomicznosc-pl`, a źródło publikacji w
+`projekty/autonomicznosc-pl/02_landing`. Aktualny stan wdrożenia i pozostałe
+blokery opisuje przegląd operacyjny powyżej.
 
 ## Autonomy (CLI → connectors)
 
 | Dokument | Opis |
 |----------|------|
+| [architecture/intent-contract-and-human-machine-source-of-truth-2026-07-22.md](architecture/intent-contract-and-human-machine-source-of-truth-2026-07-22.md) | Decyzja: wspólna intencja człowieka i maszyny jako wersjonowany Intent Contract nad istniejącymi DSL |
+| [plans/intent-contract-continuation-2026-07-22.md](plans/intent-contract-continuation-2026-07-22.md) | Plan wdrożenia Intent Contract, source-level lifecycle, równoległych napraw i pętli Doctor/Repair/Validator |
 | [architecture/versioned-knowledge-strategy-and-error-runtime-2026-07-22.md](architecture/versioned-knowledge-strategy-and-error-runtime-2026-07-22.md) | Wersjonowana baza wiedzy i registry tekstów, Strategy DSL, Plesk/Cloudflare DNS oraz rzeczywisty stan pętli reakcji ERROR |
 | [architecture/autonomy-recommended-solution.md](architecture/autonomy-recommended-solution.md) | **Rekomendacja kanoniczna:** kontrolowany katalog zdolności, strumienie A/B, fazy, werdykt 4 fundamentów |
 | [architecture/adr/README.md](architecture/adr/README.md) | ADR Phase 0: zakres autonomii, DNS SSOT, HITL, DoD publish, rollback, sekrety |
