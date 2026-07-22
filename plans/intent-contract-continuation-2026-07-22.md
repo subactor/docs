@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.plans.intent-contract-continuation-2026-07-22",
-  "version": 1,
+  "version": 3,
   "status": "current",
   "updated": "2026-07-22"
 }
@@ -17,6 +17,18 @@ człowieka lub maszynę, bez zastępowania istniejących AQL, OQL, EQL, URI Proc
 Process Packów, SODL i Planfile.
 
 ## Stan wejściowy
+
+### Postęp 2026-07-22
+
+- P0 wykonane: zaakceptowano ADR-009 i dodano JSON Schema
+  `subactor.intent-contract/v1`.
+- P1 częściowo wykonane: Runtime ma deterministyczną kanonikalizację, SHA-256,
+  walidację lifecycle, fail-closed secret/execution-field scan, projekcję
+  Markdown/form oraz semantic diff z sygnałem ponownej akceptacji.
+- Artifact Registry v2 obejmuje teraz również kanoniczne schemy z repozytorium
+  Contracts.
+- Nadal otwarte w P1: zapis nowej wersji z formularza, registry/API instancji
+  oraz test zgodności hasha między implementacjami.
 
 ### Wykonane
 
@@ -45,6 +57,8 @@ Process Packów, SODL i Planfile.
 
 ## P0 — ADR i schema Intent Contract v1
 
+Status: **wykonane**.
+
 Rezultat:
 
 - ADR potwierdzający, że Intent Contract jest kopertą danych, nie nowym runtime
@@ -58,6 +72,8 @@ Kryterium zakończenia: pozytywne i negatywne fixtures przechodzą meta-schema,
 canonicalization i secret scan.
 
 ## P1 — parser, renderer i registry
+
+Status: **w toku** — ukończono walidator, kanonikalizację i hash Runtime.
 
 Rezultat:
 

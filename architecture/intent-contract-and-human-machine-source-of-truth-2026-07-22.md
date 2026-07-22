@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.architecture.intent-contract-and-human-machine-source-of-truth-2026-07-22",
-  "version": 1,
+  "version": 3,
   "status": "current",
   "updated": "2026-07-22"
 }
@@ -65,9 +65,9 @@ rozdzielenie faktu potwierdzonego od deklaracji.
 Nie istnieje więc jeden brakujący „język wykonawczy”. Istnieje luka pomiędzy
 surową wypowiedzią a wybranym, zatwierdzonym Process Packiem.
 
-## Proponowany Intent Contract v1
+## Zaimplementowany rdzeń Intent Contract v1
 
-Minimalna instancja powinna zawierać:
+Kanoniczna instancja zawiera:
 
 ```json
 {
@@ -119,9 +119,16 @@ Minimalna instancja powinna zawierać:
 }
 ```
 
-To jest model informacyjny, nie ostateczny schema. URI, transport, vault entry i
-sekrety nie mogą być generowane przez model. `capabilities` pochodzą z katalogu,
-a dokładne URI dopiero z deterministycznego bindingu po AQL.
+Ostateczny wire contract znajduje się w
+`contracts/schemas/intent-contract.schema.v1.json`, a deterministyczna
+kanonikalizacja, hashowanie i reguły semantyczne w
+`runtime/src/intent-contract.mjs`. URI, transport, vault entry i sekrety nie
+mogą być generowane przez model. `capabilities` pochodzą z katalogu, a dokładne
+URI dopiero z deterministycznego bindingu po AQL.
+
+Runtime udostępnia również deterministyczne projekcje Markdown/form oraz
+semantic diff. Projekcje zawsze wskazują `base_hash`; nie mogą zapisać zmiany,
+zaakceptować intencji ani uruchomić procesu.
 
 ## Zasady współautorstwa człowieka i maszyny
 
