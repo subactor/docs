@@ -2,9 +2,9 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.architecture.adr.readme",
-  "version": 1,
+  "version": 2,
   "status": "current",
-  "updated": "2026-07-18"
+  "updated": "2026-07-22"
 }
 ---
 
@@ -25,6 +25,7 @@
 | [005](./005-rollback.md) | Rollback i failure semantics | **Accepted** |
 | [006](./006-secrets-ownership.md) | Ownership sekretów / vault | **Accepted** |
 | [007](./007-canonical-component-paths.md) | Kanoniczne ścieżki vs `platform/components` | **Accepted** |
+| [008](./008-resource-lifecycle-control-plane.md) | Wspólny lifecycle zasobów control plane | **Accepted** |
 
 Akceptacja ADR-001–006 zamyka odpowiadające pytania w
 [`../autonomy-ops-status-and-open-questions.md`](../autonomy-ops-status-and-open-questions.md) §5
