@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.architecture.adr.008-resource-lifecycle-control-plane",
-  "version": 2,
+  "version": 3,
   "status": "current",
   "updated": "2026-07-22"
 }
@@ -14,7 +14,7 @@
 - **Data:** 2026-07-22
 - **Kontrakt:** `subactor.resource-lifecycle/v1`
 - **Implementacja:** `orchestrator/src/resource-lifecycle.mjs`
-- **JSON Schema:** `orchestrator/schemas/resource-lifecycle.v1.schema.json`
+- **JSON Schema:** `orchestrator/schemas/resource-lifecycle.schema.v1.json`
 
 ## Kontekst
 
