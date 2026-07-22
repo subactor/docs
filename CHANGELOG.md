@@ -2,6 +2,9 @@
 
 ## 2026-07-22
 
+- Documented DQL/1 as a read-only diagnostic profile over TestQL expressions,
+  system snapshots, dependency graphs and immutable artifact references, with
+  an explicit continuation plan for Doctor/Repair/Validator.
 - Updated the Intent Contract architecture and continuation plan after adding
   the append-only Control registry, bounded propose/revise/preview/diff API and
   the non-executable Intent Binding v1 contract.
