@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.plans.intent-contract-continuation-2026-07-22",
-  "version": 3,
+  "version": 4,
   "status": "current",
   "updated": "2026-07-22"
 }
@@ -22,13 +22,18 @@ Process Packów, SODL i Planfile.
 
 - P0 wykonane: zaakceptowano ADR-009 i dodano JSON Schema
   `subactor.intent-contract/v1`.
-- P1 częściowo wykonane: Runtime ma deterministyczną kanonikalizację, SHA-256,
-  walidację lifecycle, fail-closed secret/execution-field scan, projekcję
-  Markdown/form oraz semantic diff z sygnałem ponownej akceptacji.
+- P1 wykonane w zakresie bezpiecznego registry: Runtime ma deterministyczną
+  kanonikalizację, SHA-256, walidację lifecycle, fail-closed
+  secret/execution-field scan, projekcję Markdown/form oraz semantic diff.
+  Control zapisuje append-only propozycje i rewizje oraz udostępnia API
+  `propose/revise/get/preview/diff`; nie ma endpointu akceptacji ani wykonania.
+- P2 rozpoczęte kontraktowo: `subactor.intent-binding/v1` wiąże hash intencji,
+  rewizję projektu i immutable rewizje Process Pack/Strategy/AQL/OQL/EQL.
 - Artifact Registry v2 obejmuje teraz również kanoniczne schemy z repozytorium
   Contracts.
-- Nadal otwarte w P1: zapis nowej wersji z formularza, registry/API instancji
-  oraz test zgodności hasha między implementacjami.
+- Nadal otwarte: write-back z formularza jako wyspecjalizowana projekcja,
+  niezależny test zgodności hasha między implementacjami, bramka akceptacji,
+  deterministyczny binder i integracja z Planfile.
 
 ### Wykonane
 
@@ -47,8 +52,8 @@ Process Packów, SODL i Planfile.
 
 ### Otwarte luki
 
-- brak instancji intencji zachowującej wypowiedzi człowieka i maszyny oraz ich
-  zaakceptowaną normalizację;
+- brak kontrolowanej akceptacji instancji intencji i powiązania zaakceptowanego
+  hasha z lifecycle ticketu;
 - bezpośrednie UI/API Planfile może zapisać `ready` bez wspólnego preflightu;
 - Problem Reaction grupuje obserwacje po fingerprint, ale nie ma `ProblemCase`,
   `Occurrence` i konkurencyjnych `RepairCandidate`;
@@ -73,7 +78,8 @@ canonicalization i secret scan.
 
 ## P1 — parser, renderer i registry
 
-Status: **w toku** — ukończono walidator, kanonikalizację i hash Runtime.
+Status: **wykonane w zakresie bezpiecznego registry; round-trip formularza i
+cross-runtime hash pozostają rozszerzeniem**.
 
 Rezultat:
 
@@ -81,7 +87,10 @@ Rezultat:
 - deterministyczny renderer JSON → Markdown/form oraz round-trip formularza do
   nowej wersji JSON;
 - wpisy Artifact Registry z immutable revision URI;
-- API Control do preview, diff i pobrania wersji bez mutacji wykonawczej.
+- API Control do propose, revise, list, preview, diff i pobrania wersji bez
+  akceptacji lub mutacji wykonawczej;
+- append-only registry z optimistic concurrency (`base_hash`) i immutable URI
+  `intent://subactor/<id>/v<version>`.
 
 Kryterium zakończenia: Node i ewentualny Python generują identyczny hash, a
 renderer nie zmienia danych kanonicznych.
@@ -90,6 +99,7 @@ renderer nie zmienia danych kanonicznych.
 
 Rezultat:
 
+- kontrakt `subactor.intent-binding/v1` wiążący immutable rewizje zależności;
 - zaakceptowany Intent Contract wybiera istniejący Process Pack i typowane
   bindingi;
 - ticket v2 przechowuje `intent_ref` oraz `intent_hash`;

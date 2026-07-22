@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.architecture.intent-contract-and-human-machine-source-of-truth-2026-07-22",
-  "version": 3,
+  "version": 4,
   "status": "current",
   "updated": "2026-07-22"
 }
@@ -130,6 +130,18 @@ Runtime udostępnia również deterministyczne projekcje Markdown/form oraz
 semantic diff. Projekcje zawsze wskazują `base_hash`; nie mogą zapisać zmiany,
 zaakceptować intencji ani uruchomić procesu.
 
+Control posiada teraz append-only Intent Registry. Udostępnia ograniczone
+scope'ami API do utworzenia propozycji, dopisania nowej wersji z kontrolą
+`base_hash`, pobrania wersji, projekcji Markdown/form i semantic diff. Rejestr
+odrzuca statusy zaakceptowane i wykonawcze, podszycie autora, nieznane pola oraz
+mutację wcześniejszej wersji. Nie istnieje endpoint `accept` ani `execute`.
+
+`subactor.intent-binding/v1` formalizuje osobny, niemutowalny związek pomiędzy
+hashem intencji, rewizją projektu i dokładnymi rewizjami Process Packa,
+Strategy/AQL/OQL/EQL lub artefaktów. Binding nie zawiera URI wykonawczego i nie
+nadaje authority. Obecnie jest kontraktem Schema + fixture; deterministyczny
+binder i bramka akceptacji pozostają kolejnym etapem.
+
 ## Zasady współautorstwa człowieka i maszyny
 
 1. Oryginalna wypowiedź jest niezmienna i zachowuje autora oraz hash.
@@ -173,6 +185,16 @@ Markdown, odpowiedź API oraz prompt LLM są projekcjami tego samego dokumentu.
 Surowe statements są provenance, a zaakceptowana sekcja `normalized` jest
 wiążącą intencją. AQL pozostaje jedynym źródłem authority, Planfile źródłem
 stanu wykonania, a EQL receipt źródłem potwierdzonego rezultatu.
+
+## Stan wdrożenia
+
+- wykonane: schema, fixture, walidacja Runtime, canonical hash, projekcje,
+  semantic diff, append-only registry oraz API `propose/revise/get/preview/diff`;
+- wykonane kontraktowo: `subactor.intent-binding/v1` wiążący intencję, projekt i
+  wersjonowane zależności governance;
+- otwarte: akceptacja przez uprawnionego principal-a, deterministyczny binder,
+  `intent_ref`/`intent_hash` w Process Envelope i Planfile oraz wspólny readiness
+  hook blokujący wykonanie nieaktualnej intencji.
 
 Szczegółowy plan implementacji znajduje się w
 [`../plans/intent-contract-continuation-2026-07-22.md`](../plans/intent-contract-continuation-2026-07-22.md).

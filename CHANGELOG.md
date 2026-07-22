@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-07-22
+
+- Updated the Intent Contract architecture and continuation plan after adding
+  the append-only Control registry, bounded propose/revise/preview/diff API and
+  the non-executable Intent Binding v1 contract.
+- Kept acceptance, authority and execution outside the proposal API; the next
+  stage is the deterministic binder plus Planfile readiness integration.
+
 ## 2026-07-19
 
 - Documented constitutional continuity, digital twin isolation and generic publishing.
