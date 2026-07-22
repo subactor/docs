@@ -2,9 +2,9 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.architecture.autonomy-and-founder-communication-report-2026-07-20",
-  "version": 1,
+  "version": 2,
   "status": "current",
-  "updated": "2026-07-21"
+  "updated": "2026-07-22"
 }
 ---
 
@@ -1230,3 +1230,58 @@ zdeduplikowana i odzwierciedla realne intencje, a nie szum testowy.
 
 Fail-closed pozostaje domyślną postawą na każdym etapie; kroki 1–3 wymagają
 świadomej decyzji o włączeniu mutacji i realnych credentiali.
+
+## 19. Ciągłość rozmowy i bezpośrednie linki Foundera (2026-07-22)
+
+Naprawiono regresję widoczną w prywatnym kanale autonomii: po poprawnej
+odpowiedzi o ticketach kolejne pytanie „podaj URL, abym mógł od razu
+wyklikać” traciło kontekst, a LLM otrzymywał `approved_facts` bez linków.
+
+Przyczyna składała się z dwóch niezależnych redukcji danych:
+
+1. portal przechowywał historię konwersacji, lecz relay przekazywał agentowi
+   wyłącznie bieżącą wiadomość;
+2. Control miał bezpieczne linki utworzone przez `founderTicketLink`, lecz do
+   LLM wysyłał tylko tekstowe streszczenie pozbawione tych URL-i.
+
+Obecna ścieżka:
+
+```text
+prywatna rozmowa
+  → authenticated outbound relay
+      → bieżąca wiadomość + maks. 8 wcześniejszych turnów z tego samego wątku
+          → LLM: NL + historia → read-only DOQL
+              → founder_work_status → aktualny Planfile
+                  → founderTicketLink (kanoniczny generator URL)
+                      → deterministyczny renderer wszystkich akcji Foundera
+```
+
+Historia jest ograniczona do ról `user`/`assistant`, maksymalnie 8 wpisów po
+2000 znaków. Służy wyłącznie do rozwiązania odwołań językowych. Nie jest
+zatwierdzonym faktem o stanie organizacji i nie może przyznać uprawnień.
+
+Dla próśb o bezpośrednie linki Control wymusza read model
+`founder_work_status`, jeżeli propozycja LLM go pominęła. LLM nadal wykonuje
+konwersję NL → DOQL i otrzymuje aktualne fakty, ale końcowe adresy są
+renderowane deterministycznie z danych Planfile. Model nie może wymyślić URL-a
+ani usunąć istniejących linków odpowiedzią „nie mogę ich podać”.
+
+Test regresyjny odtwarza dokładnie sekwencję:
+
+```text
+Founder: które tickety mam obsłużyć?
+Subactor: PLF-617 i PLF-618 wymagają Foundera.
+Founder: podaj url, abym mógł od razu wyklikać
+```
+
+W teście model celowo błędnie zwraca `intent=conversation`, a generator
+odpowiedzi celowo zwraca „Nie mogę podać URL-i”. Control koryguje profil do
+`founder_work_status` i zwraca oba kanoniczne linki. Potwierdzone także:
+izolacja rozmów użytkowników, zachowanie maksymalnie ośmiu turnów, brak
+przecieku historii innego aktora i idempotentne `reply → ack`.
+
+Walidacja po zmianie:
+
+- Core: 463 zaliczone, 7 pominiętych, 0 błędów;
+- Agents/LLM Gateway: 18 zaliczonych, 0 błędów;
+- Contractor Portal: 11 zaliczonych oraz osobny test relay context — zaliczony.
