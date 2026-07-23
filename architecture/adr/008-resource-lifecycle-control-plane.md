@@ -2,19 +2,19 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.architecture.adr.008-resource-lifecycle-control-plane",
-  "version": 3,
+  "version": 4,
   "status": "current",
-  "updated": "2026-07-22"
+  "updated": "2026-07-23"
 }
 ---
 
 # ADR-008: wspólny lifecycle zasobów control plane
 
 - **Status:** Accepted
-- **Data:** 2026-07-22
-- **Kontrakt:** `subactor.resource-lifecycle/v1`
+- **Data:** 2026-07-23
+- **Kontrakt:** `subactor.resource-lifecycle/v2`
 - **Implementacja:** `orchestrator/src/resource-lifecycle.mjs`
-- **JSON Schema:** `orchestrator/schemas/resource-lifecycle.schema.v1.json`
+- **JSON Schema:** `orchestrator/schemas/resource-lifecycle.schema.v2.json`
 
 ## Kontekst
 
@@ -34,7 +34,7 @@ Samo skopiowanie wszystkich danych do jednej bazy stworzyłoby konkurencyjne
 ## Decyzja
 
 Orchestrator utrzymuje jeden wersjonowany **kontrakt projekcji lifecycle**, a nie
-jedną fizyczną bazę wszystkich faktów. Każdy obiekt `subactor.resource-lifecycle/v1`
+jedną fizyczną bazę wszystkich faktów. Każdy obiekt `subactor.resource-lifecycle/v2`
 wiąże:
 
 1. stabilną tożsamość i kanoniczny URI zasobu;
@@ -57,11 +57,40 @@ wyliczany z projekcji desired/observed i receipts walidacji.
 | `website` | `https://<host>/` | Site Resources / release manifest | publiczny HTTP, TLS i release marker |
 | `dns_record` | `dns://<domain>/<type>/<name>` | deklaracja DNS w repozytorium | autorytatywny provider DNS / publiczny resolver |
 | `domain` | `domain://<fqdn>` | inventory domen i kontrakt publikacji | registrar, provider DNS, TLS i publiczny endpoint |
+| `ephemeral_access` | `access://subactor/<type>/<id>` | magazyn wydania dostępu | stan konsumpcji i termin wygaśnięcia |
 
 Artifact Registry pozostaje deterministyczną projekcją plików tekstowych.
 Planfile pozostaje źródłem stanu ticketów. Provider DNS pozostaje źródłem
 obserwacji DNS. Vault pozostaje jedynym źródłem sekretów. Projekcja lifecycle
 przechowuje wyłącznie odwołania i fingerprinty — nigdy credentiale.
+
+## Czas życia i czasowe artefakty dostępu
+
+Wersja v2 wymaga projekcji `temporal` dla każdego zasobu. Zasoby trwałe mają
+`mode=permanent` i `state=permanent`. Jednorazowe linki, granty oraz tokeny są
+typem `ephemeral_access`, mają `mode=expiring` i jeden ze stanów `active`,
+`consumed`, `expired`, `revoked` albo `superseded`.
+
+Obsługiwane podtypy to `founder_action`, `founder_form`,
+`founder_delegation`, `founder_vault`, `founder_access`, `apply_grant` i
+`api_token`. Jest to katalog typów lifecycle, a nie obietnica, że każdy z tych
+artefaktów ma być używany jako kanał komunikacji. Control tworzy okno
+przypomnienia tylko dla dostarczonych linków związanych z ticketem Foundera.
+
+Aktywny artefakt ustawia:
+
+```text
+issued_at < now < expires_at
+reminder_not_before = expires_at
+```
+
+Do wygaśnięcia kontroler nie może wysłać ponownie tej samej prośby. Jeżeli
+dostawa e-maila nie została potwierdzona, samo wcześniejsze wygenerowanie
+tokenu nie tworzy okna ciszy i transport może wykonać kontrolowany retry.
+
+Projekcja nigdy nie zawiera surowego tokenu, jego hasha ani pełnego URL-a z
+query lub fragmentem. Kanoniczny `access://` identyfikuje wyłącznie typ i
+rekord. Sekret pozostaje w swoim magazynie domenowym.
 
 ## Stany i działania
 
@@ -80,12 +109,13 @@ Wspólne stany to `declared`, `ready`, `reconciling`, `verified`, `drifted`,
 najmniej jednego evidence URI. `blocked`, `failed` i `drifted` wymagają jawnych
 reason codes. Lista dozwolonych przejść jest częścią wersjonowanego kontraktu.
 
-## Zakres implementacji v1
+## Zakres implementacji v2
 
 Orchestrator udostępnia:
 
 - walidator pojedynczego obiektu i przejścia;
-- adaptery dla ticketu, artefaktu, WWW, rekordu DNS i domeny;
+- adaptery dla ticketu, artefaktu, WWW, rekordu DNS, domeny i czasowego
+  dostępu;
 - zbiorczy snapshot z licznikami, wykryciem duplikatów i ograniczoną listą
   następnych działań;
 - fail-closed kontrolę credentiali w projekcji;
@@ -122,6 +152,8 @@ fingerprinty i zakaz sekretów.
 
 ## Dowody akceptacji
 
-Testy Orchestratora obejmują wszystkie pięć adapterów, stan `verified`, drift
+Testy Orchestratora obejmują wszystkie sześć adapterów, stan `verified`, drift
 DNS, błąd HTTP, blokadę ticketu, routing odpowiedzialności, zakaz credentiali,
-macierz przejść oraz zbiorczy snapshot.
+macierz przejść, aktywne i wygasłe tokeny oraz zbiorczy snapshot. Testy Control
+potwierdzają ponadto, że dostarczony link blokuje przypomnienie do `expires_at`,
+a niedostarczony link nie blokuje retry transportu.
