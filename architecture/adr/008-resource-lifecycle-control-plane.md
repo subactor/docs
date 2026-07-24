@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.architecture.adr.008-resource-lifecycle-control-plane",
-  "version": 4,
+  "version": 5,
   "status": "current",
   "updated": "2026-07-23"
 }
@@ -127,6 +127,49 @@ JSON Schema opisuje wire contract. Moduł Orchestratora jest implementacją regu
 semantycznych, których sam JSON Schema nie wyraża: derivation stanu, przejścia,
 fingerprinty i zakaz sekretów.
 
+## Lifecycle Type Registry v1
+
+Sam kontrakt projekcji nie dowodzi, że każdy trwały typ obiektu ma wersjonowanie,
+walidację i migrację. Źródłem prawdy dla takiego pokrycia jest
+`platform/config/lifecycle-types/registry.v1.json`, walidowany przez
+`platform/config/lifecycle-types/schema.v1.json` oraz
+`orchestrator/src/lifecycle-type-registry.mjs`.
+
+Każdy wpis deklaruje:
+
+- typ i odpowiedzialnego właściciela;
+- autorytety desired i observed state;
+- kontrakt lifecycle, adapter oraz walidator przejść;
+- bieżącą i obsługiwane wersje;
+- walidator oraz schema receiptu;
+- strategię i ścieżki migracji;
+- retencję, stan adopcji i jawne luki;
+- czy typ może zostać dopuszczony do autonomicznej mutacji.
+
+Rejestr działa fail-closed. Typ `partial` albo `planned` pozostaje widoczny w
+raporcie pokrycia, ale nie może uzyskać autonomicznego admission. Nieznana wersja
+jest odrzucana. Dla trwałego typu z wieloma obsługiwanymi wersjami musi istnieć
+wykonywalna ścieżka od każdej starszej wersji do bieżącej.
+
+Projekcje nie są przepisywane w miejscu. Strategia `reproject` ponownie odczytuje
+autorytatywne desired i observed state, buduje aktualny kontrakt, waliduje go i
+zapisuje receipt. Dane trwałe korzystają z jawnych procesów migracji,
+compatibility adaptera albo kontrolowanego zastąpienia.
+
+Każda zaakceptowana migracja musi emitować
+`subactor.lifecycle-migration-receipt/v1`, związany z `plan_hash`, procesem,
+aktorem, walidacją źródła i celu oraz URI dowodów. Samo pole `schema_version` lub
+udany zapis danych nie jest dowodem migracji.
+
+### Stan pokrycia
+
+Typy `ticket`, `text_artifact`, `website`, `dns_record`, `domain` i
+`ephemeral_access` są `enforced`. Typy `intent`, `plan` i
+`organization_record` są `partial`. Instancje procesów, komunikacja, connectory,
+repozytoria, release'y i certyfikaty są jawnie skatalogowane jako `planned`.
+Kontroler może dzięki temu odróżnić brak obiektu od braku wdrożonego kontraktu
+lifecycle i nie tworzyć pozornego sukcesu.
+
 ## Konsekwencje
 
 - Katalog lifecycle daje jeden widok kontrolny i wspólną walidację, ale nie
@@ -149,6 +192,12 @@ fingerprinty i zakaz sekretów.
    wewnętrznych reason codes, ścieżek repozytorium i danych autoryzacyjnych.
 5. Po migracji należy usunąć duplikujące klasyfikatory stanów w adapterach,
    zachowując walidatory domenowe jako źródła checks.
+6. Admission nowych typów trwałych ma sprawdzać Lifecycle Type Registry przed
+   utworzeniem pierwszej instancji.
+7. Kolejne adaptery należy wdrażać w kolejności:
+   `organization_record`, `intent`, `plan`, `process_instance`,
+   `communication`, `deployment_release`, `certificate`, `connector`,
+   `repository`.
 
 ## Dowody akceptacji
 
