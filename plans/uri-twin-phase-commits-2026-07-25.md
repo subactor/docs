@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.plans.uri-twin-phase-commits-2026-07-25",
-  "version": 2,
+  "version": 3,
   "status": "current",
   "updated": "2026-07-25"
 }
@@ -66,14 +66,15 @@ Ship: commit na `main` w danym repo (nie otwieramy PR).
 | `plesk://host/subscription/query/snapshot` | **done** (connector + twin-fact) |
 | `plesk://host/dns/query/authority` | **done** (twin-fact na istniejącym probe) |
 | reality-check findings | **done** (advisory subscription/dns twins) |
-| publish recipe wymusza docroot fact | open |
+| publish recipe wymusza docroot fact | **done** (site-publish + docs/www/logo step-catalog) |
+| reality-check via URI Process | **done** (`?live=1` / `?via=uri`, bridge fallback) |
 | live E2E po deployu | open |
 
 ### Checklista
 
 - [x] Trzy URI z catalogu uri-twin-plesk w connectorze
 - [x] Reality-check: twin findings; `human_boundary` nietknięty
-- [ ] Publish/readiness czyta URI Process (nie tylko bridge HTTP)
+- [x] Publish/readiness czyta URI Process (nie tylko bridge HTTP)
 - [x] Żadne usunięcie kill switch / HITL
 
 ---

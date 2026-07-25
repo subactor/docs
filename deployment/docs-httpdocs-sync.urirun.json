@@ -12,6 +12,18 @@
   },
   "uri_processes": [
     {
+      "id": "docs-docroot-query",
+      "name": "Observe docroot twin-fact before publish plan",
+      "actor": "bot:project-operator-bot",
+      "uri": "plesk://host/site/query/docroot",
+      "payload": {
+        "domain": "docs.subactor.com",
+        "remote_path": "/httpdocs"
+      },
+      "depends_on": [],
+      "human_approval": false
+    },
+    {
       "id": "docs-httpdocs-methods",
       "name": "Detect SFTP/FTP deployment transports",
       "actor": "bot:project-operator-bot",
@@ -19,7 +31,9 @@
       "payload": {
         "host": "prototypowanie.pl"
       },
-      "depends_on": [],
+      "depends_on": [
+        "docs-docroot-query"
+      ],
       "human_approval": false
     },
     {
