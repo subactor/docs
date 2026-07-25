@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.plans.uri-twin-phase-commits-2026-07-25",
-  "version": 4,
+  "version": 5,
   "status": "current",
   "updated": "2026-07-25"
 }
@@ -83,7 +83,7 @@ Ship: commit na `main` w danym repo (nie otwieramy PR).
 
 - [x] Runbook: [uri-twin-plesk-deploy-runbook.md](../operations/uri-twin-plesk-deploy-runbook.md)
 - [x] Smoke: `subactor uri plesk://host/site/query/docroot` + `reality-check?via=uri` (docs.subactor.com)
-- [ ] Metryka: % reality-check z `authority=observed` vs rule fallback (zbierane ręcznie z reportów)
+- [x] Metryka: % reality-check z `authority=observed` vs rule fallback — live 2026-07-25: **60% observed (3/5)** na *.subactor.com; szczegóły w runbooku
 
 ---
 

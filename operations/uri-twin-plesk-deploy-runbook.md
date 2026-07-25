@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.operations.uri-twin-plesk-deploy-runbook",
-  "version": 1,
+  "version": 2,
   "status": "current",
   "updated": "2026-07-25"
 }
@@ -43,6 +43,19 @@ subactor get '/api/projects/reality-check?domain=docs.subactor.com&via=uri'
 - `via=uri` → `sources.plesk_docroot_twin.source == "uri_process"` i `schema == subactor.twin-fact/v1`.
 - Bez `via` → `source == "bridge_http"` (projekcja), fail-open.
 - `human_boundary` / granty nietknięte.
+
+## Live smoke (2026-07-25, Subactor)
+
+| Domain | via=uri authority | decision | observed |
+| --- | --- | --- | --- |
+| docs.subactor.com | observed | accept | /docs.subactor.com |
+| logo.subactor.com | observed | accept | /logo.subactor.com |
+| subactor.com | observed | accept | /httpdocs |
+| www.subactor.com | rule (domain missing in Plesk) | accept | — |
+| identity.subactor.com | rule (DNS + domain missing) | accept | — |
+
+KPI `via=uri`: **3/5 observed (60%)** — non-observed cases are missing Plesk objects / DNS, not twin regressions.
+DNS authority twin: Cloudflare NS consensus `fresh` for `subactor.com`.
 
 ## Rollback
 ```bash
