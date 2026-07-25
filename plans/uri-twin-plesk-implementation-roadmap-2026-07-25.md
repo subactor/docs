@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.plans.uri-twin-plesk-implementation-roadmap-2026-07-25",
-  "version": 2,
+  "version": 3,
   "status": "current",
   "updated": "2026-07-25"
 }
@@ -33,18 +33,15 @@ Wersjonowany, kanałowo stabilny, SSOT dla żywego stanu Plesk jako warstwa **ob
 - [x] Handler `plesk://host/site/query/docroot` w `urirun-connector-plesk` (+ manifest/README/test)
 - [x] Envelope `subactor.twin-fact/v1` + `snapshot_hash` / `fact_quality`
 - [x] Reality-check czyta docroot twin (bridge projekcja → `sources.plesk_docroot_twin`); `last_error` nie jest SSOT topologii
-- [ ] `plesk://host/subscription/query/snapshot` jako twin-fact
-- [ ] `plesk://host/dns/query/authority` normalizacja do twin-fact
+- [x] `plesk://host/subscription/query/snapshot` jako twin-fact
+- [x] `plesk://host/dns/query/authority` normalizacja do twin-fact
 - [x] Plan faz/commitów: [uri-twin-phase-commits-2026-07-25.md](./uri-twin-phase-commits-2026-07-25.md)
-- [ ] Opisać fail-open/fail-closed dla subscription/dns (docroot: estimated fallback)
+- [x] fail-open: docroot/subscription → `estimated`; dns inconsistent → `stale` + fail kodem authority
 
 ### Faza 2 — spójność planowania i readiness
-- [ ] `publish`/reality-check ma czytać `plesk://host/site/query/docroot` i `plesk://host/subscription/query/snapshot` zamiast polegać wyłącznie na `last_error`.
-- [ ] Wydzielić mapowanie: last_error -> advisory, source-of-truth -> twin fact.
-- [ ] Dodać testy E2E check-run:
-  - `plan` -> `dry-run`
-  - `publish` -> wymusza dokumentację `docroot fact`
-  - `publish-verify` -> nie rezygnuje z istniejących `human_boundary`, ale nie dubluje ich.
+- [x] Reality-check findings dla subscription/dns twins (advisory; bez usuwania HITL)
+- [ ] publish/readiness recipes wymuszają dokumentację docroot fact w planie
+- [ ] Testy E2E check-run na żywym panelu po deployu connectora
 
 ### Faza 3 — przygotowanie do autonomii
 - [ ] Nie usuwamy blokad `human_boundary`; mapujemy je do konkretnych klas ryzyka:

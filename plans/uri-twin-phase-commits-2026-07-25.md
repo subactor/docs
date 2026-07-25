@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.plans.uri-twin-phase-commits-2026-07-25",
-  "version": 1,
+  "version": 2,
   "status": "current",
   "updated": "2026-07-25"
 }
@@ -59,19 +59,22 @@ Ship: commit na `main` w danym repo (nie otwieramy PR).
 
 ## Faza 2 — pozostałe query v1 + Control SSOT
 
-### Pliki (plan)
+### Pliki
 
-| URI | Gdzie |
+| URI / obszar | Stan |
 | --- | --- |
-| `plesk://host/subscription/query/snapshot` | connector (+ ewentualnie reuse capabilities) |
-| `plesk://host/dns/query/authority` | normalizacja istniejącego probe → twin-fact |
-| publish / readiness | prefer twin fact nad `last_error` (advisory) |
+| `plesk://host/subscription/query/snapshot` | **done** (connector + twin-fact) |
+| `plesk://host/dns/query/authority` | **done** (twin-fact na istniejącym probe) |
+| reality-check findings | **done** (advisory subscription/dns twins) |
+| publish recipe wymusza docroot fact | open |
+| live E2E po deployu | open |
 
 ### Checklista
 
-- [ ] Trzy URI z catalogu uri-twin-plesk widoczne w connector-runtime
-- [ ] Reality-check: `last_error` tylko advisory; root cause z twin/DNS/Plesk
-- [ ] Żadne usunięcie `human_boundary` / kill switch
+- [x] Trzy URI z catalogu uri-twin-plesk w connectorze
+- [x] Reality-check: twin findings; `human_boundary` nietknięty
+- [ ] Publish/readiness czyta URI Process (nie tylko bridge HTTP)
+- [x] Żadne usunięcie kill switch / HITL
 
 ---
 
