@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.plans.uri-twin-plesk-implementation-roadmap-2026-07-25",
-  "version": 4,
+  "version": 5,
   "status": "current",
   "updated": "2026-07-25"
 }
@@ -41,7 +41,7 @@ Wersjonowany, kanałowo stabilny, SSOT dla żywego stanu Plesk jako warstwa **ob
 ### Faza 2 — spójność planowania i readiness
 - [x] Reality-check findings dla subscription/dns twins (advisory; bez usuwania HITL)
 - [x] publish/readiness recipes wymuszają dokumentację docroot fact w planie
-- [ ] Testy E2E check-run na żywym panelu po deployu connectora
+- [x] Testy E2E check-run na żywym panelu po deployu connectora
 
 ### Faza 3 — przygotowanie do autonomii
 - [ ] Nie usuwamy blokad `human_boundary`; mapujemy je do konkretnych klas ryzyka:
@@ -49,7 +49,7 @@ Wersjonowany, kanałowo stabilny, SSOT dla żywego stanu Plesk jako warstwa **ob
   - apply + ryzyko R2: requires grant
   - only-operator/owner steps: founder/tenant human path
 - [ ] Dodać KPI testów: % publish opartych o aktualny fact vs legacy path
-- [ ] Utworzyć runbook deploya twin i roll-back.
+- [x] Utworzyć runbook deploya twin i roll-back: [uri-twin-plesk-deploy-runbook.md](../operations/uri-twin-plesk-deploy-runbook.md)
 
 ## Minimalny podział odpowiedzialności
 - `uri-twin-core`:

@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.plans.uri-twin-phase-commits-2026-07-25",
-  "version": 3,
+  "version": 4,
   "status": "current",
   "updated": "2026-07-25"
 }
@@ -68,7 +68,7 @@ Ship: commit na `main` w danym repo (nie otwieramy PR).
 | reality-check findings | **done** (advisory subscription/dns twins) |
 | publish recipe wymusza docroot fact | **done** (site-publish + docs/www/logo step-catalog) |
 | reality-check via URI Process | **done** (`?live=1` / `?via=uri`, bridge fallback) |
-| live E2E po deployu | open |
+| live E2E po deployu | **done** (restart + smoke 2026-07-25) |
 
 ### Checklista
 
@@ -81,9 +81,9 @@ Ship: commit na `main` w danym repo (nie otwieramy PR).
 
 ## Faza 3 — deploy / KPI
 
-- [ ] Runbook: rebuild urirun-node + restart hr-control/bridge
-- [ ] Smoke: `subactor` / urirun invoke `site/query/docroot` dla jednej domeny
-- [ ] Metryka: % reality-check z `authority=observed` vs rule fallback
+- [x] Runbook: [uri-twin-plesk-deploy-runbook.md](../operations/uri-twin-plesk-deploy-runbook.md)
+- [x] Smoke: `subactor uri plesk://host/site/query/docroot` + `reality-check?via=uri` (docs.subactor.com)
+- [ ] Metryka: % reality-check z `authority=observed` vs rule fallback (zbierane ręcznie z reportów)
 
 ---
 
