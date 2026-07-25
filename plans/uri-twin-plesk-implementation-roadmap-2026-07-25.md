@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.plans.uri-twin-plesk-implementation-roadmap-2026-07-25",
-  "version": 1,
+  "version": 2,
   "status": "current",
   "updated": "2026-07-25"
 }
@@ -30,16 +30,13 @@ Wersjonowany, kanałowo stabilny, SSOT dla żywego stanu Plesk jako warstwa **ob
 - [x] Projekcja HTTP do Control: `GET /api/connectors/plesk/docroot`
 
 ### Faza 1 — migracja do prawdziwego URI twin (v1)
-- [ ] Dodać/zweryfikować manifest dla observe route `plesk://host/site/query/docroot` w warstwie URI twin,
-  not in ad-hoc HTTP route.
-- [ ] Zarejestrować `docroot` jako część wspólnego catalogu capabilities (`uri` + schema `subactor.twin-fact/v1` + tags).
-- [ ] Dodać kanał snapshot: `snapshot_hash`, `observed_at`, `freshness_seconds`, `instance_id`, `authoritative_host`.
-- [ ] Udostępnić `query/snapshot` dla:
-  - `plesk://host/site/query/docroot`
-  - `plesk://host/subscription/query/snapshot`
-  - `plesk://host/dns/query/authority`
-- [ ] Opisać mechanizm fail-open/fail-closed dla każdego query:
-  - brak danych nie blokuje automatycznie publish, ale wyraźnie oznacza `fact_quality: stale|estimated|fresh`.
+- [x] Handler `plesk://host/site/query/docroot` w `urirun-connector-plesk` (+ manifest/README/test)
+- [x] Envelope `subactor.twin-fact/v1` + `snapshot_hash` / `fact_quality`
+- [x] Reality-check czyta docroot twin (bridge projekcja → `sources.plesk_docroot_twin`); `last_error` nie jest SSOT topologii
+- [ ] `plesk://host/subscription/query/snapshot` jako twin-fact
+- [ ] `plesk://host/dns/query/authority` normalizacja do twin-fact
+- [x] Plan faz/commitów: [uri-twin-phase-commits-2026-07-25.md](./uri-twin-phase-commits-2026-07-25.md)
+- [ ] Opisać fail-open/fail-closed dla subscription/dns (docroot: estimated fallback)
 
 ### Faza 2 — spójność planowania i readiness
 - [ ] `publish`/reality-check ma czytać `plesk://host/site/query/docroot` i `plesk://host/subscription/query/snapshot` zamiast polegać wyłącznie na `last_error`.
