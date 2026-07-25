@@ -1,0 +1,79 @@
+---
+{
+  "schema": "subactor.doc/v1",
+  "id": "docs.plans.uri-twin-plesk-implementation-roadmap-2026-07-25",
+  "version": 1,
+  "status": "current",
+  "updated": "2026-07-25"
+}
+---
+
+# Plan implementacji: Plesk URI Twin (observe, bez zmian polityki hitl)
+
+## Cel
+Wersjonowany, kanałowo stabilny, SSOT dla żywego stanu Plesk jako warstwa **observe**, przy zachowaniu istniejącego modelu urirun mutacji i Control governance.
+
+## Założenia projektowe (zgodne z Twoją notatką)
+1. Nie tworzymy osobnych repo na typy Plesk (`PLESK`, `PLESK-MODULES`, `PLESK-DNS`, `PLESK-SUBSCRIPTIONS`) w fazie 1.
+2. Tworzymy obserwacyjny twin (query/snapshot) niezależny od apply/grant.
+3. Wydawanie faktów jest kanałem `query` URI (`plesk://host/.../query/...`), a HTTP w Control pozostaje tylko projekcją.
+4. Jedna logika twin-ów działa dla wielu instancji przez `instance_id` + binding/credential handle + feature flags.
+
+## Fazy realizacji
+
+### Faza 0 — stabilizacja podstawy (już częściowo wykonana)
+- [x] Opis architektoniczny w ADR: [012-uri-twin-observe-layer.md](../architecture/adr/012-uri-twin-observe-layer.md)
+- [x] Knowledge: `knowledge://subactor/architecture.uri-twin-scope/v1`
+- [x] Szkielet org `~/github/uri-twin/` (`uri-twin-core`, `uri-twin-plesk` + catalog v1)
+- [x] Weryfikacja problemu: ad-hoc `GET /api/connectors/plesk/docroot` i brak jednolitego SSOT
+- [x] Przygotowanie prototypu query-faktu docroot w bridge: `GET /plesk/docroot`
+- [x] Projekcja HTTP do Control: `GET /api/connectors/plesk/docroot`
+
+### Faza 1 — migracja do prawdziwego URI twin (v1)
+- [ ] Dodać/zweryfikować manifest dla observe route `plesk://host/site/query/docroot` w warstwie URI twin,
+  not in ad-hoc HTTP route.
+- [ ] Zarejestrować `docroot` jako część wspólnego catalogu capabilities (`uri` + schema `subactor.twin-fact/v1` + tags).
+- [ ] Dodać kanał snapshot: `snapshot_hash`, `observed_at`, `freshness_seconds`, `instance_id`, `authoritative_host`.
+- [ ] Udostępnić `query/snapshot` dla:
+  - `plesk://host/site/query/docroot`
+  - `plesk://host/subscription/query/snapshot`
+  - `plesk://host/dns/query/authority`
+- [ ] Opisać mechanizm fail-open/fail-closed dla każdego query:
+  - brak danych nie blokuje automatycznie publish, ale wyraźnie oznacza `fact_quality: stale|estimated|fresh`.
+
+### Faza 2 — spójność planowania i readiness
+- [ ] `publish`/reality-check ma czytać `plesk://host/site/query/docroot` i `plesk://host/subscription/query/snapshot` zamiast polegać wyłącznie na `last_error`.
+- [ ] Wydzielić mapowanie: last_error -> advisory, source-of-truth -> twin fact.
+- [ ] Dodać testy E2E check-run:
+  - `plan` -> `dry-run`
+  - `publish` -> wymusza dokumentację `docroot fact`
+  - `publish-verify` -> nie rezygnuje z istniejących `human_boundary`, ale nie dubluje ich.
+
+### Faza 3 — przygotowanie do autonomii
+- [ ] Nie usuwamy blokad `human_boundary`; mapujemy je do konkretnych klas ryzyka:
+  - publish dry-run: auto
+  - apply + ryzyko R2: requires grant
+  - only-operator/owner steps: founder/tenant human path
+- [ ] Dodać KPI testów: % publish opartych o aktualny fact vs legacy path
+- [ ] Utworzyć runbook deploya twin i roll-back.
+
+## Minimalny podział odpowiedzialności
+- `uri-twin-core`:
+  - envelope faktu (`subactor.twin-fact/v1`), freshness, schema/validation, metryki.
+- `uri-twin-plesk`:
+  - query dla subscriptions/docroot/dns, binding do wielu instancji.
+- `urirun-connector-plesk`:
+  - pozostaje jedynym kanałem mutacji (`command`, dry-run/apply/grant).
+- `Subactor Control`:
+  - POLICY/HITL/reality orchestration; HTTP jako projekcja istniejących URI.
+
+## Ryzyka operacyjne
+- Największe ryzyko to niespójność danych między live state (twin) a cache-control; to zamykać przez `snapshot_hash` + TTL.
+- Bez explicit bindingu `instance_id` i feature flags twiny będą miały zbyt słabą izolację między panelami.
+- Brak restartu usługi po wdrożeniu kodu => endpointy i registry mogą pozostać w stanie sprzecznym; każdy deploy musi uwzględniać rebuild/restart.
+
+## Odbiór i akceptacja
+- 1) `plan` nie wykonuje żadnej mutacji opartych o obserwację;
+- 2) `site/query/docroot` działa przez URI i jest czytelny w `/api/connector-runtime` routes;
+- 3) `publish`/`reality-check` pokazują fakty twin zamiast jedynie błędów ticketów;
+- 4) `human_boundary` pozostaje aktywny tam, gdzie model ryzyka wymaga człowieka.

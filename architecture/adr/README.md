@@ -2,9 +2,9 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.architecture.adr.readme",
-  "version": 3,
+  "version": 4,
   "status": "current",
-  "updated": "2026-07-22"
+  "updated": "2026-07-25"
 }
 ---
 
@@ -27,6 +27,9 @@
 | [007](./007-canonical-component-paths.md) | Kanoniczne ścieżki vs `platform/components` | **Accepted** |
 | [008](./008-resource-lifecycle-control-plane.md) | Wspólny lifecycle zasobów control plane | **Accepted** |
 | [009](./009-intent-contract-source-of-truth.md) | Wspólne źródło prawdy intencji człowieka i maszyny | **Accepted** |
+| [010](./010-organization-constitution-and-ticket-currency.md) | Constitution i waluta ticketów | **Accepted** |
+| [011](./011-consolidated-decision-forms-and-digital-twin-service-map.md) | Formularze + mapa usług Digital Twin | **Accepted** |
+| [012](./012-uri-twin-observe-layer.md) | uri-twin observe vs urirun mutate | **Accepted** |
 
 Akceptacja ADR-001–006 zamyka odpowiadające pytania w
 [`../autonomy-ops-status-and-open-questions.md`](../autonomy-ops-status-and-open-questions.md) §5
