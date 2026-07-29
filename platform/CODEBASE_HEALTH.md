@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.platform.codebase.health",
-  "version": 3,
+  "version": 4,
   "status": "current",
   "updated": "2026-07-29"
 }
@@ -73,7 +73,8 @@ Groźniejszy od LOC, bo dotyczy bramki deployu i źródła prawdy uprawnień.
 | `contractor-portal/vendor/contracts/` | **naprawione 2026-07-29** — nie kopia, lecz submoduł montowany read-only do `/contracts` w workerze. Pin stał na `6484a35` (07-18), 23 commity za kanonem; przypięty generator rzucał `human_contract_delegator_actor_mismatch` dla umów delegowanych przez organizację, więc umowy sukcesji nie dawały się wygenerować. Podbity do `a55664e` |
 | Weryfikacja pinów poza `platform/` | **brak** — `contractor-portal` używa submodułu, mimo że `platform` submoduły zakazuje; nic nie sprawdzało tego pinu przez 11 dni |
 | `projekty/*` | **nie forki** — 8 osobnych repo będących źródłem deployu stron publicznych (`platform/config/public-pages.json` → `local_source`). `projekty/contracts-subactor-com/app` to artefakt deployowy `contracts.subactor.com`, a `contractor-portal/` repo rozwojowe. Artefakt jest jednak **starszy** od źródła: brak `chat_linkify_http_urls()` i atrybutów a11y (`role="log"`, `aria-live`, `tabindex`) |
-| `TODO.md` (785 pozycji, prefact) | nieużyteczny jako backlog: mirrory i `vendor/` liczone 2–3×, treść kosmetyczna; realny dług się tam nie pojawia |
+| `TODO.md` (785 pozycji, prefact) | **skorygowane** — mirrory i `vendor/` to tylko ~6% pozycji (12 plików). Realnym źródłem szumu jest sześć repo z **własnym** `prefact.yaml` (`doctor-agent` sam daje 170 z 200 wypisanych pozycji), skanowanych ponownie przez umbrellę. Wykluczenie ich zawęża skan z 320 do 57 plików. Uwaga: `prefact.yaml` w rootcie **nie jest pod kontrolą wersji** — zmiana działa lokalnie, ale nie jest odtwarzalna |
+| `task://host/ticket/command/respond` | **nie jest brakującym uprawnieniem.** `SYSTEM_STATE_2026-07-24` opisuje tę lukę jako „zwalidowane, niezapisane"; w rzeczywistości ta trasa **nie istnieje** — `urirun.host.host_integrations.planfile_task_bindings()` wiąże `list/next/show/create/update/claim/start/complete/fail/block/wait-for-input/ready`, bez `respond`. `operations-lead` ma na nią ALLOW, czyli martwy zapis. Co więcej, cała rodzina `task://` czyta **plikowy** `.planfile/` pod project rootem (domyślnie `"."`, czyli cwd `urirun-node`), a store usługi Planfile to nazwany wolumen `planfile-data` montowany wyłącznie do kontenera `planfile`. Żadna wartość `project` tego nie połączy. Klasyfikacja `blueprint-only` w `uri-process-route-baseline.json` jest **poprawna i ma zostać**. Realną naprawą byłby binding klienta HTTP do `planfile:8000`, nie uprawnienie |
 
 ## Cele ewolucji (code2llm)
 
