@@ -35,11 +35,14 @@
 <body>
 <main>
   <nav class="docnav"><a href="../index.html">subactor/docs</a></nav>
+<hr />
+<p>{ &quot;schema&quot;: &quot;subactor.doc/v1&quot;, &quot;id&quot;: &quot;docs.deployment.plesk&quot;, &quot;version&quot;: 2, &quot;status&quot;: &quot;current&quot;, &quot;updated&quot;: &quot;2026-07-29&quot; }</p>
+<hr />
 <h1>Plesk deployment (docs.subactor.com httpdocs)</h1>
 <p>Static docs tree in this repository (<code>index.html</code>, markdown under <code>platform/</code>, <code>plans/</code>, <code>autonomy-cli-runbook.md</code>, …) is published to the subscription <code>httpdocs/</code> for domain <code>docs.subactor.com</code>.</p>
 <p>Keep remote <code>.htaccess</code> and <code>.well-known/</code> (sync does not delete them).</p>
 <h2>Automated path</h2>
-<p>Same architecture as <a href="../../www/deployment/PLESK.html"><code>www/deployment/PLESK.md</code></a>:</p>
+<p>Same architecture as <a href="../../subactor-com/deployment/PLESK.html"><code>subactor-com/deployment/PLESK.md</code></a>:</p>
 <pre><code class="language-text">NL / agent intent
   → Planfile ticket (uri_processes) or OQL plesk.site.sync
     → process.run / urirun-node

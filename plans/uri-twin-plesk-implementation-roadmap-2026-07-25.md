@@ -2,13 +2,17 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.plans.uri-twin-plesk-implementation-roadmap-2026-07-25",
-  "version": 5,
+  "version": 9,
   "status": "current",
-  "updated": "2026-07-25"
+  "updated": "2026-07-29"
 }
 ---
 
 # Plan implementacji: Plesk URI Twin (observe, bez zmian polityki hitl)
+
+**Stan realizacji 2026-07-29:** fazy 0–3 są wykonane. Plan pozostaje częściowy,
+ponieważ jeden warunkowy element federacji z fazy 4 jest nadal otwarty. Katalog,
+attestacje i generator propozycji review-required są wykonane.
 
 ## Cel
 Wersjonowany, kanałowo stabilny, SSOT dla żywego stanu Plesk jako warstwa **observe**, przy zachowaniu istniejącego modelu urirun mutacji i Control governance.
@@ -44,18 +48,47 @@ Wersjonowany, kanałowo stabilny, SSOT dla żywego stanu Plesk jako warstwa **ob
 - [x] Testy E2E check-run na żywym panelu po deployu connectora
 
 ### Faza 3 — przygotowanie do autonomii
-- [ ] Nie usuwamy blokad `human_boundary`; mapujemy je do konkretnych klas ryzyka:
+- [x] Nie usuwamy blokad `human_boundary`; mapujemy je do konkretnych klas ryzyka:
   - publish dry-run: auto
   - apply + ryzyko R2: requires grant
   - only-operator/owner steps: founder/tenant human path
-- [ ] Dodać KPI testów: % publish opartych o aktualny fact vs legacy path
+- [x] Dodać KPI testów: % publish opartych o aktualny fact vs legacy path —
+  `reality-check.metrics.publish_twin_coverage` rozdziela `current_fact`,
+  `legacy_path` i `stale_or_unverified`; aktualny fakt wymaga jakości `fresh`,
+  znacznika czasu i wieku nieprzekraczającego 15 minut.
 - [x] Utworzyć runbook deploya twin i roll-back: [uri-twin-plesk-deploy-runbook.md](../operations/uri-twin-plesk-deploy-runbook.md)
+- [x] Opublikować publiczne repo `uri-twin-core` i `uri-twin-plesk` z CI i
+  wersjonowanymi tagami.
+- [x] Ładować Plesk baseline z Git jako primary; zwracać commit/digest i używać
+  zwalidowanego cache/embedded wyłącznie jako oznaczony fallback.
+- [x] Dodać mapę środowiska, usług, typów zasobów i nazwanych workflow oraz
+  bezpieczne wzbogacanie przez dane API.
+- [x] Dodać alternatywnych providerów i zależności wielu konektorów (Plesk/
+  `cloudflaredns` albo Namecheap dla DNS).
+- [x] Blokować command przed dispatch, gdy twin-fact ma decyzję `refuse` albo
+  nieświeżą jakość (`precondition-blocked`).
+
+### Faza 4 — federacja twinów
+- [x] Katalog organizacji `uri-twin` z maszynowo czytelnym indeksem repo →
+  family → baseline → obsługiwane schematy: publiczne `uri-twin-catalog` v0.1.0
+  ma CI i conformance względem tagów/pakietów/baseline. Loader twin-map
+  rozwiązuje domyślne źródło przez katalog, ogranicza repo do organizacji,
+  zapisuje provenance katalogu i zachowuje direct/cache/embedded fallback.
+- [x] Podpisane wydania/attestacje baseline i polityka dozwolonych signerów w
+  loaderze: Plesk v0.2.4 ma odłączoną attestację Ed25519, CI/offline verify,
+  signer secret w Actions i publiczny fingerprint przypięty w consumerze.
+- [x] Generator propozycji PR z `review-required` discoveries: deterministyczny
+  draft ma `authority_change: none`, filtr sekretów i wymagane review,
+  manifest-route conformance oraz nową attestację.
+- [ ] Dodać kolejne platformy jako osobne repo twin dopiero przy realnym
+  konektorze i teście manifest-route conformance.
 
 ## Minimalny podział odpowiedzialności
 - `uri-twin-core`:
   - envelope faktu (`subactor.twin-fact/v1`), freshness, schema/validation, metryki.
 - `uri-twin-plesk`:
-  - query dla subscriptions/docroot/dns, binding do wielu instancji.
+  - środowisko, services/resources/workflows, query dla
+    subscriptions/docroot/dns i binding do wielu instancji.
 - `urirun-connector-plesk`:
   - pozostaje jedynym kanałem mutacji (`command`, dry-run/apply/grant).
 - `Subactor Control`:
@@ -71,3 +104,5 @@ Wersjonowany, kanałowo stabilny, SSOT dla żywego stanu Plesk jako warstwa **ob
 - 2) `site/query/docroot` działa przez URI i jest czytelny w `/api/connector-runtime` routes;
 - 3) `publish`/`reality-check` pokazują fakty twin zamiast jedynie błędów ticketów;
 - 4) `human_boundary` pozostaje aktywny tam, gdzie model ryzyka wymaga człowieka.
+- 5) Git provenance jest jawne, JS/Python obliczają ten sam `map_hash`, a URI
+  providerów istnieją w aktywnych manifestach konektorów.

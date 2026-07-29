@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DQL/1 — deterministyczna autodiagnostyka Subactora — Subactor Docs</title>
+  <style>
+    :root { --bg:#0f1419; --fg:#e7ecf1; --muted:#9aa7b5; --accent:#3d9cf0; --line:#243041; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:"IBM Plex Sans","Segoe UI",sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #1a2a3d, var(--bg));
+      color: var(--fg); line-height:1.6; min-height:100vh; }
+    main { max-width: 52rem; margin:0 auto; padding:3rem 1.5rem 5rem; }
+    a { color: var(--accent); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    h1,h2,h3,h4 { letter-spacing:-0.01em; line-height:1.25; }
+    h1 { font-size:1.9rem; } h2 { font-size:1.4rem; margin-top:2.2rem; }
+    h3 { font-size:1.15rem; margin-top:1.8rem; }
+    code { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.88em;
+      background:#1a2331; border:1px solid var(--line); border-radius:4px; padding:0.1em 0.35em; }
+    pre { background:#0b1017; border:1px solid var(--line); border-radius:8px;
+      padding:1rem; overflow-x:auto; }
+    pre code { background:none; border:none; padding:0; }
+    table { border-collapse:collapse; width:100%; margin:1rem 0; display:block; overflow-x:auto; }
+    th,td { border:1px solid var(--line); padding:0.45rem 0.7rem; text-align:left;
+      font-size:0.92rem; }
+    th { background:#161f2c; }
+    blockquote { border-left:3px solid var(--accent); margin:1rem 0; padding:0.2rem 1rem;
+      color: var(--muted); }
+    hr { border:0; border-top:1px solid var(--line); margin:2rem 0; }
+    .docnav { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.8rem;
+      margin-bottom:2rem; color:var(--muted); }
+  </style>
+</head>
+<body>
+<main>
+  <nav class="docnav"><a href="../index.html">subactor/docs</a></nav>
+<hr />
+<p>{ &quot;schema&quot;: &quot;subactor.doc/v1&quot;, &quot;id&quot;: &quot;docs.architecture.dql-autodiagnostics-2026-07-22&quot;, &quot;version&quot;: 1, &quot;status&quot;: &quot;current&quot;, &quot;updated&quot;: &quot;2026-07-22&quot; }</p>
+<hr />
+<h1>DQL/1 — deterministyczna autodiagnostyka Subactora</h1>
+<h2>Decyzja</h2>
+<p>DQL/1 (<code>subactor.diagnostic-profile/v1</code>) jest deklaratywnym profilem diagnozy nad snapshotem systemu. Używa bezpiecznych wyrażeń TestQL oraz typowanych operatorów dla kolekcji, grafów zależności i immutable artifact refs. Nie jest językiem naprawy i nie wykonuje URI Process.</p>
+<p>Kanonicznym źródłem prawdy jest JSON zgodny z <code>contracts/schemas/diagnostic-profile.schema.v1.json</code>. Plik <code>.dql.json</code>, raport Markdown lub panel są wyłącznie projekcjami tego AST.</p>
+<h2>Zaimplementowany pionowy przekrój</h2>
+<ul>
+<li>Contracts zawiera schema i kanoniczny fixture aktywnego profilu.</li>
+<li>Core zawiera ścisły, deterministyczny evaluator DQL.</li>
+<li>Platform posiada aktywny profil <code>control.architecture-integrity</code>.</li>
+<li>Read-only collector pobiera rzeczywisty kod tras Intent API, graf kroków</li>
+</ul>
+<p>Process Packa reconciliacji oraz immutable revision refs z Artifact Registry.</p>
+<ul>
+<li><code>npm run diagnostics:check</code> emituje <code>subactor.diagnostic-report/v1</code> i kończy</li>
+</ul>
+<p>się błędem, gdy choć jeden inwariant jest naruszony.</p>
+<ul>
+<li><code>test:meta</code> uruchamia diagnozę jako bramkę CI.</li>
+</ul>
+<p>Pierwszy profil sprawdza:</p>
+<ol>
+<li>czy proposal API intencji nie ma literalnej trasy <code>accept</code> lub <code>execute</code>;</li>
+<li>czy graf procesu reconciliacji ma unikalne kroki, kompletne zależności i nie</li>
+</ol>
+<p>zawiera cyklu;</p>
+<ol>
+<li>czy zależności governance wskazują immutable URI Artifact Registry.</li>
+</ol>
+<h2>Kontrakt bezpieczeństwa</h2>
+<p>Każdy profil musi mieć <code>read_only=true</code> i <code>automatic_mutation_allowed=false</code>. Finding zawiera stabilny fingerprint, owner, Problem Profile candidate, opcjonalną strategię naprawy oraz wymagany EQL. Jednocześnie zawsze deklaruje wymaganie ticketu, AQL i EQL przed przyszłą reakcją wykonawczą.</p>
+<p>LLM może zaproponować profil lub hipotezę, lecz parser odrzuca nieznane pola, w tym <code>command</code>, <code>shell</code> i wykonywalne URI. Brak wymaganego snapshotu jest osobnym problemem zależności, a nie fałszywie zielonym wynikiem.</p>
+<h2>Relacja do istniejących języków</h2>
+<table>
+<thead><tr><th>Warstwa</th><th>Odpowiedzialność</th></tr></thead>
+<tbody>
+<tr><td>DQL</td><td>porównanie obserwacji z inwariantem i utworzenie findingu</td></tr>
+<tr><td>TestQL</td><td>bezpieczne wyrażenia logiczne wewnątrz inwariantu</td></tr>
+<tr><td>EQL</td><td>niezależna walidacja rezultatu po ewentualnej naprawie</td></tr>
+<tr><td>SODL</td><td>docelowy dziennik snapshotów, findingów i korelacji</td></tr>
+<tr><td>AQL</td><td>authority Doctor/Repair/Validator</td></tr>
+<tr><td>URI Process</td><td>sonda lub naprawa uruchamiana poza DQL</td></tr>
+<tr><td>Planfile</td><td>lifecycle diagnozy i ticketów naprawczych</td></tr>
+</tbody></table>
+<h2>Uczciwe ograniczenia v1</h2>
+<ul>
+<li>obserwacja granicy API wykrywa literalne trasy w źródle; nie korzysta jeszcze</li>
+</ul>
+<p>z runtime route registry;</p>
+<ul>
+<li>aktywny jest jeden profil i jeden collector;</li>
+<li>brak operatorów czasowych nad SODL, freshness i okien zdarzeń;</li>
+<li>raport nie jest jeszcze automatycznie zapisywany jako Problem Reaction ani</li>
+</ul>
+<p>nie tworzy ticketu;</p>
+<ul>
+<li>DQL nie wybiera RepairCandidate i nie uruchamia repair-agent ani validatora.</li>
+</ul>
+<p>Plan dalszej integracji znajduje się w <a href="../plans/dql-autodiagnostics-continuation-2026-07-22.html"><code>../plans/dql-autodiagnostics-continuation-2026-07-22.md</code></a>.</p>
+</main>
+</body>
+</html>

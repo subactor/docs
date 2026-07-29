@@ -35,7 +35,11 @@
 <body>
 <main>
   <nav class="docnav"><a href="../index.html">subactor/docs</a></nav>
+<hr />
+<p>{ &quot;schema&quot;: &quot;subactor.doc/v1&quot;, &quot;id&quot;: &quot;docs.architecture.plesk-publish-status-report-2026-07-19&quot;, &quot;version&quot;: 2, &quot;status&quot;: &quot;current&quot;, &quot;updated&quot;: &quot;2026-07-22&quot; }</p>
+<hr />
 <h1>Raport stanu platformy Subactor — publikacja Plesk</h1>
+<blockquote><strong>Aktualizacja ścieżek 2026-07-22:</strong> projekt został wydzielony do repozytorium<br /><code>projekty/autonomicznosc-pl</code>; bieżące źródło publikacji znajduje się w<br /><code>projekty/autonomicznosc-pl/02_landing</code>.</blockquote>
 <p><strong>Data:</strong> 2026-07-19 · <strong>Zakres:</strong> ścieżka <code>subactor ask</code> → intent pack → ticket → plan → dry-run → apply (Plesk), stan po promocji generycznego packa <code>site-publish</code> (SELFDEV-062).</p>
 <blockquote><strong>Aktualizacja 2026-07-19 (po refaktoryzacji):</strong> wykonano punkty <strong>2.1</strong> (commit promocji), <strong>2.2</strong> (tokenowy matcher fraz), <strong>2.5</strong> (cały stack z repo, zero mountów <code>/tmp</code>), <strong>3.1</strong> (podział <code>registry.mjs</code> na 4 moduły) i <strong>3.3</strong> (wspólny <code>config-paths.mjs</code>). Szczegóły w treści — wykonane pozycje oznaczone ✅. Testy po refaktoryzacji: intent-packs 30/30, control 113 (0 fail), modele AQL OK; e2e <code>ask</code> z identycznymi <code>plan_hash</code> (www <code>1418bcbd…</code>, identity <code>3b19a968…</code>). Fraza z wtrąconym słowem („opublikuj stronę <strong>identity</strong> na plesk&quot;) rozwiązuje się teraz poprawnie do packa <code>site-publish</code>.<br /><br /><strong>Aktualizacja 2026-07-19 (wieczór):</strong> domknięto prace wokół digital twin / ciągłości decyzyjnej — subject-bound scope <code>digital-twin:self:read</code>, synchronizację env-contract (<code>npm run env:sync</code>) i plan „constitutional continuity&quot;. Szczegóły w sekcji <strong>6</strong>.</blockquote>
 <p>Powiązane dokumenty:</p>
@@ -162,7 +166,7 @@ subactor ask &quot;opublikuj stronę na plesk&quot; --field source_ref=workspace
 <h3>7.2 Równoległe prace foundera (w locie, częściowo nieskomitowane w <code>platform</code>)</h3>
 <ul>
 <li><strong>Domeny zewnętrzne w generycznym packu:</strong> <code>components/core</code> commit <code>5a10aee feat(control): authorize exact project domains</code> — <code>validateDomain</code> przyjmuje <code>allowedDomains</code> (dokładne dopasowania z rejestru) obok sufiksu <code>.subactor.com</code>.</li>
-<li><strong>Nowy zasób <code>workspace:autonomicznosc-pl</code></strong> → <code>projekty/02_landing</code> → domena <strong><code>autonomicznosc.pl</code></strong>; mounty w <code>hr-control</code> i <code>urirun-node</code> (<code>docker-compose.yml</code>), kontrakt autonomii rozszerzony o <code>autonomicznosc.pl</code> (<code>config/autonomy-contracts.json</code>). <strong>E2E zweryfikowane: dry-run przechodzi</strong> (docroot <code>/autonomicznosc.pl</code>, source spoza konwencji <code>&lt;name&gt;.subactor.com</code> — pierwszy taki przypadek).</li>
+<li><strong>Nowy zasób <code>workspace:autonomicznosc-pl</code></strong> → <code>projekty/autonomicznosc-pl/02_landing</code> → domena <strong><code>autonomicznosc.pl</code></strong>; mounty w <code>hr-control</code> i <code>urirun-node</code> (<code>docker-compose.yml</code>), kontrakt autonomii rozszerzony o <code>autonomicznosc.pl</code> (<code>config/autonomy-contracts.json</code>). <strong>E2E zweryfikowane: dry-run przechodzi</strong> (docroot <code>/autonomicznosc.pl</code>, source spoza konwencji <code>&lt;name&gt;.subactor.com</code> — pierwszy taki przypadek).</li>
 <li><strong>Warstwa digital-twin authority:</strong> <code>runtime/src/autonomy-contract.mjs</code> — reguła <code>authorized_human_capability_required</code> dla kroków <code>human_approval: true</code>; commity <code>fix(core): reject expired digital twin authority</code>, <code>feat(platform): pin constitutional authority and digital twin</code>.</li>
 </ul>
 <h3>7.3 ⚠ Obserwacja: lifecycle dry-run pod nową regułą authority</h3>
@@ -208,7 +212,7 @@ subactor ask &quot;opublikuj stronę na plesk&quot; --field source_ref=workspace
 <h2>9. Końcowa weryfikacja live (2026-07-19)</h2>
 <h3>9.1 Publikacja <code>projekty/*</code></h3>
 <p>Rzeczywisty profil integracyjny uwierzytelnił się do Plesk pod <code>https://prototypowanie.pl:8443</code>. Query capability potwierdziło dostęp do subskrypcji <code>subactor.com</code>, ale panel nie zwrócił limitu domen. Dlatego wynik pozostaje bezpiecznie negatywny: <code>can_create_domain=false</code>, <code>reason=subscription_domain_limit_unknown</code>.</p>
-<p>SFTP i FTP przeszły capability check z lease'ów vault. Dry-run dla <code>workspace:autonomicznosc-pl</code> (<code>projekty/02_landing</code>) i domeny <code>autonomicznosc.pl</code> zakończył się powodzeniem: 8 plików, 32 934 B, docroot <code>/autonomicznosc.pl</code>, plan hash <code>8cec51c...</code>. Nie wykonano mutacji produkcyjnej.</p>
+<p>SFTP i FTP przeszły capability check z lease'ów vault. Dry-run dla <code>workspace:autonomicznosc-pl</code> (<code>projekty/autonomicznosc-pl/02_landing</code>) i domeny <code>autonomicznosc.pl</code> zakończył się powodzeniem: 8 plików, 32 934 B, docroot <code>/autonomicznosc.pl</code>, plan hash <code>8cec51c...</code>. Nie wykonano mutacji produkcyjnej.</p>
 <p>Blokery apply:</p>
 <ul>
 <li>brak wiarygodnego limitu/pojemności domen subskrypcji;</li>

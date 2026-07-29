@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Błędy architektury, które utrudniają autonomię — Subactor Docs</title>
+  <style>
+    :root { --bg:#0f1419; --fg:#e7ecf1; --muted:#9aa7b5; --accent:#3d9cf0; --line:#243041; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:"IBM Plex Sans","Segoe UI",sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #1a2a3d, var(--bg));
+      color: var(--fg); line-height:1.6; min-height:100vh; }
+    main { max-width: 52rem; margin:0 auto; padding:3rem 1.5rem 5rem; }
+    a { color: var(--accent); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    h1,h2,h3,h4 { letter-spacing:-0.01em; line-height:1.25; }
+    h1 { font-size:1.9rem; } h2 { font-size:1.4rem; margin-top:2.2rem; }
+    h3 { font-size:1.15rem; margin-top:1.8rem; }
+    code { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.88em;
+      background:#1a2331; border:1px solid var(--line); border-radius:4px; padding:0.1em 0.35em; }
+    pre { background:#0b1017; border:1px solid var(--line); border-radius:8px;
+      padding:1rem; overflow-x:auto; }
+    pre code { background:none; border:none; padding:0; }
+    table { border-collapse:collapse; width:100%; margin:1rem 0; display:block; overflow-x:auto; }
+    th,td { border:1px solid var(--line); padding:0.45rem 0.7rem; text-align:left;
+      font-size:0.92rem; }
+    th { background:#161f2c; }
+    blockquote { border-left:3px solid var(--accent); margin:1rem 0; padding:0.2rem 1rem;
+      color: var(--muted); }
+    hr { border:0; border-top:1px solid var(--line); margin:2rem 0; }
+    .docnav { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.8rem;
+      margin-bottom:2rem; color:var(--muted); }
+  </style>
+</head>
+<body>
+<main>
+  <nav class="docnav"><a href="../index.html">subactor/docs</a></nav>
+<hr />
+<p>{ &quot;schema&quot;: &quot;subactor.doc/v1&quot;, &quot;id&quot;: &quot;docs.architecture.autonomy-architecture-blockers&quot;, &quot;version&quot;: 2, &quot;status&quot;: &quot;current&quot;, &quot;updated&quot;: &quot;2026-07-25&quot; }</p>
+<hr />
+<h1>Błędy architektury, które utrudniają autonomię</h1>
+<p><strong>Status:</strong> inventarz wewnętrzny v2 (2026-07-25) <strong>SSOT:</strong> <a href="../../platform/config/knowledge/entries/architecture.autonomy-architecture-blockers.v2.html"><code>knowledge://subactor/architecture.autonomy-architecture-blockers/v2</code></a> <strong>Definicja autonomii:</strong> <a href="../../platform/config/knowledge/entries/architecture.autonomy-definition.v1.html"><code>knowledge://subactor/architecture.autonomy-definition/v1</code></a></p>
+<p>Autonomię hamuje nie „brak LLM”, lecz architektura, w której system nie domyka obserwacja → decyzja w POLICY → wykonanie → verify — albo budzi Foundera na fałszywym obrazie rzeczywistości.</p>
+<h2>Klastry (priorytet)</h2>
+<table>
+<thead><tr><th>Klaster</th><th>Przykłady</th><th>Dotkliwość</th><th>Stan</th></tr></thead>
+<tbody>
+<tr><td><strong>A. Prawda świata</strong></td><td>Plesk vs Pages; TLS bez DNS; false-reality PLF-884; równoległe remediacje; stale tunnel envelope</td><td>wysoka</td><td>otwarte / częściowo</td></tr>
+<tr><td><strong>B. Kolejka / HITL</strong></td><td>bounce ready→waiting_input; ops human_boundary; duplikaty producenta; 50 waiting_input; exact_route→Founder</td><td>wysoka</td><td>otwarte / częściowo</td></tr>
+<tr><td><strong>C. SSOT wykonania</strong></td><td>dual-run + Planfile; CLI <code>done</code> bez receiptów; Planfile timeout; stale step-catalog</td><td>wysoka–średnia</td><td>częściowo (PR10)</td></tr>
+<tr><td><strong>D. Analyze/Repair</strong></td><td>diagnose≠repair pack; DOQL stub; planner bez tras; KPI notify≠execute</td><td>wysoka–średnia</td><td>otwarte</td></tr>
+<tr><td><strong>E. Governance/kanały</strong></td><td>mutations=0 (celowe); child grant; <code>.env</code> SSOT; Founder 404; e-mail loop</td><td>średnia</td><td>celowe / otwarte</td></tr>
+</tbody></table>
+<h2>Co naprawiać najpierw</h2>
+<ol>
+<li>False-reality + łańcuch przyczynowy remediacji (nie TLS przed DNS).  </li>
+<li>Jedna prawda publiczna (PR9).  </li>
+<li>Pack→Planfile + receipts tylko z kolejki (PR10).  </li>
+<li>Executable repair + typed DOQL.  </li>
+<li>Dopiero NL/LLM i ewolucja.</li>
+</ol>
+<h2>Sygnał operacyjny</h2>
+<p><code>autonomy_ready=false</code> przy <strong>15/15 healthy</strong> oznacza backlog uwagi człowieka, nie awarię stacku (<code>SYSTEM_STATE_2026-07-24</code>). Nie optymalizuj pod liczbę cykli kontrolera ani ticketów.</p>
+<h2>Powiązane</h2>
+<table>
+<thead><tr><th>Dokument</th><th>Rola</th></tr></thead>
+<tbody>
+<tr><td><a href="../operations/false-reality-and-shell-verification-2026-07-24.html"><code>../operations/false-reality-and-shell-verification-2026-07-24.md</code></a></td><td>Ticket ≠ live</td></tr>
+<tr><td><a href="../../platform/docs/SYSTEM_STATE_2026-07-24.html"><code>../../platform/docs/SYSTEM_STATE_2026-07-24.md</code></a></td><td>Głód waiting_input, duplikaty</td></tr>
+<tr><td><a href="./unresolved-live-autonomy-blockers-2026-07-19.html"><code>unresolved-live-autonomy-blockers-2026-07-19.md</code></a></td><td>Live blockers</td></tr>
+<tr><td><a href="../operations/plesk-catalog-ticket-audit-2026-07-24.html"><code>../operations/plesk-catalog-ticket-audit-2026-07-24.md</code></a></td><td>CLI≠queue, human_boundary ops</td></tr>
+<tr><td><a href="./autonomy-ops-status-and-open-questions.html"><code>autonomy-ops-status-and-open-questions.md</code></a></td><td>PR9/PR10</td></tr>
+<tr><td><a href="./adr/003-approval-hitl-model.html"><code>adr/003-approval-hitl-model.md</code></a></td><td>Kiedy HITL jest OK</td></tr>
+</tbody></table>
+<p><em>Bez sekretów. Review wiedzy: 2026-08-08.</em></p>
+</main>
+</body>
+</html>

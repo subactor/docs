@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Przewodnik operacyjny: Digital Twin Service Map (public site) — Subactor Docs</title>
+  <style>
+    :root { --bg:#0f1419; --fg:#e7ecf1; --muted:#9aa7b5; --accent:#3d9cf0; --line:#243041; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:"IBM Plex Sans","Segoe UI",sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #1a2a3d, var(--bg));
+      color: var(--fg); line-height:1.6; min-height:100vh; }
+    main { max-width: 52rem; margin:0 auto; padding:3rem 1.5rem 5rem; }
+    a { color: var(--accent); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    h1,h2,h3,h4 { letter-spacing:-0.01em; line-height:1.25; }
+    h1 { font-size:1.9rem; } h2 { font-size:1.4rem; margin-top:2.2rem; }
+    h3 { font-size:1.15rem; margin-top:1.8rem; }
+    code { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.88em;
+      background:#1a2331; border:1px solid var(--line); border-radius:4px; padding:0.1em 0.35em; }
+    pre { background:#0b1017; border:1px solid var(--line); border-radius:8px;
+      padding:1rem; overflow-x:auto; }
+    pre code { background:none; border:none; padding:0; }
+    table { border-collapse:collapse; width:100%; margin:1rem 0; display:block; overflow-x:auto; }
+    th,td { border:1px solid var(--line); padding:0.45rem 0.7rem; text-align:left;
+      font-size:0.92rem; }
+    th { background:#161f2c; }
+    blockquote { border-left:3px solid var(--accent); margin:1rem 0; padding:0.2rem 1rem;
+      color: var(--muted); }
+    hr { border:0; border-top:1px solid var(--line); margin:2rem 0; }
+    .docnav { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.8rem;
+      margin-bottom:2rem; color:var(--muted); }
+  </style>
+</head>
+<body>
+<main>
+  <nav class="docnav"><a href="../index.html">subactor/docs</a></nav>
+<hr />
+<p>{ &quot;schema&quot;: &quot;subactor.doc/v1&quot;, &quot;id&quot;: &quot;docs.operations.digital-twin-service-map-operations-guide&quot;, &quot;version&quot;: 2, &quot;status&quot;: &quot;current&quot;, &quot;updated&quot;: &quot;2026-07-24&quot; }</p>
+<hr />
+<h1>Przewodnik operacyjny: Digital Twin Service Map (public site)</h1>
+<h2>Cel</h2>
+<p>Powtarzalna diagnostyka i utrzymanie <strong>bindingu public site</strong> (Plesk + cloudflaredns, <code>tunnel_mode=none</code>) oraz kontrolera ticketów, który:</p>
+<ul>
+<li><strong>nie</strong> tworzy managed-tunnel credential przy formalnym zakazie tunelu,</li>
+<li><strong>anuluje</strong> (supersede) aktywne tickety credential,</li>
+<li><strong>odblokowuje</strong> tickety źródłowe na trasę <code>application_route_not_ready</code>,</li>
+<li><strong>nie myli</strong> default page Pleska z brakiem DNS ani z „potrzebą tunelu”.</li>
+</ul>
+<p>Kanoniczna wiedza: <code>knowledge://subactor/architecture.digital-twin.public-site-service-map/v4</code>.</p>
+<hr />
+<h2>1. Warstwy (kolejność czytania)</h2>
+<table>
+<thead><tr><th>#</th><th>Warstwa</th><th>Artefakt</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Intent</td><td><code>platform/config/intent-contracts/founder-public-site-binding.v1.json</code></td></tr>
+<tr><td>2</td><td>DOQL mapa</td><td><code>platform/config/digital-twin/public-site-service-map.doql.json</code></td></tr>
+<tr><td>3</td><td>DOQL inventory</td><td><code>platform/config/digital-twin/public-site-capability-inventory.doql.json</code></td></tr>
+<tr><td>4</td><td>Strategy</td><td><code>project.application.route.plesk-origin</code>, <code>project.public-site.bootstrap.plesk-origin</code> w <code>problem-strategies/catalog.v1.json</code></td></tr>
+<tr><td>5</td><td>Manifest projektu</td><td><code>projekty/*/project.manifest.json</code> (<code>public_ingress_mode</code>, <code>tunnel_mode</code>, <code>dns_*</code>)</td></tr>
+<tr><td>6</td><td>Runtime control</td><td><code>core/services/control/src/public-site-*.mjs</code>, etap <code>managed_tunnel_followup</code></td></tr>
+</tbody></table>
+<hr />
+<h2>2. Weryfikacja mapy usług (read-only)</h2>
+<pre><code class="language-bash">cd platform
+node scripts/run-public-site-service-map.mjs</code></pre>
+<p>Control API (scope <code>projects:read</code>):</p>
+<pre><code class="language-http">GET /api/projects/public-site-service-map
+GET /api/projects/public-site-service-map?live=1</code></pre>
+<h3>Oczekiwane assessments (portfolio z plesk origin)</h3>
+<ul>
+<li><code>dns_management_binding</code>: <code>plesk_cloudflaredns_complete</code> (gdy wszystkie projekty deklarują Plesk+cloudflaredns)</li>
+<li><code>tunnel_policy</code>: <code>consistent</code> (brak konfliktu <code>tunnel_mode=none</code> vs <code>managed_outbound_tunnel</code>)</li>
+<li><code>founder_public_site_binding</code>: <code>selected_plesk_public_origin</code></li>
+</ul>
+<p><code>founder_bootstrap_playbook</code>: lista ~11 kroków inventory → domain/DNS/TLS → dry-run treści → verify.</p>
+<p><code>live=1</code> próbuje doctor Plesk przez URI; przy błędzie fixture (fail-closed, bez mutacji).</p>
+<hr />
+<h2>3. Cykl kontrolera (supersede / unblock)</h2>
+<pre><code class="language-http">POST /api/tickets/lifecycle/run</code></pre>
+<p>(scope <code>routing:manage</code>)</p>
+<h3>Etap <code>managed_tunnel_followup</code></h3>
+<ol>
+<li>Załaduj projekty z <code>SUBACTOR_PROJECTS_PATH</code> (w kontenerze: host path zamontowany + <code>/workspace/projekty</code>).</li>
+<li><code>managedTunnelSupersedeCandidates</code> — <strong>tylko</strong> tickety credential intake.</li>
+<li>Cancel + <code>supersession_reason=public_site_binding_tunnel_mode_none</code>.</li>
+<li>Source unblock: <code>blocked-by</code> / <code>blocked_by:CHILD</code> → <code>application_route_not_ready</code>, label <code>binding:tunnel_mode_none</code>.</li>
+<li>Skip nowych credential intake dla źródeł covered by <code>tunnel_mode=none</code>.</li>
+</ol>
+<h3>Audit</h3>
+<pre><code class="language-text">public_site.tunnel_binding_superseded
+public_site.tunnel_binding_supersede_failed
+public_site.projects_load_failed
+public_site.projects_load_empty</code></pre>
+<h3>Live reference (2026-07-24)</h3>
+<table>
+<thead><tr><th>Ticket</th><th>Oczekiwany stan</th></tr></thead>
+<tbody>
+<tr><td>PLF-1272</td><td><code>canceled</code>, supersede tunnel binding</td></tr>
+<tr><td>PLF-592</td><td><code>open</code>, <code>application_route_not_ready</code>, <code>managed_tunnel_superseded=PLF-1272</code></td></tr>
+<tr><td>PLF-894 / PLF-893</td><td><code>open</code>, <code>application_route_not_ready</code> (treść/trasa, <strong>nie</strong> tunnel)</td></tr>
+</tbody></table>
+<hr />
+<h2>4. Remediacja <code>application_route_not_ready</code> przy plesk origin</h2>
+<p>Przy <code>tunnel_mode=none</code> / <code>public_ingress_mode=plesk_public_origin</code>:</p>
+<ul>
+<li><strong>nie</strong> dodawaj zależności managed-tunnel,</li>
+<li><strong>nie</strong> wymagaj kroku <code>provide-upstream</code> (free-form),</li>
+<li>użyj strategy <code>project.application.route.plesk-origin</code> (inspect → confirm-binding → dry-run → approve → verify),</li>
+<li>stare envelope z <code>provide-upstream</code> są <strong>stale</strong> (<code>remediationContractStaleForBinding</code>) i powinny być przepisane w cyklu remediacji.</li>
+</ul>
+<p>Root cause publicznego default page: <strong>brak kontraktu treści/upstreamu</strong>, nie brak tunelu.</p>
+<hr />
+<h2>5. Deploy control (unikanie stale image)</h2>
+<p>W <code>platform/docker-compose.yml</code> serwis <code>hr-control</code> montuje:</p>
+<pre><code class="language-yaml">- ../core/services/control/src:/app/services/control/src:ro</code></pre>
+<p>Po zmianach w <code>core/services/control/src</code> wystarczy <strong>restart</strong> kontenera (bez rebuild), o ile mount jest aktywny:</p>
+<pre><code class="language-bash">cd platform &amp;&amp; docker compose up -d hr-control</code></pre>
+<p>Produkcyjny bake obrazu nadal zawiera te same pliki; mount jest warstwą ops/dev.</p>
+<hr />
+<h2>6. Audyt ticketów Planfile</h2>
+<pre><code class="language-bash">cd platform
+node scripts/ticket-auditor.mjs --limit 20</code></pre>
+<p>Szukaj aktywnych:</p>
+<ul>
+<li><code>managed-tunnel-credential*</code> przy projektach z <code>tunnel_mode=none</code> → błąd policy,</li>
+<li><code>blocked-by:PLF-*</code> na anulowanym credential child → brak unblock,</li>
+<li><code>provide-upstream</code> w remediation founder przy plesk origin → stale contract.</li>
+</ul>
+<hr />
+<h2>7. Artefakty i testy</h2>
+<pre><code class="language-bash">cd platform
+npm run artifacts:build
+npm run artifacts:check
+
+cd ../core/services/control
+node --test tests/public-site-binding-followup.test.mjs \
+  tests/public-site-service-map.test.mjs \
+  tests/project-reconciliation.test.mjs</code></pre>
+<hr />
+<h2>8. Znane ograniczenia</h2>
+<ol>
+<li><strong>Pełna</strong> <code>POST /api/projects/reconciliation/run</code> może przekraczać 300s na całym portfelu — nie mylić timeoutu z błędem bindingu.</li>
+<li>Planfile bywa wolny/unhealthy pod obciążeniem — retry lifecycle, nie force-push mutacji.</li>
+<li>Digital Twin <strong>nie</strong> naprawia automatycznie reverse-proxy/upstream; daje właściwą trasę diagnostyczną i dry-run.</li>
+<li>Apply produkcyjny nadal wymaga <code>plan_hash</code> + master gate.</li>
+</ol>
+<hr />
+<h2>9. Szybki checklist „czy jest OK?”</h2>
+<ul>
+<li>[ ] Service-map: <code>founder_public_site_binding=selected_plesk_public_origin</code></li>
+<li>[ ] Brak aktywnych ticketów <code>managed-tunnel-credential</code> dla founder</li>
+<li>[ ] PLF-1272 (lub następca credential) terminal canceled z <code>public_site_binding_tunnel_mode_none</code></li>
+<li>[ ] PLF-592 / remediation: <code>application_route_not_ready</code>, bez <code>blocked-by</code> na tunnel child</li>
+<li>[ ] Remediation process: <strong>brak</strong> <code>provide-upstream</code> przy <code>tunnel_mode=none</code></li>
+<li>[ ] HTTPS founder: DNS/TLS OK; treść to osobny blocker (nie tunnel)</li>
+</ul>
+</main>
+</body>
+</html>

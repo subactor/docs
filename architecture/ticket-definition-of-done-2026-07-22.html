@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Definition of Done ticketu wyrażony w DSL — Subactor Docs</title>
+  <style>
+    :root { --bg:#0f1419; --fg:#e7ecf1; --muted:#9aa7b5; --accent:#3d9cf0; --line:#243041; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:"IBM Plex Sans","Segoe UI",sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #1a2a3d, var(--bg));
+      color: var(--fg); line-height:1.6; min-height:100vh; }
+    main { max-width: 52rem; margin:0 auto; padding:3rem 1.5rem 5rem; }
+    a { color: var(--accent); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    h1,h2,h3,h4 { letter-spacing:-0.01em; line-height:1.25; }
+    h1 { font-size:1.9rem; } h2 { font-size:1.4rem; margin-top:2.2rem; }
+    h3 { font-size:1.15rem; margin-top:1.8rem; }
+    code { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.88em;
+      background:#1a2331; border:1px solid var(--line); border-radius:4px; padding:0.1em 0.35em; }
+    pre { background:#0b1017; border:1px solid var(--line); border-radius:8px;
+      padding:1rem; overflow-x:auto; }
+    pre code { background:none; border:none; padding:0; }
+    table { border-collapse:collapse; width:100%; margin:1rem 0; display:block; overflow-x:auto; }
+    th,td { border:1px solid var(--line); padding:0.45rem 0.7rem; text-align:left;
+      font-size:0.92rem; }
+    th { background:#161f2c; }
+    blockquote { border-left:3px solid var(--accent); margin:1rem 0; padding:0.2rem 1rem;
+      color: var(--muted); }
+    hr { border:0; border-top:1px solid var(--line); margin:2rem 0; }
+    .docnav { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.8rem;
+      margin-bottom:2rem; color:var(--muted); }
+  </style>
+</head>
+<body>
+<main>
+  <nav class="docnav"><a href="../index.html">subactor/docs</a></nav>
+<hr />
+<p>{ &quot;schema&quot;: &quot;subactor.doc/v1&quot;, &quot;id&quot;: &quot;docs.architecture.ticket-definition-of-done-2026-07-22&quot;, &quot;version&quot;: 1, &quot;status&quot;: &quot;current&quot;, &quot;updated&quot;: &quot;2026-07-22&quot; }</p>
+<hr />
+<h1>Definition of Done ticketu wyrażony w DSL</h1>
+<p>Data: 2026-07-22</p>
+<h2>Problem</h2>
+<p>Ticket mógł mieć komplet definicji <code>aql</code>/<code>eql</code>/<code>oql</code>/<code>uri</code> w process envelope v2 i nadal nie dawało się stwierdzić, kiedy jest skończony. Oczekiwania EQL były listą zdań, a kroki URI osobną listą wywołań. Nic nie łączyło jednego z drugim, więc „done&quot; oznaczało tyle, że kroki się wykonały — a nie, że oczekiwany stan zaistniał i został odczytany.</p>
+<p>Kryteria akceptacji pisane prozą nie są DoD. Nie da się ich wykonać, więc nie da się ich zaudytować.</p>
+<h2>Kontrakt</h2>
+<p>DoD ticketu to jego oczekiwania EQL, z których <strong>każde</strong> wskazuje, czym jest weryfikowane:</p>
+<pre><code class="language-json">{&quot;id&quot;: &quot;encrypted&quot;, &quot;expected&quot;: &quot;plaintext_is_written_only_to_encrypted_origin_bound_vault&quot;,
+ &quot;verified_by&quot;: [&quot;write-encrypted&quot;]}
+{&quot;id&quot;: &quot;ticket-first&quot;, &quot;expected&quot;: &quot;ticket_exists_before_effect&quot;,
+ &quot;verified_by_control&quot;: [&quot;process-envelope.v2&quot;]}</code></pre>
+<ul>
+<li><code>verified_by</code> — identyfikatory kroków URI <strong>tego samego</strong> ticketu (<code>inputs.uri_processes</code>,</li>
+</ul>
+<p>w packu <code>recipe.v1.urirun.json</code>). To dowód wykonawczy: konkretny URI, konkretny receipt.</p>
+<ul>
+<li><code>verified_by_control</code> — nazwana kontrola platformy, która sama zamyka się fail-closed.</li>
+</ul>
+<p>Dozwolony zbiór jest skończony i zdefiniowany w <code>scripts/audit-ticket-definition-of-done.mjs</code>: <code>process-envelope.v2</code>, <code>capability-preflight</code>, <code>autonomy-contract</code>, <code>apply-grant</code>, <code>secret-redaction</code>, <code>idempotency-key</code>, <code>human-approval</code>.</p>
+<p>Kontrola nie jest furtką na „zaufaj mi&quot;. Służy niezmiennikom, których żaden krok URI nie może udowodnić, bo są egzekwowane zanim krok w ogóle powstanie — np. „ticket istnieje przed efektem&quot; albo „sekret nie trafia do audytu&quot;.</p>
+<h2>Reguły audytu</h2>
+<p><code>npm run tickets:dod</code> (<code>scripts/audit-ticket-definition-of-done.mjs</code>) sprawdza process packi i aktywne tickety tym samym ewaluatorem:</p>
+<table>
+<thead><tr><th>kod</th><th>znaczenie</th></tr></thead>
+<tbody>
+<tr><td><code>definition_of_done_missing</code></td><td>brak oczekiwań EQL — ticket nie ma DoD</td></tr>
+<tr><td><code>expectation_without_expected</code></td><td>oczekiwanie bez treści (<code>expected</code> lub <code>assert</code>)</td></tr>
+<tr><td><code>expectation_without_verification</code></td><td>oczekiwanie bez <code>verified_by</code> i bez <code>verified_by_control</code></td></tr>
+<tr><td><code>expectation_verified_by_unknown_step</code></td><td>wiązanie do kroku, którego ticket nie ma</td></tr>
+<tr><td><code>expectation_verified_by_unknown_control</code></td><td>kontrola spoza zamkniętego zbioru</td></tr>
+<tr><td><code>step_without_expectation</code></td><td>krok URI, którego żadne oczekiwanie nie sprawdza</td></tr>
+</tbody></table>
+<p><code>step_without_expectation</code> jest równie ważny jak brak weryfikacji: efekt, którego nie sprawdza żadne oczekiwanie, jest efektem bez DoD.</p>
+<p>Osobno raportowana jest obserwacja <code>verified_without_read_back</code> — oczekiwanie wiązane wyłącznie krokami <code>command</code>, bez żadnego <code>query</code>. Wywołanie dowodzi wywołania, nie skutku. To sygnał do domknięcia read-backu, a nie błąd: dla części oczekiwań odczyt jest wykonywany przez kontrolę albo przez człowieka.</p>
+<h2>Zakres egzekwowania</h2>
+<ul>
+<li><strong>Process packi — egzekwowane.</strong> Wszystkie 11 aktywnych packów wiąże komplet</li>
+</ul>
+<p>oczekiwań; gate <code>test/ticket-definition-of-done.test.mjs</code> chodzi w <code>npm test</code> na prawdziwym <code>config/process-packs</code>, więc nowy pack bez wiązań nie przejdzie. Tickety cięte z packa dziedziczą wiązania — <code>processPackPublicView</code> kopiuje <code>definitions.eql</code> bez zmian.</p>
+<ul>
+<li><strong>Tickety historyczne — raportowane.</strong> Domyślne wyjście kończy się kodem błędu</li>
+</ul>
+<p>tylko dla packów. <code>--strict</code> czyni zaległość ticketową błędem; to docelowy stan po migracji backlogu.</p>
+<h2>Stan zaległości na 2026-07-22</h2>
+<p>42 aktywne tickety, żaden nie ma jeszcze wiązalnego DoD:</p>
+<ul>
+<li>25 bez jakichkolwiek oczekiwań — to podzbiór 31 ticketów <code>legacy_without_v2</code></li>
+</ul>
+<p>z <code>npm run tickets:governance</code>; DoD wymaga wcześniejszej migracji do envelope v2;</p>
+<ul>
+<li>17 z oczekiwaniami, ale bez wiązań (52 oczekiwania, 51 kroków bez oczekiwania);</li>
+<li>9 oczekiwań w ticketach ręcznych używa klucza <code>assert</code> z treścią prozą</li>
+</ul>
+<p>(„10 organizations have primary-source evidence&quot;) — ewaluator je czyta, ale wiązanie i tak trzeba dopisać.</p>
+<p>Automatyczne dowiązanie zaległości zostało świadomie odrzucone. Przy jednym kroku w tickecie wiązanie jest formalnie jednoznaczne, ale semantycznie fałszywe: oczekiwanie „0 external messages sent&quot; nie jest dowodzone przez krok, który wykonuje research. Wiązanie negatywnych niezmienników należy do kontroli, a nie do kroku, i wymaga decyzji właściciela ticketu.</p>
+<h2>Następny przyrost</h2>
+<ol>
+<li>Przenieść walidację wiązań do <code>core/services/control/src/process-pack-registry.mjs</code>,</li>
+</ol>
+<p>żeby pack bez <code>verified_by</code> nie ładował się w ogóle, nie tylko nie przechodził gate'u platformy.</p>
+<ol>
+<li>Wymagać wiązań przy tworzeniu ticketu z envelope v2 — wtedy zaległość przestaje</li>
+</ol>
+<p>rosnąć.</p>
+<ol>
+<li>Zmigrować 31 ticketów legacy do envelope v2 i dopisać DoD partiami, z właścicielem</li>
+</ol>
+<p>kolejki jako autorem oczekiwań.</p>
+<ol>
+<li>Domknąć <code>verified_without_read_back</code> tam, gdzie istnieje realna trasa <code>query</code></li>
+</ol>
+<p>(41 obserwacji w packach).</p>
+</main>
+</body>
+</html>

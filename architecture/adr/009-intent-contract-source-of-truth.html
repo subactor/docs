@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ADR-009: Intent Contract jako źródło prawdy intencji — Subactor Docs</title>
+  <style>
+    :root { --bg:#0f1419; --fg:#e7ecf1; --muted:#9aa7b5; --accent:#3d9cf0; --line:#243041; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:"IBM Plex Sans","Segoe UI",sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #1a2a3d, var(--bg));
+      color: var(--fg); line-height:1.6; min-height:100vh; }
+    main { max-width: 52rem; margin:0 auto; padding:3rem 1.5rem 5rem; }
+    a { color: var(--accent); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    h1,h2,h3,h4 { letter-spacing:-0.01em; line-height:1.25; }
+    h1 { font-size:1.9rem; } h2 { font-size:1.4rem; margin-top:2.2rem; }
+    h3 { font-size:1.15rem; margin-top:1.8rem; }
+    code { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.88em;
+      background:#1a2331; border:1px solid var(--line); border-radius:4px; padding:0.1em 0.35em; }
+    pre { background:#0b1017; border:1px solid var(--line); border-radius:8px;
+      padding:1rem; overflow-x:auto; }
+    pre code { background:none; border:none; padding:0; }
+    table { border-collapse:collapse; width:100%; margin:1rem 0; display:block; overflow-x:auto; }
+    th,td { border:1px solid var(--line); padding:0.45rem 0.7rem; text-align:left;
+      font-size:0.92rem; }
+    th { background:#161f2c; }
+    blockquote { border-left:3px solid var(--accent); margin:1rem 0; padding:0.2rem 1rem;
+      color: var(--muted); }
+    hr { border:0; border-top:1px solid var(--line); margin:2rem 0; }
+    .docnav { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.8rem;
+      margin-bottom:2rem; color:var(--muted); }
+  </style>
+</head>
+<body>
+<main>
+  <nav class="docnav"><a href="../../index.html">subactor/docs</a></nav>
+<hr />
+<p>{ &quot;schema&quot;: &quot;subactor.doc/v1&quot;, &quot;id&quot;: &quot;docs.architecture.adr.009-intent-contract-source-of-truth&quot;, &quot;version&quot;: 1, &quot;status&quot;: &quot;current&quot;, &quot;updated&quot;: &quot;2026-07-22&quot; }</p>
+<hr />
+<h1>ADR-009: Intent Contract jako źródło prawdy intencji</h1>
+<ul>
+<li><strong>Status:</strong> Accepted</li>
+<li><strong>Data:</strong> 2026-07-22</li>
+<li><strong>Kontrakt:</strong> <code>subactor.intent-contract/v1</code></li>
+<li><strong>Schema:</strong> <code>contracts/schemas/intent-contract.schema.v1.json</code></li>
+<li><strong>Implementacja:</strong> <code>runtime/src/intent-contract.mjs</code></li>
+</ul>
+<h2>Kontekst</h2>
+<p>Subactor rozdziela authority, operację, trasę wykonania, oczekiwany efekt i stan pracy pomiędzy AQL, OQL, URI Process, EQL, Process Envelope oraz Planfile. Brakowało kanonicznej instancji, która zachowuje surowe wypowiedzi człowieka i maszyny, pokazuje ich interpretację oraz wiąże dokładnie zaakceptowane znaczenie.</p>
+<p>Swobodny RULE-DSL lub prompt nie może pełnić tej funkcji: nie ma stabilnego AST, może mieszać politykę z poleceniami wykonawczymi i nie stanowi authority.</p>
+<h2>Decyzja</h2>
+<p><code>subactor.intent-contract/v1</code> jest wersjonowaną kopertą JSON, a nie nowym językiem wykonawczym. Kanoniczny dokument zawiera:</p>
+<ol>
+<li>niezmienne statements z aktorem, czasem i hashem treści;</li>
+<li>zaakceptowaną normalizację celu, ograniczeń, wejść i kryteriów akceptacji;</li>
+<li>referencje do istniejących Process Packów, strategii, AQL, OQL i EQL;</li>
+<li>decyzję związaną z hashem normalizacji i całego kontraktu;</li>
+<li>referencje do ticketu, problemu, kandydata naprawy, wiedzy i receipts;</li>
+<li>provenance poprzedniej wersji.</li>
+</ol>
+<p>Klucze obiektów są sortowane przed serializacją, kolejność tablic jest znacząca, a SHA-256 jest liczony z kanonicznego JSON. <code>contract_hash</code> nie jest włączany do własnego preimage. Zmiana statementu, normalizacji, bindingu, decyzji albo linku zmienia hash.</p>
+<h2>Granice bezpieczeństwa</h2>
+<ul>
+<li>Kontrakt nie nadaje authority i nie zastępuje AQL ani apply grantu.</li>
+<li>Nie przyjmuje dokładnych URI wykonawczych, poleceń, skryptów ani shella.</li>
+<li>Nie przechowuje sekretów ani wartości credentiali.</li>
+<li>LLM może zaproponować normalizację i referencję z allowlisty, ale nie może</li>
+</ul>
+<p>nadpisać statementu człowieka ani samodzielnie zaakceptować jego intencji.</p>
+<ul>
+<li><code>executing</code> wymaga Process Packa, AQL, EQL i ticketu; <code>verified</code> wymaga receipt.</li>
+<li>JSON jest źródłem prawdy. Formularz i Markdown są deterministycznymi</li>
+</ul>
+<p>projekcjami, nie konkurencyjnymi dokumentami.</p>
+<h2>Lifecycle</h2>
+<p>Dozwolone stany to <code>draft</code>, <code>proposed</code>, <code>clarification_required</code>, <code>accepted</code>, <code>planned</code>, <code>executing</code>, <code>verified</code>, <code>closed</code>, <code>rejected</code> i <code>superseded</code>. Zmiana znaczenia tworzy nową wersję z <code>previous_ref</code> i <code>previous_hash</code>. Wcześniejsza wersja pozostaje audytowalna; nie jest przepisywana w miejscu.</p>
+<h2>Konsekwencje</h2>
+<ul>
+<li>Intent Contract zamyka lukę provenance pomiędzy dialogiem a ticketem.</li>
+<li>Planfile i Process Envelope muszą w kolejnym etapie zapisywać <code>intent_ref</code></li>
+</ul>
+<p>oraz <code>intent_hash</code> i unieważniać niezgodny plan/grant.</p>
+<ul>
+<li>Potrzebny jest deterministyczny renderer formularza/Markdown i semantic diff.</li>
+<li>Równoległe naprawy mogą współdzielić <code>problem_id</code>, ale zachowują osobne</li>
+</ul>
+<p><code>candidate_id</code>, plany, evidence i receipts.</p>
+<h2>Dowody akceptacji</h2>
+<p>Testy Runtime sprawdzają stabilność kanonikalizacji, wykrywanie zmiany treści, zakaz sekretów i wykonywalnych pól oraz wymagane bindingi lifecycle. Repozytorium Contracts zawiera JSON Schema i kanoniczny pozytywny fixture.</p>
+</main>
+</body>
+</html>

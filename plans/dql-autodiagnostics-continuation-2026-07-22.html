@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Plan kontynuacji — DQL i pętla Doctor/Repair/Validator — Subactor Docs</title>
+  <style>
+    :root { --bg:#0f1419; --fg:#e7ecf1; --muted:#9aa7b5; --accent:#3d9cf0; --line:#243041; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:"IBM Plex Sans","Segoe UI",sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #1a2a3d, var(--bg));
+      color: var(--fg); line-height:1.6; min-height:100vh; }
+    main { max-width: 52rem; margin:0 auto; padding:3rem 1.5rem 5rem; }
+    a { color: var(--accent); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    h1,h2,h3,h4 { letter-spacing:-0.01em; line-height:1.25; }
+    h1 { font-size:1.9rem; } h2 { font-size:1.4rem; margin-top:2.2rem; }
+    h3 { font-size:1.15rem; margin-top:1.8rem; }
+    code { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.88em;
+      background:#1a2331; border:1px solid var(--line); border-radius:4px; padding:0.1em 0.35em; }
+    pre { background:#0b1017; border:1px solid var(--line); border-radius:8px;
+      padding:1rem; overflow-x:auto; }
+    pre code { background:none; border:none; padding:0; }
+    table { border-collapse:collapse; width:100%; margin:1rem 0; display:block; overflow-x:auto; }
+    th,td { border:1px solid var(--line); padding:0.45rem 0.7rem; text-align:left;
+      font-size:0.92rem; }
+    th { background:#161f2c; }
+    blockquote { border-left:3px solid var(--accent); margin:1rem 0; padding:0.2rem 1rem;
+      color: var(--muted); }
+    hr { border:0; border-top:1px solid var(--line); margin:2rem 0; }
+    .docnav { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.8rem;
+      margin-bottom:2rem; color:var(--muted); }
+  </style>
+</head>
+<body>
+<main>
+  <nav class="docnav"><a href="../index.html">subactor/docs</a></nav>
+<hr />
+<p>{ &quot;schema&quot;: &quot;subactor.doc/v1&quot;, &quot;id&quot;: &quot;docs.plans.dql-autodiagnostics-continuation-2026-07-22&quot;, &quot;version&quot;: 2, &quot;status&quot;: &quot;current&quot;, &quot;updated&quot;: &quot;2026-07-29&quot; }</p>
+<hr />
+<h1>Plan kontynuacji — DQL i pętla Doctor/Repair/Validator</h1>
+<p><strong>Stan przeglądu 2026-07-29:</strong> P1–P6 pozostają otwarte, dopóki dokument nie wskaże completion receipt i wersjonowanego evidence dla danej fazy. Samo istnienie profilu lub testu statycznego nie zamyka pętli diagnostycznej.</p>
+<h2>Stan wykonany</h2>
+<ul>
+<li>schema <code>subactor.diagnostic-profile/v1</code> i kanoniczny fixture;</li>
+<li>deterministyczny evaluator <code>subactor.diagnostic-report/v1</code>;</li>
+<li>operatory <code>expression</code>, <code>all</code>, <code>dependency_graph</code>, <code>immutable_refs</code>;</li>
+<li>stabilne fingerprinty i governed Problem Profile candidates;</li>
+<li>aktywny profil architektury Control oraz read-only collector;</li>
+<li>zielony live-static read-back 3/3 i bramka <code>test:meta</code>.</li>
+</ul>
+<h2>P1 — Diagnostic Registry</h2>
+<p>Załadować wyłącznie aktywne, zwalidowane profile z Artifact Registry. Każdy profil musi mieć immutable revision URI, ownera, AQL obserwatora i maksymalny budżet snapshotu. Zmiana treści wymaga nowej wersji.</p>
+<h2>P2 — typowane adaptery snapshotu</h2>
+<p>Zastąpić skan literalnego kodu runtime route registry. Dodać adaptery dla Planfile lifecycle, connector doctor, Artifact Registry, SODL, Process Packów, DNS/site resources i desired-state. Adaptery są read-only i nie zwracają sekretów.</p>
+<h2>P3 — czas i przyczynowość</h2>
+<p>Dodać <code>fresh_within</code>, <code>eventually_within</code>, <code>always_during</code> i bounded event windows nad SODL. Fakty, korelacje i hipotezy przyczyn muszą być oddzielnymi polami; DQL nie może deklarować hipotezy jako potwierdzonej przyczyny.</p>
+<h2>P4 — Finding Outbox i ProblemCase</h2>
+<p>Zapisywać raport przez idempotentny outbox. Deduplikować occurrence po fingerprint i snapshot hash, tworzyć ProblemCase dopiero według polityki oraz zachować niezależne RepairCandidate dla alternatywnych napraw.</p>
+<h2>P5 — Doctor/Repair/Validator</h2>
+<p>Doctor tworzy snapshot i finding. Repair działa w izolowanym worktree wyłącznie z ticketem, AQL i grantem. Niezależny Validator uruchamia EQL na świeżym snapshotcie. Tylko receipt może zamknąć ProblemCase.</p>
+<h2>P6 — scheduler i obserwowalność</h2>
+<p>Dodać lease, budżety częstotliwości, backoff, dashboard statusów profili oraz kanały odpowiedzialnych aktorów. Awaria collectora pozostaje widocznym problemem diagnostycznym i nie może być interpretowana jako stan zdrowy.</p>
+<h2>Warunek pełnej autonomii diagnostycznej</h2>
+<p>Kontrolowany defekt musi przejść ścieżkę:</p>
+<pre><code class="language-text">snapshot → DQL finding → occurrence → ticket → RepairCandidate
+         → URI Process → świeży snapshot → EQL receipt → verified</code></pre>
+<p>Bez receipt system może powiedzieć „wykryto” albo „podjęto próbę”, ale nie „naprawiono”.</p>
+</main>
+</body>
+</html>

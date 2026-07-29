@@ -35,6 +35,9 @@
 <body>
 <main>
   <nav class="docnav"><a href="../index.html">subactor/docs</a></nav>
+<hr />
+<p>{ &quot;schema&quot;: &quot;subactor.doc/v1&quot;, &quot;id&quot;: &quot;docs.platform.codebase.health&quot;, &quot;version&quot;: 4, &quot;status&quot;: &quot;current&quot;, &quot;updated&quot;: &quot;2026-07-29&quot; }</p>
+<hr />
 <h1>Stan kodu i plan refaktoru (code2llm)</h1>
 <p><strong>Data indeksu:</strong> 2026-07-17 <strong>Źródła:</strong> <code>project/analysis.toon.yaml</code>, <code>project/map.toon.yaml</code>, <code>project/evolution.toon.yaml</code>, <code>project/planfile-tickets.yaml</code></p>
 <h2>Źródło prawdy (monorepo workspace)</h2>
@@ -42,11 +45,14 @@
 <thead><tr><th>Ścieżka</th><th>Rola</th></tr></thead>
 <tbody>
 <tr><td><code>core/</code>, <code>agents/</code>, <code>connectors/</code>, <code>runtime/</code>, <code>contracts/</code>, …</td><td>Kanoniczne repozytoria komponentów (osobne <code>.git</code>)</td></tr>
-<tr><td><code>platform/components/&lt;name&gt;/</code></td><td><strong>Submoduły</strong> montowane do assembly deploy (<code>gitdir: …/modules/components/…</code>)</td></tr>
+<tr><td><code>platform/components/&lt;name&gt;/</code></td><td><strong>Symlinki</strong> do kanonicznych repo (<code>../../&lt;name&gt;</code>); <code>platform/.gitignore</code> ignoruje <code>/components/</code></td></tr>
+<tr><td><code>platform/dependencies.lock.json</code></td><td>Przypięcie każdego komponentu do commita — <strong>jedyne</strong> źródło wersji dla deployu</td></tr>
 <tr><td><code>platform/</code></td><td>Docker Compose, config, skrypty, dokumentacja operacyjna</td></tr>
 </tbody></table>
-<p><strong>Zasada edycji:</strong> zmiany logiki w kanonicznym komponencie <strong>i</strong> w odpowiadającym submodule <code>platform/components/*</code> (workspace trzyma oba drzewa; testy platformy importują z <code>components/</code>).</p>
-<p>Skan code2llm widzi obie kopie — metryki CC/duplikacji są <strong>sztucznie podwojone</strong>. Przy triażu ticketów planfile bierz ścieżki bez prefiksu <code>platform/components/</code>.</p>
+<p><strong>Nie ma submodułów.</strong> <code>verify-dependencies-lock.mjs</code> aktywnie ich zakazuje (<code>.gitmodules is forbidden</code>, gitlinks odrzucane). Assembly to <code>external-git-checkouts</code>: <code>dependencies:sync</code> odtwarza drzewo z locka, a dla symlinkowanego rodzeństwa tylko asertuje zgodność HEAD.</p>
+<p><strong>Zasada edycji:</strong> komponent edytuje się <strong>raz</strong>, w kanonicznym repo — <code>platform/components/*</code> to ten sam i-node. Osobna kopia w <code>components/</code> jest defektem (patrz „Dług strukturalny&quot;).</p>
+<p><strong>Zasada wersjonowania:</strong> po wypchnięciu komponentu przypnij nową wersję przez <code>npm run dependencies:pin</code>. Lock nigdy nie może wskazywać commita spoza <code>origin/main</code> — <code>dependencies:sync</code> pobiera commit z remote, więc lokalny pin daje workspace nieodtwarzalny dla innych.</p>
+<p>Skan code2llm podąża za symlinkami i widzi drzewo komponentu dwa razy — metryki CC/duplikacji są <strong>sztucznie podwojone</strong>. Przy triażu ticketów planfile bierz ścieżki bez prefiksu <code>platform/components/</code>.</p>
 <h2>Metryki (indeks 2026-07-17)</h2>
 <table>
 <thead><tr><th>Metryka</th><th>Skan surowy</th><th>Po deduplikacji lustra</th></tr></thead>
@@ -60,17 +66,30 @@
 </tbody></table>
 <p><strong>Języki:</strong> JavaScript/MJS dominuje, potem PHP (portal, site-generator), shell, mało Pythona.</p>
 <h2>Hotspoty (kolejność refaktoru)</h2>
+<p>Pomiar LOC z 2026-07-29; wartości CC pochodzą z indeksu 2026-07-17 i **nie zostały przemierzone** — traktuj je jako historyczne.</p>
 <table>
-<thead><tr><th>Priorytet</th><th>Plik</th><th>Problem</th></tr></thead>
+<thead><tr><th>Priorytet</th><th>Plik</th><th>LOC 07-17</th><th>LOC 07-29</th><th>Problem</th></tr></thead>
 <tbody>
-<tr><td>P0</td><td><code>core/.../control/src/server.mjs</code></td><td>~1038 L, handler <code>server</code> CC≈280, fan-out≈91</td></tr>
-<tr><td>P0</td><td><code>connectors/.../bridge/src/server.mjs</code></td><td>~1313 L, <code>execute</code> CC≈72</td></tr>
-<tr><td>P0</td><td><code>core/.../control/public/app.js</code></td><td>~2485 L monolit UI</td></tr>
-<tr><td>P1</td><td><code>core/.../control/src/delegation-manager.mjs</code></td><td><code>delegationDecision</code> CC≈57, <code>normalize…</code> CC≈32</td></tr>
-<tr><td>P1</td><td><code>org-core/.../server.mjs</code></td><td>CC≈46</td></tr>
-<tr><td>P1</td><td><code>agents/.../browser-agent/src/server.mjs</code></td><td>CC≈64</td></tr>
-<tr><td>P2</td><td><code>contractor-portal/.../index.php</code></td><td>~1124 L</td></tr>
-<tr><td>P2</td><td><code>project-importer</code> blueprint / scenario-editor</td><td>CC 27–38</td></tr>
+<tr><td>P0</td><td><code>core/.../control/src/server.mjs</code></td><td>~954</td><td><strong>3069</strong></td><td>już nie router (handler ~220 L); shared kernel: 139 stałych env, 82 importy, 117 funkcji, <code>routeDeps()</code> = worek 130 kluczy, 6 schedulerów <code>setInterval</code>. Jedyny moduł control <strong>bez testu</strong></td></tr>
+<tr><td>P0</td><td><code>core/.../control/public/app.js</code></td><td>~2485</td><td><strong>5499</strong></td><td>335 funkcji top-level, 3 instrukcje import/export — monolit ES bez podziału; cache-busting ręczny (<code>?v=…</code>)</td></tr>
+<tr><td>P1</td><td><code>connectors/.../bridge/src/server.mjs</code></td><td>~1313</td><td><strong>2052</strong></td><td>wydzielenie zatrzymane w połowie: <code>plesk-*.mjs</code> istnieją, ale <code>pleskFetch</code>/<code>pleskCreate</code>/<code>pleskSiteSync</code>/<code>pleskPublishSite</code> dalej w <code>server.mjs</code>; <code>fetchJson</code> (165 L) prawdopodobnie duplikuje <code>runtime/service-client</code></td></tr>
+<tr><td>P1</td><td><code>core/.../control/src/delegation-coverage.mjs</code></td><td>—</td><td>141</td><td><code>actorCoversRequirements</code> bez <strong>żadnego</strong> testu; znany defekt: wildcard <code>**</code> nie liczy się jako pokrycie (SYSTEM_STATE_2026-07-24)</td></tr>
+<tr><td>P2</td><td><code>contractor-portal/.../index.php</code></td><td>~1124</td><td>1219</td><td>—</td></tr>
+</tbody></table>
+<p>Kierunek jest przeciwny do celu: trzy główne hotspoty urosły 1,6–2,2× w 12 dni, mimo że zaplanowany refaktor został wykonany. Rozbicie na moduły działa (control: 110 modułów <code>src/</code> + 29 <code>routes/</code>, 111 plików testowych), ale nie nadąża za tempem dokładania funkcji.</p>
+<h2>Dług strukturalny</h2>
+<p>Groźniejszy od LOC, bo dotyczy bramki deployu i źródła prawdy uprawnień.</p>
+<table>
+<thead><tr><th>Pozycja</th><th>Stan 2026-07-29</th></tr></thead>
+<tbody>
+<tr><td><code>platform/components/autonomy-lab</code></td><td><strong>naprawione</strong> — był osobnym, nieaktualnym klonem (<code>7149555</code> vs lock <code>c120264</code>), <code>live-observer.mjs</code> pusty zamiast 279 L; zamieniony na symlink</td></tr>
+<tr><td>Lock vs rzeczywistość</td><td><code>connectors</code>, <code>core</code>, <code>observability</code>, <code>runtime</code> rozjechane; <code>dependencies:verify</code> czerwone</td></tr>
+<tr><td><code>core</code>, <code>runtime</code></td><td>HEAD <strong>niewypchnięty</strong> — do czasu pusha locka nie wolno przypiąć</td></tr>
+<tr><td><code>contractor-portal/vendor/contracts/</code></td><td><strong>naprawione 2026-07-29</strong> — nie kopia, lecz submoduł montowany read-only do <code>/contracts</code> w workerze. Pin stał na <code>6484a35</code> (07-18), 23 commity za kanonem; przypięty generator rzucał <code>human_contract_delegator_actor_mismatch</code> dla umów delegowanych przez organizację, więc umowy sukcesji nie dawały się wygenerować. Podbity do <code>a55664e</code></td></tr>
+<tr><td>Weryfikacja pinów poza <code>platform/</code></td><td><strong>brak</strong> — <code>contractor-portal</code> używa submodułu, mimo że <code>platform</code> submoduły zakazuje; nic nie sprawdzało tego pinu przez 11 dni</td></tr>
+<tr><td><code>projekty/*</code></td><td><strong>nie forki</strong> — 8 osobnych repo będących źródłem deployu stron publicznych (<code>platform/config/public-pages.json</code> → <code>local_source</code>). <code>projekty/contracts-subactor-com/app</code> to artefakt deployowy <code>contracts.subactor.com</code>, a <code>contractor-portal/</code> repo rozwojowe. Artefakt jest jednak <strong>starszy</strong> od źródła: brak <code>chat_linkify_http_urls()</code> i atrybutów a11y (<code>role=&quot;log&quot;</code>, <code>aria-live</code>, <code>tabindex</code>)</td></tr>
+<tr><td><code>TODO.md</code> (785 pozycji, prefact)</td><td><strong>skorygowane</strong> — mirrory i <code>vendor/</code> to tylko ~6% pozycji (12 plików). Realnym źródłem szumu jest sześć repo z <strong>własnym</strong> <code>prefact.yaml</code> (<code>doctor-agent</code> sam daje 170 z 200 wypisanych pozycji), skanowanych ponownie przez umbrellę. Wykluczenie ich zawęża skan z 320 do 57 plików. Uwaga: <code>prefact.yaml</code> w rootcie <strong>nie jest pod kontrolą wersji</strong> — zmiana działa lokalnie, ale nie jest odtwarzalna</td></tr>
+<tr><td><code>task://host/ticket/command/respond</code></td><td><strong>nie jest brakującym uprawnieniem.</strong> <code>SYSTEM_STATE_2026-07-24</code> opisuje tę lukę jako „zwalidowane, niezapisane&quot;; w rzeczywistości ta trasa <strong>nie istnieje</strong> — <code>urirun.host.host_integrations.planfile_task_bindings()</code> wiąże <code>list/next/show/create/update/claim/start/complete/fail/block/wait-for-input/ready</code>, bez <code>respond</code>. <code>operations-lead</code> ma na nią ALLOW, czyli martwy zapis. Co więcej, cała rodzina <code>task://</code> czyta <strong>plikowy</strong> <code>.planfile/</code> pod project rootem (domyślnie <code>&quot;.&quot;</code>, czyli cwd <code>urirun-node</code>), a store usługi Planfile to nazwany wolumen <code>planfile-data</code> montowany wyłącznie do kontenera <code>planfile</code>. Żadna wartość <code>project</code> tego nie połączy. Klasyfikacja <code>blueprint-only</code> w <code>uri-process-route-baseline.json</code> jest <strong>poprawna i ma zostać</strong>. Realną naprawą byłby binding klienta HTTP do <code>planfile:8000</code>, nie uprawnienie</td></tr>
 </tbody></table>
 <h2>Cele ewolucji (code2llm)</h2>
 <ul>
@@ -79,18 +98,27 @@
 <li>god-modules: 27 → 0  </li>
 <li>high-CC (≥15): 226 → ≤113  </li>
 </ul>
-<h2>Faza w toku (2026-07-17)</h2>
+<h2>Faza w toku (2026-07-29)</h2>
 <table>
 <thead><tr><th>Krok</th><th>Status</th></tr></thead>
 <tbody>
 <tr><td>Dokumentacja health + plan</td><td><strong>done</strong></td></tr>
-<tr><td>Split <code>delegation-manager</code> → config / coverage / decision</td><td><strong>done</strong></td></tr>
-<tr><td>Extract <code>access-registry</code>, <code>integration-records</code>, <code>delegation-summary</code> z control server</td><td><strong>done</strong> (<code>server.mjs</code> ~1038 → ~954 L)</td></tr>
-<tr><td>Routing HTTP control server (handlery per domena)</td><td><strong>next</strong></td></tr>
-<tr><td>Split bridge <code>execute</code></td><td>planned</td></tr>
-<tr><td>Modularizacja <code>app.js</code></td><td>planned</td></tr>
+<tr><td>Split <code>delegation-manager</code> → config / coverage / decision</td><td><strong>done</strong> (1038 → 360 L)</td></tr>
+<tr><td>Extract <code>access-registry</code>, <code>integration-records</code>, <code>delegation-summary</code></td><td><strong>done</strong></td></tr>
+<tr><td>Routing HTTP control server (handlery per domena)</td><td><strong>done</strong> — <code>src/routes/</code>, 29 modułów, 5767 L, <code>dispatch.mjs</code></td></tr>
+<tr><td><code>platform/components/autonomy-lab</code> → symlink</td><td><strong>done</strong> (2026-07-29)</td></tr>
+<tr><td><code>dependencies:pin</code> — odświeżanie locka z guardami</td><td><strong>done</strong> (2026-07-29)</td></tr>
+<tr><td>Odświeżenie locka dla 4 rozjechanych komponentów</td><td><strong>blocked</strong> — wymaga pusha <code>core</code> i <code>runtime</code></td></tr>
+<tr><td>Rozbicie <code>routeDeps</code> (130 kluczy) na deps per-domena</td><td><strong>next</strong></td></tr>
+<tr><td>Wydzielenie 6 schedulerów z <code>server.mjs</code> do <code>jobs/</code></td><td>next</td></tr>
+<tr><td>Dokończenie <code>plesk-*</code> w bridge, dedup <code>fetchJson</code></td><td>planned</td></tr>
+<tr><td>Modularizacja <code>app.js</code> (start: domena delegowania)</td><td>planned</td></tr>
+<tr><td>Testy charakteryzujące <code>delegation-coverage</code>, potem naprawa <code>**</code></td><td>planned</td></tr>
+<tr><td>Podbicie pinu submodułu <code>contractor-portal/vendor/contracts</code></td><td><strong>done</strong> (2026-07-29)</td></tr>
+<tr><td>Weryfikator pinu dla submodułu portalu (odpowiednik <code>dependencies:verify</code>)</td><td>planned</td></tr>
+<tr><td>Wyrównanie artefaktu <code>projekty/contracts-subactor-com/app</code> do źródła</td><td>planned</td></tr>
 </tbody></table>
-<p>Testy: <code>delegation-manager</code>, <code>scenario-editor</code>, <code>panel-contract</code>, <code>panel-router</code> — zielone (platform).</p>
+<p>Testy platformy <code>test:meta</code>: 143/143 zielone (2026-07-29).</p>
 <h2>Jak odświeżyć indeks</h2>
 <pre><code class="language-bash"># z roota workspace; wyklucz node_modules i venv
 code2llm ./ -f all --toon-yaml -o project --no-png \

@@ -2,15 +2,17 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.plans.autonomy-implementation-roadmap",
-  "version": 1,
+  "version": 2,
   "status": "current",
-  "updated": "2026-07-18"
+  "updated": "2026-07-29"
 }
 ---
 
 # Roadmapa implementacji autonomii
 
 **Status:** plan wdrożenia (Fazy 0–8 + kolejność PR).  
+**Przegląd 2026-07-29:** roadmapa pozostaje aktywna; PR9 jest zablokowany przed
+produkcyjnym cutoverem, a PR10 nie ma jeszcze completion evidence.
 **Evidence CURRENT/TARGET:** [`../architecture/autonomy-implementation-status.md`](../architecture/autonomy-implementation-status.md)  
 **Rekomendacja kanoniczna:** [`../architecture/autonomy-recommended-solution.md`](../architecture/autonomy-recommended-solution.md)  
 **ADR:** [`../architecture/adr/README.md`](../architecture/adr/README.md) (**001–007 Accepted**)  

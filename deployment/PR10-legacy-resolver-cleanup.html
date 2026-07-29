@@ -35,6 +35,9 @@
 <body>
 <main>
   <nav class="docnav"><a href="../index.html">subactor/docs</a></nav>
+<hr />
+<p>{ &quot;schema&quot;: &quot;subactor.doc/v1&quot;, &quot;id&quot;: &quot;docs.deployment.pr10-legacy-resolver-cleanup&quot;, &quot;version&quot;: 1, &quot;status&quot;: &quot;current&quot;, &quot;updated&quot;: &quot;2026-07-18&quot; }</p>
+<hr />
 <h1>PR10 — legacy resolver / dual-run cleanup</h1>
 <p><strong>Status:</strong> in progress (2026-07-18) — cold FALLBACK_PHRASES removed; dual-run stays <strong>shadow</strong> until metrics OK.</p>
 <blockquote><strong>Default stays <code>INTENT_PACK_DUAL_RUN=shadow</code>.</strong> Do not flip to <code>off</code> in CI/prod until shadow compare stays clean. Pack-only routes (e.g. logo) are not legacy drift (<code>baseline: pack_only</code>).</blockquote>

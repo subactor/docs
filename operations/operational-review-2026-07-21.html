@@ -35,6 +35,9 @@
 <body>
 <main>
   <nav class="docnav"><a href="../index.html">subactor/docs</a></nav>
+<hr />
+<p>{ &quot;schema&quot;: &quot;subactor.doc/v1&quot;, &quot;id&quot;: &quot;docs.operations.operational-review-2026-07-21&quot;, &quot;version&quot;: 3, &quot;status&quot;: &quot;current&quot;, &quot;updated&quot;: &quot;2026-07-22&quot; }</p>
+<hr />
 <h1>Przegląd operacyjny Subactor — 2026-07-21</h1>
 <h2>Werdykt</h2>
 <p>Projekt <code>autonomicznosc-pl</code> jest wdrożony i zgodny z manifestem. Publiczne <code>https://autonomicznosc.pl/</code> zwraca HTTP 200, certyfikat obejmuje domenę, a hash publicznego <code>index.html</code> jest identyczny z lokalnym źródłem. Kontroler zamknął <code>PLF-614</code> jako <code>converged</code>; wykonanie produkcyjne ma osobny receipt w <code>PLF-687</code>.</p>
@@ -70,7 +73,7 @@
 </tbody></table>
 <p>Negatywne wywołanie dozwolonego URI bez <code>ticket_id</code> zwróciło HTTP 409 <code>process_ticket_required</code>. Bramki mutacji pozostały wyłączone, a lease mutacji nie istniał. Publiczny hash Autonomiczność.pl nadal wynosi <code>5bb84efbf8bee4d19691cca012a2a9d75840360a377d77f0763036eab4b93ce1</code>.</p>
 <p>Test obserwowalności wykrył fałszywie otwarty historyczny incydent. Planfile zwracał zamknięty <code>PLF-107</code> po dokładnym ID, ale nie umieszczał archiwalnego ticketu na bieżącej liście. Observer traktował brak na liście jako stan otwarty. Po poprawce wykonuje ograniczony lookup po ID, zachowując fail-safe przy błędzie; liczba otwartych incydentów spadła z 1 do 0 (<code>observability@f54c26a</code>).</p>
-<p>Test ujawnił też lukę publikacyjną: zatwierdzone dokumenty z <code>projekty/06_legal</code> nie należą do synchronizowanego katalogu <code>projekty/02_landing</code>, więc nie mają publicznych URL-i ani odnośników w stopce. Cały katalog <code>projekty/</code> jest ponadto poza repozytorium Git. <code>PLF-697</code> wymaga najpierw wersjonowanego źródła, następnie pięciu stron HTML, dry-runu, grantu i publicznego postflightu.</p>
+<p>Test ujawnił też lukę publikacyjną: zatwierdzone dokumenty z <code>projekty/autonomicznosc-pl/06_legal</code> nie należą do synchronizowanego katalogu <code>projekty/autonomicznosc-pl/02_landing</code>, więc nie mają publicznych URL-i ani odnośników w stopce. Cały katalog <code>projekty/</code> jest ponadto poza repozytorium Git. <code>PLF-697</code> wymaga najpierw wersjonowanego źródła, następnie pięciu stron HTML, dry-runu, grantu i publicznego postflightu.</p>
 <h2>Dlaczego wcześniejsza publikacja nie zadziałała</h2>
 <p>Wystąpiły cztery niezależne problemy, które wcześniej zlewały się w jeden status:</p>
 <ol>
@@ -162,6 +165,23 @@
 <li>Utrwalić regułę restartu: usługi należące do Connector LAN należy odtwarzać</li>
 </ol>
 <p>z <code>docker-compose.connector-lan.yml</code>; restart tylko z bazowym Compose usuwa sieć <code>connector-execution</code> z <code>hr-bridge</code>.</p>
+<h2>Aktualizacja architektury 2026-07-22</h2>
+<p>Po przeglądzie lifecycle, reakcji na problemy i dwóch wariantów RULE-DSL uzgodniono następujący podział źródeł prawdy:</p>
+<ul>
+<li>Planfile przechowuje stan ticketu, historię i completion receipt;</li>
+<li>Runtime egzekwuje wspólny kontrakt readiness;</li>
+<li>AQL, OQL, EQL i URI Process zachowują rozdzielone odpowiedzialności;</li>
+<li>SODL/1 jest dziennikiem zdarzeń, a nie drugim językiem biznesowym;</li>
+<li>Strategy DSL opisuje zatwierdzone strategie i bindingi capabilities;</li>
+<li>nowy Intent Contract ma zachować statements człowieka i maszyny oraz ich</li>
+</ul>
+<p>zaakceptowaną normalizację, bez nadawania authority.</p>
+<p>Wykonane elementy lifecycle obejmują współdzielony preflight Runtime, obserwacyjną reconciliację Control, egzekwowane przejście pojedynczego ticketu do <code>ready</code>, zachowanie <code>verified_by</code> w completion receipt oraz atomowy, idempotentny zapis evidence w Planfile. Nadal otwarte są: natywny policy hook Planfile dla bezpośredniego UI/API, kontrakt <code>ProblemCase/RepairCandidate</code> oraz wykonawcza pętla <code>reaction → ticket → URIrun → EQL → completion</code>.</p>
+<p>Decyzję i kolejność dalszych prac opisują:</p>
+<ul>
+<li><a href="../architecture/intent-contract-and-human-machine-source-of-truth-2026-07-22.html"><code>../architecture/intent-contract-and-human-machine-source-of-truth-2026-07-22.md</code></a>;</li>
+<li><a href="../plans/intent-contract-continuation-2026-07-22.html"><code>../plans/intent-contract-continuation-2026-07-22.md</code></a>.</li>
+</ul>
 <h2>Bezpieczne wznowienie</h2>
 <p>Najbliższa automatyczna praca nie wymaga kolejnego uploadu Autonomiczność.pl. Najpierw wykonawca <code>security-bot</code> powinien podjąć <code>PLF-689</code> i <code>PLF-690</code>. Do czasu gotowego konektora Cloudflare nie należy ponawiać zmian DNS <code>status.subactor.com</code> przez Plesk ani oznaczać <code>PLF-685</code> jako zakończonego.</p>
 </main>

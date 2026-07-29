@@ -2,9 +2,9 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.autonomy-cli-runbook",
-  "version": 1,
+  "version": 4,
   "status": "current",
-  "updated": "2026-07-19"
+  "updated": "2026-07-29"
 }
 ---
 
@@ -21,7 +21,7 @@ Related (platform-internal, more detailed on single concerns):
 | [`platform/docs/URI_PROCESS_AUTONOMY.md`](../platform/docs/URI_PROCESS_AUTONOMY.md) | Contract AQL / OQL / URI layers |
 | [`platform/docs/GITHUB_PLESK_URI_PROCESSES.md`](../platform/docs/GITHUB_PLESK_URI_PROCESSES.md) | GitHub + Plesk recipes, www sync |
 | [`platform/docs/AUTONOMY_CONTRACTS.md`](../platform/docs/AUTONOMY_CONTRACTS.md) | Autonomy contracts + delegation |
-| [`www/deployment/PLESK.md`](../www/deployment/PLESK.md) | www → subactor.com httpdocs (working path) |
+| [`subactor-com/deployment/PLESK.md`](../subactor-com/deployment/PLESK.md) | www → subactor.com httpdocs (working path) |
 | [`orchestrator/README.md`](../orchestrator/README.md) | Thin NL\|ticket\|OQL → urirun hub |
 
 ---
@@ -79,6 +79,42 @@ node bin/subactor-run.mjs --nl "zsynchronizuj www"    # phrase stub only
 OpenRouter role today: **intent / model selection / plan proposal only**.
 Once URI + payload are known, FTP/SFTP ensure and sync are **deterministic
 connector calls** — no LLM in the upload path.
+
+### Safe Control cycle
+
+Operatorzy uruchamiają Control przez bezpieczny overlay Platformy:
+
+```bash
+cd ~/github/subactor/platform
+npm run control:safe:up       # wszystkie mutacje i konsumenci kolejki wyłączone
+npm run control:safe:cycle    # tylko preview; nie wykonuje zgłoszeń
+npm run control:execute-once  # maksymalnie jedno zgłoszenie, potem zawsze safe mode
+```
+
+`control:execute-once` nakłada konfigurację one-shot na konfigurację safe,
+wykonuje jeden cykl i odtwarza safe overlay także po błędzie. Runner odmawia
+wykonania, jeżeli zewnętrzne bramki mutacji są aktywne, trigger błędów jest
+włączony albo limit konsumenta różni się od `1`. Odpowiedź wykonująca więcej
+niż jedno zgłoszenie jest raportowana jako naruszenie limitu.
+
+Komendy `control:execute-once:up` i `control:execute-once:run` są niskopoziomowe
+i służą do diagnostyki; zwykła procedura operatorska używa atomowej komendy
+`control:execute-once`. Regresje tych gwarancji pokrywają testy
+`platform/test/control-safe-start.test.mjs` oraz
+`platform/test/control-execute-once.test.mjs`.
+
+Control publikuje w `/health` niesekretny kontrakt
+`subactor.control-safety-status/v1`. Ops Observer odwzorowuje go na metryki:
+
+- `subactor_control_safety_observation_ok`,
+- `subactor_control_safety_mode{mode="safe|execute_once|unsafe|unknown"}`,
+- `subactor_control_execution_guard_valid`,
+- metryki bramek mutacji, konsumenta kolejki i jego limitu.
+
+Prometheus alarmuje po 30 sekundach konfiguracji `unsafe`, po 2 minutach braku
+obserwacji oraz gdy poprawny `execute_once` nie wróci do safe mode przez 10
+minut. Stan `waiting_external`, brak wykonywalnych ticketów i prawidłowy krótki
+one-shot nie są alarmami.
 
 ---
 

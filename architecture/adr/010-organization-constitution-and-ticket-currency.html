@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ADR-010: konstytucja organizacji i aktualność ticketów — Subactor Docs</title>
+  <style>
+    :root { --bg:#0f1419; --fg:#e7ecf1; --muted:#9aa7b5; --accent:#3d9cf0; --line:#243041; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:"IBM Plex Sans","Segoe UI",sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #1a2a3d, var(--bg));
+      color: var(--fg); line-height:1.6; min-height:100vh; }
+    main { max-width: 52rem; margin:0 auto; padding:3rem 1.5rem 5rem; }
+    a { color: var(--accent); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    h1,h2,h3,h4 { letter-spacing:-0.01em; line-height:1.25; }
+    h1 { font-size:1.9rem; } h2 { font-size:1.4rem; margin-top:2.2rem; }
+    h3 { font-size:1.15rem; margin-top:1.8rem; }
+    code { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.88em;
+      background:#1a2331; border:1px solid var(--line); border-radius:4px; padding:0.1em 0.35em; }
+    pre { background:#0b1017; border:1px solid var(--line); border-radius:8px;
+      padding:1rem; overflow-x:auto; }
+    pre code { background:none; border:none; padding:0; }
+    table { border-collapse:collapse; width:100%; margin:1rem 0; display:block; overflow-x:auto; }
+    th,td { border:1px solid var(--line); padding:0.45rem 0.7rem; text-align:left;
+      font-size:0.92rem; }
+    th { background:#161f2c; }
+    blockquote { border-left:3px solid var(--accent); margin:1rem 0; padding:0.2rem 1rem;
+      color: var(--muted); }
+    hr { border:0; border-top:1px solid var(--line); margin:2rem 0; }
+    .docnav { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.8rem;
+      margin-bottom:2rem; color:var(--muted); }
+  </style>
+</head>
+<body>
+<main>
+  <nav class="docnav"><a href="../../index.html">subactor/docs</a></nav>
+<hr />
+<p>{ &quot;schema&quot;: &quot;subactor.doc/v1&quot;, &quot;id&quot;: &quot;docs.architecture.adr.010-organization-constitution-and-ticket-currency&quot;, &quot;version&quot;: 12, &quot;status&quot;: &quot;current&quot;, &quot;updated&quot;: &quot;2026-07-23&quot; }</p>
+<hr />
+<h1>ADR-010: konstytucja organizacji i aktualność ticketów</h1>
+<ul>
+<li><strong>Status:</strong> Accepted</li>
+<li><strong>Data:</strong> 2026-07-23</li>
+<li><strong>Konstytucja:</strong> <code>subactor.organization-constitution/v1</code></li>
+<li><strong>Aktualność ticketu:</strong> <code>subactor.ticket-currency/v1</code></li>
+</ul>
+<h2>Decyzja</h2>
+<p>Najwyższym normatywnym obiektem systemu jest wersjonowana **Organization Constitution**. Wiąże organizację, root authority, immutable actor contract, model akceptacji, rejestr lifecycle oraz niezmienne zasady bezpieczeństwa. Intencja pozostaje najwyższym semantycznym „dlaczego”, ale nie może sama nadać uprawnień.</p>
+<p>Aktywna instancja znajduje się w <code>platform/config/governance/organization-constitution.v1.json</code>. Control waliduje ją przy starcie i nie uruchamia się z błędnym hashem, niezatwierdzoną aktywną wersją albo nieprawidłowym root contract.</p>
+<pre><code class="language-text"> wypowiedź człowieka / zdarzenie
+              |
+              v
+        Intent Contract
+              |
+              v
+ Organization Constitution ------&gt; root AQL authority
+              |                          |
+              v                          v
+       lifecycle registry       delegation constraints
+              |                          |
+              +------------+-------------+
+                           v
+                ticket + Process Envelope
+                           |
+             +-------------+-------------+
+             v                           v
+    readiness / currency            AQL + OQL + URI
+             |                           |
+             +-------------+-------------+
+                           v
+                    EQL + receipts</code></pre>
+<h2>Dwa niezależne pytania o ticket</h2>
+<p><code>readiness</code> i <code>currency</code> nie mogą być jednym polem:</p>
+<ul>
+<li><strong>readiness</strong> odpowiada, czy ticket można teraz bezpiecznie wykonać: status,</li>
+</ul>
+<p>wersja kontraktu, Process Envelope v2, AQL/EQL/OQL, graf kroków, exact URI, aktor i budżet prób;</p>
+<ul>
+<li><strong>currency</strong> odpowiada, czy ticket nadal reprezentuje aktualną pracę:</li>
+</ul>
+<p>jawny następca, jawne źródło, bieżący observed state i dowody;</p>
+<ul>
+<li>audyt LLM może pomóc ocenić znaczenie dowodów, ale nie może sam wykonać</li>
+</ul>
+<p>mutacji;</p>
+<ul>
+<li>wiek, podobna nazwa albo historyczna notatka nie wystarczają do anulowania.</li>
+</ul>
+<p>Deterministyczny kontrakt <code>subactor.ticket-currency/v1</code> korzysta tylko z formalnych relacji:</p>
+<ul>
+<li><code>source:PLF-N</code> — praca pochodna jest aktualna tak długo, jak źródło pozostaje</li>
+</ul>
+<p>aktywne;</p>
+<ul>
+<li><code>superseded-by:PLF-N</code> — jawny następca unieważnia poprzedni ticket;</li>
+<li>brak obserwowanego ticketu relacji daje <code>uncertain</code>, nigdy automatyczne</li>
+</ul>
+<p>anulowanie.</p>
+<p>Ticket z terminalnym źródłem albo aktywnym jawnym następcą dostaje <code>cancel_recommended=true</code> i nie może zostać wykonany przez konsumenta kolejki. W bieżącej wersji kontroler raportuje rekomendację i zapisuje audit event; faktyczne anulowanie pozostaje oddzielnym, jawnym apply audytora.</p>
+<h2>Odpowiedzialność walidatorów</h2>
+<ul>
+<li><strong>Planfile</strong> jest źródłem stanu i historii. Model <code>TicketInputs</code> odrzuca</li>
+</ul>
+<p>nieznane pola, Process Envelope v2 wymaga kompletnych definicji AQL/EQL/OQL/URI, a endpoint <code>complete</code> wymaga zgodnego completion receiptu z pozytywnymi asercjami EQL.</p>
+<ul>
+<li><strong>Runtime</strong> dostarcza czyste, deterministyczne decyzje:</li>
+</ul>
+<p><code>ticketReadinessDecision</code>, <code>ticketCurrencyDecision</code> oraz walidację bindingu konstytucji. Nie wykonuje mutacji.</p>
+<ul>
+<li><strong>Control</strong> składa te decyzje z observed state, AQL aktorów i aktywnymi</li>
+</ul>
+<p>trasami URI. Może claimować, wykonywać, przypominać lub uzgadniać projekcję, lecz każda zmiana przechodzi ponownie przez kontrakt Planfile.</p>
+<ul>
+<li><strong>Audyt LLM</strong> ocenia znaczenie bieżących i historycznych dowodów w trybie</li>
+</ul>
+<p>dry-run. Nie jest autorytetem stanu; bez jawnego <code>--apply</code>, progu confidence i rationale nie może wykonać zamknięcia.</p>
+<h2>Constitution, Assurance i Controller</h2>
+<p>Constitution i Controller odpowiadają na inne pytania:</p>
+<ul>
+<li><strong>Organization Constitution</strong> określa, skąd pochodzi authority, jakie</li>
+</ul>
+<p>delegacje są legalne i jakie inwarianty muszą obowiązywać niezależnie od aktualnej implementacji;</p>
+<ul>
+<li><strong>Autonomy Assurance Supervisor</strong> ocenia, czy Controller, jego kontrakty i</li>
+</ul>
+<p>efekty nadal zachowują inwarianty. Nie powinien wykonywać zwykłych ticketów ani zatwierdzać własnych napraw;</p>
+<ul>
+<li><strong>Controller</strong> prowadzi normalną pracę operacyjną: pobiera snapshot,</li>
+</ul>
+<p>sprawdza readiness i currency, uruchamia exact URI, zapisuje receipts, przypomina odpowiedzialnym aktorom i uzgadnia projekcje lifecycle;</p>
+<ul>
+<li><strong>zewnętrzny Sentinel</strong> obserwuje heartbeat Control z innego procesu.</li>
+</ul>
+<p>Wewnętrzny scheduler nie może wiarygodnie wykryć własnego zatrzymania.</p>
+<pre><code class="language-text"> human intent / event / observed state
+                  |
+                  v
+       Organization Constitution
+          root authority + invariants
+                  |
+        +---------+----------+
+        |                    |
+        v                    v
+ Autonomy Assurance      Controller
+ DOQL -&gt; DQL -&gt; Doctor    ticket readiness/currency
+          |               AQL -&gt; OQL -&gt; URI Process
+          v                         |
+ RepairCandidate                    v
+          |                    EQL + receipts
+          v                         |
+ isolated canary                    |
+          |                         |
+          v                         |
+ independent Validator &lt;------------+
+          |
+    +-----+------------------+
+    | green                 | red
+    v                       v
+ promotion eligible     rollback / retry /
+ (no authority)         governed escalation
+
+ External Sentinel -------- heartbeat / lease --------&gt; Control</code></pre>
+<p>Warstwa Assurance składa istniejące języki zamiast tworzyć drugi język wykonawczy:</p>
+<ol>
+<li>SODL utrwala zdarzenia i przebieg.</li>
+<li>DOQL agreguje zwalidowane obiekty do sytuacji.</li>
+<li>DQL porównuje sytuację z wersjonowanymi inwariantami.</li>
+<li>Doctor tworzy diagnozę i wymagania dowodowe, bez mutacji.</li>
+<li>Strategy DSL wybiera dozwoloną klasę reakcji.</li>
+<li>AQL ogranicza aktora i capability.</li>
+<li>OQL oraz URI Process opisują i wykonują przypiętą naprawę.</li>
+<li>niezależny Validator wystawia EQL/read-back receipt.</li>
+</ol>
+<p>Zielony raport canary może nadać wyłącznie <code>promotion_eligible=true</code>. Nie jest grantem, AQL ani dowodem wykonania w produkcji.</p>
+<h2>Inwarianty działania kontrolera</h2>
+<p>Sama obecność procesu i regularny heartbeat nie dowodzą autonomii. Assurance musi osobno mierzyć:</p>
+<ul>
+<li><strong>liveness</strong> — cykl kończy się w czasie wynikającym z konfiguracji;</li>
+<li><strong>progress</strong> — pomiędzy kolejnymi oknami powstają receipts, terminalne</li>
+</ul>
+<p>rezultaty albo formalne powody oczekiwania;</p>
+<ul>
+<li><strong>safety</strong> — brak wykonania bez aktualnego kontraktu, exact URI, AQL i EQL;</li>
+<li><strong>currency</strong> — ticket nie ma terminalnego źródła ani aktywnego następcy;</li>
+<li><strong>uniqueness</strong> — jeden fingerprint problemu i jeden aktywny RepairCandidate;</li>
+<li><strong>independence</strong> — Repair nie może wystawić własnego pozytywnego dowodu;</li>
+<li><strong>recoverability</strong> — czerwony Validator prowadzi do rollbacku albo jawnego</li>
+</ul>
+<p>stanu wymagającego interwencji;</p>
+<ul>
+<li><strong>coverage</strong> — zielony DOQL/DQL ma receipt kompletności i świeżości każdego</li>
+</ul>
+<p>wymaganego źródła.</p>
+<p>Brak postępu nie jest tym samym co awaria. Ticket czekający na człowieka, zewnętrzny grant albo jawny ticket zależny może poprawnie nie zmieniać stanu. Supervisor powinien uznać zastój dopiero wtedy, gdy minął SLA odpowiedzialności i nie powstał receipt dostawy, odpowiedzi, retry lub eskalacji.</p>
+<h2>Stwierdzone luki</h2>
+<p>Odczyt live z 2026-07-23 wykazał:</p>
+<ul>
+<li>cykl działa co 300000 ms, trigger błędów ma opóźnienie 1000 ms i cooldown</li>
+</ul>
+<p>300000 ms;</p>
+<ul>
+<li>32 aktywne tickety były <code>currency=current</code>;</li>
+<li>31 ticketów wymagało powiadomienia, jeden został zignorowany zgodnie z</li>
+</ul>
+<p>lifecycle, a żaden nie był wykonywalny;</p>
+<ul>
+<li>wszystkie 32 aktywne tickety miały <code>constitution_legacy_unbound</code>;</li>
+<li>aktywna konstytucja pozostaje w trybie <code>observe</code>.</li>
+</ul>
+<p>Wykryto również dwie luki diagnostyczne:</p>
+<ol>
+<li>live observer uznawał cykl za stary po stałych 120000 ms, mimo że prawidłowy</li>
+</ol>
+<p>okres kontrolera wynosi 300000 ms. Luka została usunięta: próg wynosi teraz <code>max(120000, 2 * periodic_interval_ms + jitter_budget_ms)</code>, a brak harmonogramu i clock skew są osobnymi naruszeniami;</p>
+<ol>
+<li>profil DOQL portfela ocenia osiem lokalnych <code>project.manifest.json</code>.</li>
+</ol>
+<p>Zielone <code>8/8</code> dowodzi spójności tego zbioru, ale bez receiptu kompletności nie dowodzi spójności całego rejestru projektów Organization Core.</p>
+<p>Kolejna walidacja restartu Control wykazała dwa przypadki, które wymagają osobnych stanów zamiast wspólnego <code>stale</code>:</p>
+<ul>
+<li>przed <code>automation_ready_at</code> kontroler jest <code>startup_pending</code>;</li>
+<li>po rozpoczęciu pracy, lecz przed pierwszym receiptem, jest <code>cycle_running</code>;</li>
+<li>dopiero brak cyklu albo przekroczenie budżetu daje odpowiednio</li>
+</ul>
+<p><code>controller_cycle_stale</code> lub <code>controller_cycle_timeout</code>.</p>
+<p>Każdy proces Control otrzymuje niepowtarzalny <code>controller_instance_id</code>, a każdy cykl <code>cycle_id</code>, <code>cycle_started_at</code>, <code>cycle_completed_at</code> i <code>duration_ms</code>. Historia progress jest filtrowana do bieżącej instancji, dzięki czemu restart nie miesza starych cykli z nowym procesem.</p>
+<p>Cykl publikuje również <code>subactor.controller-cycle-telemetry/v1</code>. Kontrakt ma zamknięty, uporządkowany katalog etapów:</p>
+<ol>
+<li><code>snapshot_load</code>;</li>
+<li><code>problem_reactions</code>;</li>
+<li><code>readiness_recheck</code>;</li>
+<li><code>ticket_currency</code>;</li>
+<li><code>lifecycle_reconciliation</code>;</li>
+<li><code>reminder_preparation</code>;</li>
+<li><code>queue_execution</code>.</li>
+</ol>
+<p>Nieznany, zduplikowany lub wykonany poza kolejnością etap jest odrzucany. Każdy rekord zawiera wyłącznie status, czas i bezpieczną klasę błędu — nigdy treść wyjątku, token ani payload. Control zapisuje timings w bieżącym snapshotcie i completion/failure audit event, a Autonomy Lab weryfikuje zgodność schematu, <code>cycle_id</code>, kompletność i sumę czasów.</p>
+<p>Etap <code>problem_reactions</code> ma odrębny kontrakt <code>subactor.problem-reaction-telemetry/v1</code>:</p>
+<pre><code class="language-text">candidate_selection
+        |
+        v
+manifest_compilation
+        |
+        v
+ticket_creation
+        |
+        v
+audit_receipt</code></pre>
+<p>Gdy nie ma kandydata, pierwszy etap kończy się poprawnie, a trzy pozostałe otrzymują jawny status <code>skipped</code> z powodem <code>no_candidate</code>. Nie są raportowane jako wykonane i nie zwiększają progress. Kontrakt dopuszcza najwyżej jeden utworzony ticket, zgodnie z istniejącym backpressure kontrolera.</p>
+<p>DQL architektury sprawdza obecnie trzy inwarianty ze statycznego snapshotu. Nie ma jeszcze live route registry ani automatycznego Finding Outbox prowadzącego do <code>ProblemCase</code>. Doctor, Repair i Validator mają testowalne implementacje, ale nie działają jeszcze jako niezależny recovery plane odseparowany procesowo od Control.</p>
+<h2>Plan domknięcia luk</h2>
+<h3>Etap 1 — poprawność obserwacji</h3>
+<ul>
+<li>próg stale jest już wyliczany z konfiguracji:</li>
+</ul>
+<p><code>max(120000, 2 * periodic_interval_ms + jitter_budget_ms)</code>;</p>
+<ul>
+<li><code>controller_instance_id</code>, <code>cycle_id</code>, <code>cycle_started_at</code>,</li>
+</ul>
+<p><code>cycle_completed_at</code>, <code>duration_ms</code> oraz siedem stage timings są już emitowane; nadal należy dodać lease ownera i histogram trendu wielu cykli;</p>
+<ul>
+<li>wymagać dla każdego źródła DOQL <code>freshness</code>, <code>expected_scope</code>,</li>
+</ul>
+<p><code>observed_count</code>, hash snapshotu i receipt kompletności;</p>
+<ul>
+<li>bazowy profil <code>controller.progress</code> rozróżnia <code>productive</code>,</li>
+</ul>
+<p><code>productive_with_waiting</code>, <code>waiting_external</code>, <code>idle</code> i <code>stalled_executable</code>; następna wersja ma dodać wiek najstarszego obowiązku, SLA odpowiedzialności oraz budżet retry/escalation.</p>
+<h3>Etap 2 — skuteczna konstytucja</h3>
+<ul>
+<li>wiązać wszystkie nowe tickety z <code>constitution_ref</code> i</li>
+</ul>
+<p><code>constitution_hash</code>;</p>
+<ul>
+<li>zmigrować aktywny backlog i osobno oznaczyć historyczne legacy;</li>
+<li>uruchomić shadow comparison <code>observe</code> kontra <code>enforce</code>;</li>
+<li>przełączyć na <code>enforce</code> dopiero przy zerowej liczbie aktywnych</li>
+</ul>
+<p><code>legacy_unbound</code> i zielonym canary;</p>
+<ul>
+<li>nie przepisywać historycznych ticketów bez receiptu migracji.</li>
+</ul>
+<h3>Etap 3 — niezależny Assurance Plane</h3>
+<ul>
+<li>uruchomić Supervisor, Doctor, Repair i Validator jako odrębne principals z</li>
+</ul>
+<p>rozłącznymi AQL;</p>
+<ul>
+<li>dodać idempotentny Finding Outbox:</li>
+</ul>
+<p><code>DQL finding -&gt; ProblemCase -&gt; jeden ticket -&gt; RepairCandidate</code>;</p>
+<ul>
+<li>przypinać snapshot, strategię i kandydata hashami;</li>
+<li>wykonywać najpierw symulację i izolowany canary;</li>
+<li>dopuścić produkcyjny URI Process dopiero po polityce promocji;</li>
+<li>wymagać niezależnego EQL/read-back i automatycznego rollbacku;</li>
+<li>uruchomić zewnętrzny Sentinel poza procesem i credentialami Control.</li>
+</ul>
+<h3>Etap 4 — progresywne wdrożenie</h3>
+<p>Kolejność środowisk to: fixture, test jednostkowy, stress, izolowany canary, shadow live, canary produkcyjny o odwracalnym skutku, a dopiero potem ograniczona autonomia. Każdy etap ma osobny receipt i nie dziedziczy authority z poprzedniego.</p>
+<p>Szczegółowe komendy, oczekiwane wyniki i kryteria przerwania opisuje <code>docs/operations/autonomy-assurance-validation-2026-07-23.md</code>.</p>
+<h2>Rollout konstytucji</h2>
+<p>Tryb <code>observe</code> zachowuje kompatybilność istniejących ticketów:</p>
+<ul>
+<li>brak bindingu daje <code>legacy_unbound</code> i nie blokuje;</li>
+<li>jawny binding ze starym ref/hash daje <code>stale</code> i blokuje wykonanie;</li>
+<li>nowe ticket factories mają docelowo wiązać bieżący ref/hash;</li>
+<li>tryb <code>enforce</code> można włączyć dopiero po migracji aktywnego backlogu.</li>
+</ul>
+<p>Formularze pochodne zapisują relację jako label <code>source:PLF-N</code>. Jest to pole obsługiwane przez kontrakt Planfile i odczytywane przez walidator aktualności. Kanoniczny magazyn formularzy zachowuje pochodzenie <code>ticket-derived:PLF-N</code>, więc kontroler może idempotentnie uzupełnić label w istniejących rekordach. Relacja nie jest duplikowana w <code>TicketInputs</code>, ponieważ ten obiekt celowo odrzuca pola spoza wersjonowanego modelu.</p>
+<h2>Uruchamianie i audyt</h2>
+<p>Control udostępnia uwierzytelniony <code>POST /api/tickets/lifecycle/run</code> ze scope <code>routing:manage</code>. Endpoint uruchamia ten sam współbieżnościowo chroniony cykl co scheduler i zwraca ograniczony snapshot, bez omijania AQL, EQL, grantów ani master gate.</p>
+<p>Aktualność biznesową sprawdza <code>platform/scripts/ticket-auditor.mjs</code>. Domyślnie jest to dry-run. <code>duplicate</code>, <code>obsolete</code> i <code>done</code> mogą zmienić ticket dopiero z <code>--apply</code>, po przekroczeniu progu confidence i z zapisem rationale oraz receiptu.</p>
+<p>Cykl musi używać jednego snapshotu operacyjnego. Powtarzanie pełnych odczytów Planfile przez niezależne pętle lub nieidempotentna migracja relacji może przeciążyć źródło prawdy. Migracja uznaje istniejący label za zakończony stan, nie zapisuje ponownie dużego <code>inputs</code>, a równoległy cykl jest odrzucany przez guard kontrolera.</p>
+<p>Control współdzieli 30-sekundowy snapshot aktywnych ticketów pomiędzy kontrolerem, przypomnieniami i projekcjami. Równoległe odczyty są koalescowane, a każda mutacja unieważnia cache. Rekoncyliacja projektów jest procesem dobowym, z ręcznym endpointem do kontrolowanego uruchomienia; nie konkuruje co kilka minut z głównym cyklem autonomii.</p>
+<p>Okresowy cykl autonomii działa co 5 minut, a niezależny trigger błędów może uruchomić go wcześniej po kontrolowanym debounce. Startup digestu, pilnych akcji Foundera i rekoncyliacji projektów ma osobne przesunięcia, aby nie wykonywać kilku kosztownych snapshotów w tej samej sekundzie. Wszystkie wartości są jawne w konfiguracji środowiska.</p>
+<p>Rekoncyliacja projektów rozdziela obserwację od mutacji projekcji. Każdy wynik trafia do audytu i snapshotu kontrolera, ale ticket projektu, ticket naprawczy i ticket kontrolera są PATCH-owane tylko przy zmianie materialnej. Pola czasowe <code>observed_at</code> i generowany <code>created_at</code> koperty nie powodują odnowienia niezmienionego kontraktu; istniejąca aktualna koperta pozostaje niezmienna.</p>
+<p>Trigger błędów koalescuje zdarzenia także w trakcie aktywnego cyklu. Po zakończeniu obowiązuje 5-minutowy cooldown; symptomy z tego samego incydentu uruchamiają najwyżej jeden kolejny cykl po cooldownie. Zapobiega to pętli <code>timeout Planfile → problem.detected → pełny skan → kolejny timeout</code>, nie usuwając reakcji zdarzeniowej.</p>
+<p>Jednorazowy formularz ma odrębny lifecycle od ticketu źródłowego. Po zwalidowaniu i zapisaniu odpowiedzi jego ticket dowodowy kończy się jako <code>done</code>; dopiero potem jawna relacja <code>source:PLF-N</code> wskazuje, gdzie zastosować decyzję. Błąd readiness ticketu źródłowego nie może ponownie otworzyć formularza ani wygenerować przypomnienia o odpowiedzi, która już istnieje. Kontroler uzgadnia historyczne rozbieżności tylko wtedy, gdy kanoniczny store ma stan <code>completed</code> i udany submission.</p>
+<h2>Dowody wdrożenia</h2>
+<ul>
+<li>Runtime: testy hasha konstytucji, zakazu sekretów, observe/enforce oraz</li>
+</ul>
+<p>jawnego supersession.</p>
+<ul>
+<li>Core: test zatrzymania stale-bound i obsolete-derived ticketu, ręcznego</li>
+</ul>
+<p>cyklu oraz powiązania formularza ze źródłem.</p>
+<ul>
+<li>Gateway: zgodność kontekstu ticketu v2 z przejściową obsługą v1.</li>
+<li>Live dry-run 2026-07-23: 34 aktywne tickety, 34 <code>still_needed</code>, 0 błędów,</li>
+</ul>
+<p>0 kandydatów do zamknięcia.</p>
+<ul>
+<li>Pełny live dry-run 2026-07-23: 36 aktywnych ticketów, 36 <code>still_needed</code>,</li>
+</ul>
+<p>0 błędów i 0 kandydatów do anulowania.</p>
+<ul>
+<li>Cykl ustalony po wdrożeniu współdzielonego snapshotu: 52 tickety, 32</li>
+</ul>
+<p><code>currency_current</code>, 0 <code>uncertain</code>, 0 <code>obsolete</code>, 0 zapisów naprawczych; odpowiedź API 63,7 ms, Planfile health 1,3 ms.</p>
+<ul>
+<li>Jednorazowa rekoncyliacja domknęła jako <code>done</code> cztery zwalidowane formularze:</li>
+</ul>
+<p>PLF-1105, PLF-1120, PLF-1127 i PLF-1167. Żaden ticket nie został anulowany.</p>
+<ul>
+<li>Live diagnostyka 2026-07-23: wykryto i usunięto nieidempotentny zapis relacji,</li>
+</ul>
+<p>który przez pole nieobsługiwane przez <code>TicketInputs</code> ponawiał PATCH i przeciążał Planfile.</p>
+<ul>
+<li>DQL architektury 2026-07-23: 3/3 inwarianty zielone.</li>
+<li>DOQL portfela manifestów: 8 obiektów, 8 domen, 8 unikalnych domen i brak</li>
+</ul>
+<p>kandydata decyzji; wynik dotyczy wyłącznie jawnie odczytanego zbioru.</p>
+<ul>
+<li>Autonomy Lab: 17/17 scenariuszy funkcjonalnych oraz 1700/1700 wykonań stress,</li>
+</ul>
+<p>bez mutacji zewnętrznych.</p>
+<ul>
+<li>Repair canary stress: 600/600 wykonań, w tym write failure, validator</li>
+</ul>
+<p>failure, candidate hash drift, LLM URI injection i duplicate execution; zero mutacji zewnętrznych.</p>
+<ul>
+<li>Testy Constitution, lifecycle registry i zakazu rekurencyjnej naprawy:</li>
+</ul>
+<p>7/7.</p>
+<ul>
+<li>Read-only lifecycle reconcile: 32 aktywne, 32 current, 32</li>
+</ul>
+<p><code>legacy_unbound</code>, 31 notify, 1 ignore i 0 execute.</p>
+<ul>
+<li>Po poprawce live observer obliczył dla okresu 300 s i jitteru 30 s próg</li>
+</ul>
+<p>630 s. Cykl mający 218164 ms został poprawnie uznany za świeży: <code>ok=true</code>, zero violations i zero mutacji zewnętrznych.</p>
+<ul>
+<li>Autonomy Lab po zmianie: 9/9 testów, w tym granice fake-clock, brak</li>
+</ul>
+<p>harmonogramu, clock skew i okres przekraczający dobowe wymaganie.</p>
+<ul>
+<li>Zweryfikowane instancje Control po restarcie mają własny</li>
+</ul>
+<p><code>controller_instance_id</code>; pierwszy zakończony cykl został zapisany jako <code>startup</code>, utworzył jeden deduplikowany ticket reakcji i nie wykonał efektu zewnętrznego. Najnowszy odczyt: 54 scanned, 33 considered, 0 executable, 33 notifications i czas 2302 ms. Profil oznaczył go jako <code>productive</code>, a nie jako postęp wynikający z samych powiadomień.</p>
+<ul>
+<li>Live shadow podczas następnego pierwszego cyklu zwrócił</li>
+</ul>
+<p><code>state=cycle_running</code>, poprawny <code>cycle_id</code>, brak violations oraz <code>external_mutations=0</code>.</p>
+<ul>
+<li>Autonomy Lab po dodaniu izolacji instancji, progress i stanu aktywnego cyklu:</li>
+</ul>
+<p>14/14. Celowane testy Core kontrolera: 23/23.</p>
+<ul>
+<li>Stage telemetry: Core 27/27, Autonomy Lab 16/16 i stress 1700/1700.</li>
+</ul>
+<p>Pierwszy live cycle miał 2627 ms czasu całkowitego i 2623 ms w instrumentowanych etapach. <code>problem_reactions</code> trwał 2523 ms, czyli około 96% czasu etapów; sześć pozostałych etapów zajęło łącznie 100 ms.</p>
+<ul>
+<li>Pełny Core po integracji: 642 zaliczone, 7 pominiętych, 0 błędów.</li>
+<li>Etap utworzył dokładnie jeden ticket PLF-1189 dla nowego fingerprintu.</li>
+</ul>
+<p>Ostatnie tickety reakcji mają różne fingerprinty, więc obserwacja nie wskazuje na duplikację tego samego ProblemCase.</p>
+<ul>
+<li>Podtelemetria reakcji: Core celowane 29/29, Autonomy Lab 18/18, stress</li>
+</ul>
+<p>1700/1700 oraz pełny Core 644 zaliczone, 7 pominiętych, 0 błędów.</p>
+<ul>
+<li>Pierwszy live read-back po wdrożeniu miał <code>candidate_count=0</code>,</li>
+</ul>
+<p><code>tickets_created=0</code>, <code>candidate_selection=completed</code> oraz trzy jawne <code>skipped:no_candidate</code>. Cały cykl miał 88 ms etapów, zero violations i zero mutacji zewnętrznych. Progress był poprawnie <code>waiting_external</code>.</p>
+<h2>Konsekwencje</h2>
+<ul>
+<li>Konstytucja jest nadrzędnym źródłem norm, ale nie zastępuje intencji,</li>
+</ul>
+<p>autorytetów domenowych ani observed state.</p>
+<ul>
+<li>Kontroler nie „zgaduje”, że ticket jest stary. Zatrzymuje wykonanie tylko na</li>
+</ul>
+<p>formalnym dowodzie nieaktualności.</p>
+<ul>
+<li>Formularz, wiadomość i ticket naprawczy muszą deklarować źródło; inaczej</li>
+</ul>
+<p>ogólny reconciler nie może bezpiecznie ustalić supersession.</p>
+<ul>
+<li>Automatyczne anulowanie wszystkich rekomendacji wymaga osobnego policy</li>
+</ul>
+<p>profilu, canary i rollbacku. Nie jest domyślnie włączone.</p>
+</main>
+</body>
+</html>

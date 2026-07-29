@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fałszywe obrazy rzeczywistości i weryfikacja shell/REST/URI — Subactor Docs</title>
+  <style>
+    :root { --bg:#0f1419; --fg:#e7ecf1; --muted:#9aa7b5; --accent:#3d9cf0; --line:#243041; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:"IBM Plex Sans","Segoe UI",sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #1a2a3d, var(--bg));
+      color: var(--fg); line-height:1.6; min-height:100vh; }
+    main { max-width: 52rem; margin:0 auto; padding:3rem 1.5rem 5rem; }
+    a { color: var(--accent); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    h1,h2,h3,h4 { letter-spacing:-0.01em; line-height:1.25; }
+    h1 { font-size:1.9rem; } h2 { font-size:1.4rem; margin-top:2.2rem; }
+    h3 { font-size:1.15rem; margin-top:1.8rem; }
+    code { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.88em;
+      background:#1a2331; border:1px solid var(--line); border-radius:4px; padding:0.1em 0.35em; }
+    pre { background:#0b1017; border:1px solid var(--line); border-radius:8px;
+      padding:1rem; overflow-x:auto; }
+    pre code { background:none; border:none; padding:0; }
+    table { border-collapse:collapse; width:100%; margin:1rem 0; display:block; overflow-x:auto; }
+    th,td { border:1px solid var(--line); padding:0.45rem 0.7rem; text-align:left;
+      font-size:0.92rem; }
+    th { background:#161f2c; }
+    blockquote { border-left:3px solid var(--accent); margin:1rem 0; padding:0.2rem 1rem;
+      color: var(--muted); }
+    hr { border:0; border-top:1px solid var(--line); margin:2rem 0; }
+    .docnav { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.8rem;
+      margin-bottom:2rem; color:var(--muted); }
+  </style>
+</head>
+<body>
+<main>
+  <nav class="docnav"><a href="../index.html">subactor/docs</a></nav>
+<hr />
+<p>{ &quot;schema&quot;: &quot;subactor.doc/v1&quot;, &quot;id&quot;: &quot;docs.operations.false-reality-and-shell-verification-2026-07-24&quot;, &quot;version&quot;: 2, &quot;status&quot;: &quot;current&quot;, &quot;updated&quot;: &quot;2026-07-24&quot; }</p>
+<hr />
+<h1>Fałszywe obrazy rzeczywistości i weryfikacja shell/REST/URI</h1>
+<h2>Problem (przykład PLF-884)</h2>
+<p>Founder Attention pokazywał <strong>PLF-884</strong> („Wystaw i zweryfikuj TLS — contracts.subactor.com”) jako <strong>DZIAŁAJ TERAZ</strong>, podczas gdy:</p>
+<table>
+<thead><tr><th>Warstwa obserwacji</th><th>Fakt</th></tr></thead>
+<tbody>
+<tr><td>Public DNS (1.1.1.1)</td><td>brak A dla <code>contracts.subactor.com</code></td></tr>
+<tr><td>Plesk REST <code>/api/v2/domains?name=contracts.subactor.com</code></td><td><code>[]</code> — <strong>brak obiektu</strong> w panelu</td></tr>
+<tr><td>Reconciliation</td><td><code>dns_not_ready</code> → <code>tls_not_ready</code> → <code>application_route_not_ready</code></td></tr>
+<tr><td>Tickety</td><td><strong>PLF-883</strong> = DNS (root), <strong>PLF-884</strong> = TLS <code>blocked-by:PLF-883</code></td></tr>
+</tbody></table>
+<p>Czyli system prosił o decyzję SSL, zanim istniała subdomena w Plesk i rekord DNS. To klasyczny <strong>fałszywy obraz rzeczywistości</strong>: ticket/attention ≠ live observation.</p>
+<hr />
+<h2>Skąd biorą się fałszywe obrazy</h2>
+<h3>1. Ticket state ≠ causal chain (Digital Twin diagnosis)</h3>
+<p>Reconciliation buduje <code>diagnosis.causal_chain</code>:</p>
+<pre><code class="language-text">public_dns_name_unresolved
+  → acme_domain_validation_unavailable
+  → tls_certificate_issuance_blocked
+  → strict_https_unavailable</code></pre>
+<p>Ale remediacja tworzy <strong>równoległe</strong> tickety DNS + TLS + app, a attention bierze <strong>każdy</strong> <code>queue=founder</code> + <code>waiting_input</code>. TLS dostaje <code>readiness_preflight:…ensure-ssl</code> mimo <code>blocked-by:PLF-883</code>.</p>
+<p><strong>Lek:</strong> attention ignoruje <code>blocked-by</code> / <code>blocked_by:PLF-*</code> (<code>founder-attention-policy</code>). Root ticket (DNS) jest jedynym founder/bot action.</p>
+<h3>2. Snapshot recon vs live dig</h3>
+<p><code>project-reconciliation.json</code> ma <code>observed_at</code> i może być stary. UI/ops-observer pokazują ticket, nie świeży dig.</p>
+<p><strong>Lek:</strong> <code>subactor reality &lt;domain&gt;</code> łączy dig + recon + tickety + attention w jednym raporcie.</p>
+<h3>3. Lab REST na live Plesk</h3>
+<p>Operacje <code>example.test</code> szły na <code>PLESK_MODE=live</code> → HTML 404 na <code>/api/v2/mail/mailboxes</code> i <code>/sites/publish</code> (mock-only).</p>
+<p><strong>Lek:</strong> lab→mock routing (<code>plesk-lab-route.mjs</code>); live mailbox→CLI; live publish→domain-fs.</p>
+<h3>4. Process envelope / preserveContract</h3>
+<p>Stary process z <code>provide-upstream</code> lub ensure-ssl przeżywał mimo <code>tunnel_mode=none</code> / DNS missing.</p>
+<p><strong>Lek:</strong> <code>remediationContractStaleForBinding</code>; DNS plesk path → <code>project-operator-bot</code> + subdomain-ensure.</p>
+<h3>5. Planfile latency / partial reads</h3>
+<p>Timeouty Planfile dają UI z niekompletnym stanem → wrażenie „system nie wie”.</p>
+<p><strong>Lek:</strong> reality-check z timeoutami i jawnym <code>source.ok=false</code>; nie traktować partial 404/timeout jako „domena OK”.</p>
+<h3>6. Mieszanie warstw policy i execution</h3>
+<p>Service-map mówi <code>tunnel_mode=none</code>, a ticket nadal ma tunnel blocker. Policy (Intent/DOQL) ≠ execution ticket.</p>
+<p><strong>Lek:</strong> supersede tunnel tickets; reality-check flags mismatch policy vs ticket labels.</p>
+<hr />
+<h2>Rozwiązania na bazie Digital Twin / DSL</h2>
+<table>
+<thead><tr><th>Warstwa</th><th>Rola w prawdzie</th></tr></thead>
+<tbody>
+<tr><td><strong>Intent</strong></td><td>Co wolno (np. bez tunnel)</td></tr>
+<tr><td><strong>DOQL service-map</strong></td><td>Portfolio binding, konflikty</td></tr>
+<tr><td><strong>domain-readiness diagnosis</strong></td><td>Causal chain DNS→TLS→HTTPS + <code>next_processes</code></td></tr>
+<tr><td><strong>Strategy DSL</strong></td><td>Kroki (ensure-domain / subdomain-ensure / ssl)</td></tr>
+<tr><td><strong>project.manifest</strong></td><td><code>origin_ip</code>, subscription, gates</td></tr>
+<tr><td><strong>Ticket + SODL</strong></td><td>Plan wykonania — musi cytować observation</td></tr>
+<tr><td><strong>Attention policy</strong></td><td>Kto dostaje „DZIAŁAJ TERAZ”</td></tr>
+</tbody></table>
+<p>Zasada: <strong>observation receipt bije ticket last_error</strong>. Jeśli dig/Plesk mówią „brak domeny”, ticket TLS nie może prosić o SSL.</p>
+<p><code>next_processes</code> przy <code>public_dns_name_unresolved</code> dla multi-label hosta na Plesk:</p>
+<ol>
+<li><code>plesk://host/site/command/subdomain-ensure</code> (<code>apply=false</code>)</li>
+<li><code>plesk://host/dns/query/propagation</code></li>
+<li><code>plesk://host/dns/command/replace</code> (<code>apply=false</code>)</li>
+</ol>
+<hr />
+<h2>Testowanie całego systemu z shell</h2>
+<h3>Już istnieje</h3>
+<pre><code class="language-bash">subactor health
+subactor status
+subactor tickets
+subactor get /api/projects/public-site-service-map
+subactor get /api/projects/reconciliation
+npm run verify:layers          # platform/scripts/verify-layered-system.mjs
+npm run tickets:routes         # false_ready / unsupported URI
+npm run doql:check
+node scripts/run-public-site-service-map.mjs</code></pre>
+<h3>Nowe: reality-check</h3>
+<pre><code class="language-bash"># z platform/
+node scripts/reality-check-project.mjs contracts.subactor.com
+node scripts/reality-check-project.mjs contracts.subactor.com --json
+
+# CLI
+subactor reality contracts.subactor.com
+subactor reality contracts-subactor-com --json</code></pre>
+<p>Wyjście: public DNS, recon blockers, tickety, findings (<code>false_tls_human_boundary</code>, <code>plesk_domain_missing</code>, …), <code>recommended_next</code> URI.</p>
+<h3>URI / REST — pełne testowanie z shell</h3>
+<table>
+<thead><tr><th>Potrzeba</th><th>Stan</th><th>Shell / REST</th></tr></thead>
+<tbody>
+<tr><td>dig + ticket + recon + Plesk + attention</td><td><strong>jest</strong></td><td><code>subactor reality &lt;domain&gt;</code> → <code>GET /api/projects/reality-check?domain=</code></td></tr>
+<tr><td>Plesk domains list (read-only)</td><td><strong>jest</strong></td><td><code>subactor get '/api/connectors/plesk/domains?name=…'</code> → bridge <code>GET /plesk/domains</code></td></tr>
+<tr><td>URI process dry-run</td><td><strong>jest</strong></td><td><code>subactor uri plesk://host/site/command/subdomain-ensure '{&quot;domain&quot;:&quot;…&quot;}'</code> (domyślnie <code>apply=false</code>)</td></tr>
+<tr><td>Attention policy</td><td><strong>jest</strong></td><td>w reality-check (classifyFounderAttention) + diagnostics</td></tr>
+<tr><td>Service-map / recon</td><td><strong>jest</strong></td><td><code>subactor get /api/projects/public-site-service-map</code></td></tr>
+</tbody></table>
+<p><strong>Tak — da się testować cały łańcuch z clienta shell</strong> (health → recon → reality → plesk observe → URI dry-run). Mutacje apply nadal tylko z ticketem + AQL + grantem.</p>
+<pre><code class="language-bash">export SUBACTOR_ADMIN_TOKEN=…
+subactor health
+subactor get /api/projects/reconciliation
+subactor get '/api/projects/reality-check?domain=contracts.subactor.com'
+subactor get '/api/connectors/plesk/domains?name=contracts.subactor.com'
+subactor reality contracts.subactor.com --json
+# dry-run (tworzy/używa process ticket; apply=false domyślnie dla ensure):
+subactor uri 'plesk://host/site/command/subdomain-ensure' \
+  '{&quot;domain&quot;:&quot;contracts.subactor.com&quot;,&quot;parent_domain&quot;:&quot;subactor.com&quot;,&quot;apply&quot;:false}'</code></pre>
+<hr />
+<h2>Poprawki kodu (ta sesja)</h2>
+<ol>
+<li><strong>Attention</strong> — ignore <code>blocked-by</code> / <code>blocked_by:PLF-*</code> (<code>blocked_by_dependency</code>).</li>
+<li><strong>DNS remediation</strong> — Plesk plane → <code>project-operator-bot</code>; multi-label → <code>subdomain-ensure</code> dry-run.</li>
+<li><strong>TLS prompt</strong> — gdy DNS unresolved, tekst: najpierw subdomena, nie SSL.</li>
+<li><strong>Diagnosis</strong> — <code>next_processes</code> startuje od subdomain-ensure.</li>
+<li><strong>Shell</strong> — <code>subactor reality</code> + <code>subactor uri</code> + <code>scripts/reality-check-project.mjs</code>.</li>
+<li><strong>REST</strong> — <code>GET /api/projects/reality-check</code>, <code>GET /api/connectors/plesk/domains</code>, bridge <code>GET /plesk/domains</code>.</li>
+<li><strong>Lab Plesk 404</strong> — lab→mock (osobna poprawka bridge).</li>
+</ol>
+<hr />
+<h2>Jak czytać PLF-884 od teraz</h2>
+<table>
+<thead><tr><th>Ticket</th><th>Rola</th><th>Kto</th></tr></thead>
+<tbody>
+<tr><td><strong>PLF-883</strong></td><td>Root: brak domeny w Plesk + DNS</td><td><strong>project-operator-bot</strong> → <code>subdomain-ensure</code> + DNS</td></tr>
+<tr><td><strong>PLF-884</strong></td><td>TLS po DNS</td><td>Founder tylko gdy DNS ready; inaczej <code>blocked_by:PLF-883</code></td></tr>
+<tr><td><strong>PLF-885</strong></td><td>App route</td><td>po DNS+TLS</td></tr>
+</tbody></table>
+<p><strong>Nie</strong> zatwierdzaj ensure-ssl na PLF-884, dopóki:</p>
+<pre><code class="language-bash">dig +short contracts.subactor.com A @1.1.1.1   # = 217.160.250.222
+# oraz Plesk domains zawiera contracts.subactor.com
+subactor reality contracts.subactor.com         # findings puste / ok:true</code></pre>
+</main>
+</body>
+</html>

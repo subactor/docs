@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Audit: katalog Plesk vs tickety + wykonanie PLF-883 — Subactor Docs</title>
+  <style>
+    :root { --bg:#0f1419; --fg:#e7ecf1; --muted:#9aa7b5; --accent:#3d9cf0; --line:#243041; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:"IBM Plex Sans","Segoe UI",sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #1a2a3d, var(--bg));
+      color: var(--fg); line-height:1.6; min-height:100vh; }
+    main { max-width: 52rem; margin:0 auto; padding:3rem 1.5rem 5rem; }
+    a { color: var(--accent); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    h1,h2,h3,h4 { letter-spacing:-0.01em; line-height:1.25; }
+    h1 { font-size:1.9rem; } h2 { font-size:1.4rem; margin-top:2.2rem; }
+    h3 { font-size:1.15rem; margin-top:1.8rem; }
+    code { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.88em;
+      background:#1a2331; border:1px solid var(--line); border-radius:4px; padding:0.1em 0.35em; }
+    pre { background:#0b1017; border:1px solid var(--line); border-radius:8px;
+      padding:1rem; overflow-x:auto; }
+    pre code { background:none; border:none; padding:0; }
+    table { border-collapse:collapse; width:100%; margin:1rem 0; display:block; overflow-x:auto; }
+    th,td { border:1px solid var(--line); padding:0.45rem 0.7rem; text-align:left;
+      font-size:0.92rem; }
+    th { background:#161f2c; }
+    blockquote { border-left:3px solid var(--accent); margin:1rem 0; padding:0.2rem 1rem;
+      color: var(--muted); }
+    hr { border:0; border-top:1px solid var(--line); margin:2rem 0; }
+    .docnav { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.8rem;
+      margin-bottom:2rem; color:var(--muted); }
+  </style>
+</head>
+<body>
+<main>
+  <nav class="docnav"><a href="../index.html">subactor/docs</a></nav>
+<hr />
+<p>{ &quot;schema&quot;: &quot;subactor.doc/v1&quot;, &quot;id&quot;: &quot;docs.operations.plesk-catalog-ticket-audit-2026-07-24&quot;, &quot;version&quot;: 1, &quot;status&quot;: &quot;current&quot;, &quot;updated&quot;: &quot;2026-07-24&quot; }</p>
+<hr />
+<h1>Audit: katalog Plesk vs tickety + wykonanie PLF-883</h1>
+<h2>1. Czy queue odpalił kroki PLF-883?</h2>
+<p><strong>Nie przez URI Process queue.</strong></p>
+<table>
+<thead><tr><th>Fakt</th><th>Stan (2026-07-24 ~20:27 UTC)</th></tr></thead>
+<tbody>
+<tr><td>PLF-883 <code>status</code></td><td><code>done</code></td></tr>
+<tr><td><code>uri_processes[*].status</code></td><td>wszystkie <code>pending</code></td></tr>
+<tr><td>Notatka</td><td><code>CLI 2026-07-24: subdomain contracts.subactor.com id=315; DNS A 217.160.250.222 public ready</code></td></tr>
+<tr><td>PLF-884</td><td><code>done</code>, notatka CLI o LE TLS</td></tr>
+<tr><td>Live dig</td><td><code>217.160.250.222</code></td></tr>
+<tr><td>Live Plesk domains</td><td><code>contracts.subactor.com</code> id=315</td></tr>
+<tr><td>Live cert (SNI)</td><td>CN/SAN = <code>contracts.subactor.com</code>, ważne do 2026-10-22</td></tr>
+<tr><td><code>subactor reality</code></td><td><strong>ok: true</strong>, findings=0</td></tr>
+</tbody></table>
+<p><strong>Wniosek:</strong> efekt produkcyjny (domena + DNS + cert) powstał <strong>poza</strong> autonomous queue (CLI / ręczna ścieżka). Queue <strong>nie</strong> oznaczył kroków URI jako completed — ticket <code>done</code> z <code>pending</code> processami to rozjazd receipts.</p>
+<h3>Dlaczego queue nie jechał</h3>
+<ul>
+<li><code>delegation/manager.queue_consumer</code>: <code>error=planfile_unavailable</code>, <code>considered=0</code>, <code>results=[]</code>.</li>
+<li>Control → Planfile (<code>http://planfile:8000</code>) <strong>timeoutuje</strong> przy listach/health pod obciążeniem.</li>
+<li>Bez stabilnego Planfile consumer nie bierze ticketów <code>ready</code> do <code>execute</code>.</li>
+</ul>
+<hr />
+<h2>2. Audit: catalog vs URI w otwartych ticketach</h2>
+<h3>Katalog Plesk (19 capability → 22 URI)</h3>
+<p>Zamknięty zbiór w <code>connector-capabilities/catalog.v1.json</code>:</p>
+<ul>
+<li>sync, subdomain-ensure, domain-ensure, ssl-ensure</li>
+<li>DNS: authority, records, replace, reconcile, propagation, preflight</li>
+<li>doctor, subscription capabilities, publish-verify, reverse-proxy</li>
+<li>transports SFTP/FTP, extensions (profiled)</li>
+</ul>
+<h3>Otwarte tickety z <code>plesk://</code></h3>
+<table>
+<thead><tr><th>URI w ticketach</th><th>W katalogu?</th></tr></thead>
+<tbody>
+<tr><td><code>…/site/command/sync</code></td><td>TAK (14 ticketów)</td></tr>
+<tr><td><code>…/site/command/subdomain-ensure</code></td><td>TAK</td></tr>
+<tr><td><code>…/site/command/ssl-ensure</code></td><td>TAK</td></tr>
+<tr><td><code>…/dns/*</code> (authority, replace, propagation)</td><td>TAK</td></tr>
+<tr><td><code>…/doctor</code>, <code>subscription</code>, <code>extensions/catalog</code></td><td>TAK</td></tr>
+<tr><td><code>…/site/command/reverse-proxy-ensure</code></td><td>TAK</td></tr>
+<tr><td><code>…/site/command/publish-verify</code></td><td>TAK</td></tr>
+<tr><td><strong><code>plesk://host/site/query/methods</code></strong></td><td><strong>NIE</strong> (PLF-504, PLF-508)</td></tr>
+</tbody></table>
+<p><strong>Pokrycie:</strong> 11/12 unikalnych <code>plesk://</code> z otwartych ticketów jest w katalogu. Jedyna luka katalogowa w użyciu: <strong><code>site/query/methods</code></strong>.</p>
+<h3>Bramy <code>human_approval=true</code> (wciąż pending)</h3>
+<p>Operacyjne (powinny iść na bot + 1× consent, nie ręczny DNS za każdym razem):</p>
+<ul>
+<li><code>reconcile-dns</code> → <code>dns/command/replace</code> (PLF-1493) — <strong>human=true</strong> → <code>human_boundary</code> na bot queue</li>
+<li><code>ensure-ssl</code> apply (PLF-1494, PLF-592)</li>
+<li><code>publish</code> / <code>site-sync-apply</code> (wiele projektów)</li>
+<li><code>approve</code> task:// (PLF-885, 1053, 1056, 894, 913, 914…)</li>
+</ul>
+<p>Biznesowe (zostawić Founderowi):</p>
+<ul>
+<li>pilot terms, recruitment, social onboarding, incident-response</li>
+</ul>
+<hr />
+<h2>3. contracts.subactor.com — łańcuch vs queue</h2>
+<pre><code class="language-text">[OK live]  subdomain w Plesk (id=315)
+[OK live]  public DNS A = origin
+[OK live]  LE cert SAN = contracts.subactor.com
+[OK]       reality-check findings=[]
+[FAIL path] queue URI steps nie odpalone / nie zreceiptowane
+[FAIL path] PLF-885 apply_ready + approval, ale brak kroku apply-sync w processach
+             (dry-run → approve → verify, bez publish apply)
+[FAIL try]  POST processes/run sync dry-run → plesk_site_source_dir_invalid
+             (zły source_dir w ręcznym wywołaniu audytu)
+[FAIL dep]  Planfile latency → autonomous queue idle</code></pre>
+<p>Nowe tickety po recon: <strong>PLF-1493</strong> (DNS, czek na human reconcile-dns), <strong>PLF-1494</strong> (TLS blocked-by 1493) — mimo że live DNS/TLS już zielone → <strong>fałszywa remediacja</strong> vs live observation (reality-check to widzi, recon jeszcze nie domknął blockerów).</p>
+<hr />
+<h2>4. Czy LLM mógłby to domknąć z katalogu?</h2>
+<table>
+<thead><tr><th>Warstwa</th><th>Ocena</th></tr></thead>
+<tbody>
+<tr><td>URI w ticketach remediacji</td><td><strong>Wystarczająco w katalogu</strong> (prawie 100%)</td></tr>
+<tr><td>Payload / source_dir / remote_path</td><td><strong>Często niedookreślone</strong> — muszą z manifestu projektu</td></tr>
+<tr><td>Wykonanie</td><td><strong>Bot + Planfile + queue</strong>, nie LLM</td></tr>
+<tr><td>Blokada dziś</td><td>Planfile timeout + human_approval na DNS replace + brak apply w processie po approval</td></tr>
+</tbody></table>
+<p><strong>Schema katalogu wystarcza botowi na łańcuch domena→DNS→TLS→sync</strong>, o ile:</p>
+<ol>
+<li>Planfile jest responsywny,</li>
+<li>botowe kroki startują <code>ready</code> bez fałszywego <code>human_boundary</code>,</li>
+<li>po <code>publication_approval</code> jest jawny krok <code>sync apply=true</code>,</li>
+<li>payload bierze <code>source_dir</code> z manifestu.</li>
+</ol>
+<p>LLM nie jest potrzebny do tego łańcucha i nie powinien inventować URI spoza katalogu.</p>
+<hr />
+<h2>5. Rekomendowane naprawy (kolejność)</h2>
+<ol>
+<li><strong>Stabilność Planfile</strong> (timeouty list ticketów) — bez tego queue = 0.</li>
+<li><strong>Po live green (reality-check ok)</strong> — recon nie tworzy PLF-1493/1494; domyka stare remediacje.</li>
+<li><strong>DNS replace:</strong> dry-run bez human; apply tylko po jednorazowym plan_hash / mutations gate (nie każdy reconcile).</li>
+<li><strong>Dodać do katalogu</strong> <code>plesk://host/site/query/methods</code> (używane w PLF-504/508).</li>
+<li><strong>PLF-885 process:</strong> wstawić <code>apply-sync</code> po <code>approve</code> gdy approval już jest.</li>
+<li><strong>Receipts:</strong> CLI/ops success → oznacz URI steps completed lub cancel duplikaty.</li>
+</ol>
+<hr />
+<h2>6. Shell weryfikacja (teraz)</h2>
+<pre><code class="language-bash">subactor reality contracts.subactor.com          # ok: true
+subactor get '/api/connectors/plesk/domains?name=contracts.subactor.com'
+# cert:
+echo | openssl s_client -connect 217.160.250.222:443 -servername contracts.subactor.com 2&gt;/dev/null \
+  | openssl x509 -noout -subject -dates</code></pre>
+</main>
+</body>
+</html>

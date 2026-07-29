@@ -2,13 +2,18 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.plans.docs-subactor-com-publish",
-  "version": 1,
+  "version": 2,
   "status": "current",
-  "updated": "2026-07-18"
+  "updated": "2026-07-29"
 }
 ---
 
 # Plan: docs → docs.subactor.com (NL → publish)
+
+**Stan przeglądu 2026-07-29:** plan pozostaje częściowo wykonany. Poniższe
+wyniki z 2026-07-18 są historycznym evidence; nie dowodzą zakończenia
+produkcyjnego cutoveru. Otwarte pozostają publiczny DNS/TLS, ścisły publiczny
+verify oraz końcowy receipt dla ścieżki NL → publish.
 
 Goal: make this founder CLI prompt work end-to-end:
 
@@ -73,7 +78,7 @@ Plesk publish writes the subscription `httpdocs` for that domain name; public HT
 only shows Plesk content after DNS (and TLS cert) point at the Plesk host
 (same pattern as `subactor.com` → `217.160.250.222`).
 
-## Test results (2026-07-18)
+## Historyczne wyniki testów (2026-07-18)
 
 | Check | Result |
 | --- | --- |
@@ -84,6 +89,14 @@ only shows Plesk content after DNS (and TLS cert) point at the Plesk host
 | `https://docs.subactor.com/` | Serves **GitHub Pages** (Jekyll); TLS SAN mismatch on strict verify |
 
 Ops follow-ups: add `docs.subactor.com` on Plesk + DNS/TLS; raise urirun exec timeout or fix FTP/SFTP (paramiko) for apply; prefer addon docroot `/docs.subactor.com` so primary `/httpdocs` is not overwritten.
+
+## Otwarte kryteria zamknięcia
+
+- [ ] DNS wskazuje zatwierdzony origin i ma audytowalny plan rollbacku.
+- [ ] Certyfikat zawiera `docs.subactor.com` w SAN i przechodzi strict TLS.
+- [ ] Publiczny fingerprint treści odpowiada zaakceptowanemu release.
+- [ ] Pełna ścieżka NL → plan → grant → apply → verify kończy się receipt bez
+  ręcznego obchodzenia bramek.
 
 ## Powiązane (rekomendacja autonomii)
 

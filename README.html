@@ -35,16 +35,22 @@
 <body>
 <main>
   <nav class="docnav"><a href="./index.html">subactor/docs</a></nav>
+<hr />
+<p>{ &quot;schema&quot;: &quot;subactor.doc/v1&quot;, &quot;id&quot;: &quot;docs.readme&quot;, &quot;version&quot;: 5, &quot;status&quot;: &quot;current&quot;, &quot;updated&quot;: &quot;2026-07-29&quot; }</p>
+<hr />
 <h1>docs.subactor.com</h1>
 <p>!<a href="img.png">img.png</a></p>
 <p>Publiczna dokumentacja Subactor.</p>
-<h2>Stan live (2026-07-21)</h2>
+<h2>Stan architektury i wdrożeń (2026-07-22)</h2>
 <p>Aktualny przegląd wykonanych prac, dowodów produkcyjnych, otwartych ticketów i planu refaktoryzacji: <a href="operations/operational-review-2026-07-21.html">operations/operational-review-2026-07-21.md</a>.</p>
-<p>Historyczny raport Plesk i autonomii: <a href="architecture/plesk-publish-status-report-2026-07-19.html">architecture/plesk-publish-status-report-2026-07-19.md</a>. Szczegółowy rejestr zależności, których platforma nie może utworzyć samodzielnie: <a href="architecture/unresolved-live-autonomy-blockers-2026-07-19.html">architecture/unresolved-live-autonomy-blockers-2026-07-19.md</a>. Plan usunięcia blokad i uruchomienia pierwszego kontrolowanego pilota: <a href="plans/full-platform-remediation-plan-2026-07-19.html">plans/full-platform-remediation-plan-2026-07-19.md</a>. Dry-run <code>projekty/02_landing</code> działa, ale produkcyjne utworzenie domeny blokują nieznany limit subskrypcji oraz brak DNS/TLS. Prywatny chat per-user i lokalny agent autonomii działają; realny e-mail i telefon nie są jeszcze gotowe live.</p>
+<p>Historyczny raport Plesk i autonomii: <a href="architecture/plesk-publish-status-report-2026-07-19.html">architecture/plesk-publish-status-report-2026-07-19.md</a>. Szczegółowy rejestr zależności, których platforma nie może utworzyć samodzielnie: <a href="architecture/unresolved-live-autonomy-blockers-2026-07-19.html">architecture/unresolved-live-autonomy-blockers-2026-07-19.md</a>. Plan usunięcia blokad i uruchomienia pierwszego kontrolowanego pilota: <a href="plans/full-platform-remediation-plan-2026-07-19.html">plans/full-platform-remediation-plan-2026-07-19.md</a>. Projekt domenowy znajduje się w niezależnym repozytorium <code>projekty/autonomicznosc-pl</code>, a źródło publikacji w <code>projekty/autonomicznosc-pl/02_landing</code>. Aktualny stan wdrożenia i pozostałe blokery opisuje przegląd operacyjny powyżej.</p>
 <h2>Autonomy (CLI → connectors)</h2>
 <table>
 <thead><tr><th>Dokument</th><th>Opis</th></tr></thead>
 <tbody>
+<tr><td><a href="architecture/intent-contract-and-human-machine-source-of-truth-2026-07-22.html">architecture/intent-contract-and-human-machine-source-of-truth-2026-07-22.md</a></td><td>Decyzja: wspólna intencja człowieka i maszyny jako wersjonowany Intent Contract nad istniejącymi DSL</td></tr>
+<tr><td><a href="plans/intent-contract-continuation-2026-07-22.html">plans/intent-contract-continuation-2026-07-22.md</a></td><td>Plan wdrożenia Intent Contract, source-level lifecycle, równoległych napraw i pętli Doctor/Repair/Validator</td></tr>
+<tr><td><a href="architecture/versioned-knowledge-strategy-and-error-runtime-2026-07-22.html">architecture/versioned-knowledge-strategy-and-error-runtime-2026-07-22.md</a></td><td>Wersjonowana baza wiedzy i registry tekstów, Strategy DSL, Plesk/Cloudflare DNS oraz rzeczywisty stan pętli reakcji ERROR</td></tr>
 <tr><td><a href="architecture/autonomy-recommended-solution.html">architecture/autonomy-recommended-solution.md</a></td><td><strong>Rekomendacja kanoniczna:</strong> kontrolowany katalog zdolności, strumienie A/B, fazy, werdykt 4 fundamentów</td></tr>
 <tr><td><a href="architecture/adr/README.html">architecture/adr/README.md</a></td><td>ADR Phase 0: zakres autonomii, DNS SSOT, HITL, DoD publish, rollback, sekrety</td></tr>
 <tr><td><a href="architecture/autonomy-ops-status-and-open-questions.html">architecture/autonomy-ops-status-and-open-questions.md</a></td><td>Status ops + pytania otwarte (z proponowanymi odpowiedziami); baseline <code>5894906</code></td></tr>
@@ -79,6 +85,7 @@
 <li><code>context.md</code> — narracja dla LLM  </li>
 </ul>
 <p>Zasady skanowania i triażu mirrorów: <a href="platform/CODEBASE_HEALTH.html">CODEBASE_HEALTH.md</a>.</p>
+<p>Aktualne podsumowanie refaktoryzacji i kolejność kolejnych splitów: <a href="plans/refactoring-status-and-roadmap-2026-07-29.html">plans/refactoring-status-and-roadmap-2026-07-29.md</a>.</p>
 </main>
 </body>
 </html>

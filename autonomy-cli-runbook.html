@@ -35,6 +35,9 @@
 <body>
 <main>
   <nav class="docnav"><a href="./index.html">subactor/docs</a></nav>
+<hr />
+<p>{ &quot;schema&quot;: &quot;subactor.doc/v1&quot;, &quot;id&quot;: &quot;docs.autonomy-cli-runbook&quot;, &quot;version&quot;: 4, &quot;status&quot;: &quot;current&quot;, &quot;updated&quot;: &quot;2026-07-29&quot; }</p>
+<hr />
 <h1>Autonomy CLI runbook — connector goals from the shell</h1>
 <p>Practical runbook: how Subactor turns a natural-language (NL) goal into governed URI Process steps, starting from the <strong>shell CLI</strong>. Focus example: documentation in the <code>docs</code> repo published to <strong>docs.subactor.com</strong> <code>httpdocs</code>.</p>
 <p>Related (platform-internal, more detailed on single concerns):</p>
@@ -44,7 +47,7 @@
 <tr><td><a href="../platform/docs/URI_PROCESS_AUTONOMY.html"><code>platform/docs/URI_PROCESS_AUTONOMY.md</code></a></td><td>Contract AQL / OQL / URI layers</td></tr>
 <tr><td><a href="../platform/docs/GITHUB_PLESK_URI_PROCESSES.html"><code>platform/docs/GITHUB_PLESK_URI_PROCESSES.md</code></a></td><td>GitHub + Plesk recipes, www sync</td></tr>
 <tr><td><a href="../platform/docs/AUTONOMY_CONTRACTS.html"><code>platform/docs/AUTONOMY_CONTRACTS.md</code></a></td><td>Autonomy contracts + delegation</td></tr>
-<tr><td><a href="../www/deployment/PLESK.html"><code>www/deployment/PLESK.md</code></a></td><td>www → subactor.com httpdocs (working path)</td></tr>
+<tr><td><a href="../subactor-com/deployment/PLESK.html"><code>subactor-com/deployment/PLESK.md</code></a></td><td>www → subactor.com httpdocs (working path)</td></tr>
 <tr><td><a href="../orchestrator/README.html"><code>orchestrator/README.md</code></a></td><td>Thin NL\</td><td>ticket\</td><td>OQL → urirun hub</td></tr>
 </tbody></table>
 <hr />
@@ -94,6 +97,22 @@ node bin/subactor-run.mjs --nl &quot;zsynchronizuj www&quot;    # phrase stub on
 <tr><td>Founder CLI bypass</td><td><code>SUBACTOR_ADMIN_TOKEN</code> on <code>subactor-run</code></td><td>Allowlist <code>*</code>; still respects apply env</td></tr>
 </tbody></table>
 <p>OpenRouter role today: <strong>intent / model selection / plan proposal only</strong>. Once URI + payload are known, FTP/SFTP ensure and sync are **deterministic connector calls** — no LLM in the upload path.</p>
+<h3>Safe Control cycle</h3>
+<p>Operatorzy uruchamiają Control przez bezpieczny overlay Platformy:</p>
+<pre><code class="language-bash">cd ~/github/subactor/platform
+npm run control:safe:up       # wszystkie mutacje i konsumenci kolejki wyłączone
+npm run control:safe:cycle    # tylko preview; nie wykonuje zgłoszeń
+npm run control:execute-once  # maksymalnie jedno zgłoszenie, potem zawsze safe mode</code></pre>
+<p><code>control:execute-once</code> nakłada konfigurację one-shot na konfigurację safe, wykonuje jeden cykl i odtwarza safe overlay także po błędzie. Runner odmawia wykonania, jeżeli zewnętrzne bramki mutacji są aktywne, trigger błędów jest włączony albo limit konsumenta różni się od <code>1</code>. Odpowiedź wykonująca więcej niż jedno zgłoszenie jest raportowana jako naruszenie limitu.</p>
+<p>Komendy <code>control:execute-once:up</code> i <code>control:execute-once:run</code> są niskopoziomowe i służą do diagnostyki; zwykła procedura operatorska używa atomowej komendy <code>control:execute-once</code>. Regresje tych gwarancji pokrywają testy <code>platform/test/control-safe-start.test.mjs</code> oraz <code>platform/test/control-execute-once.test.mjs</code>.</p>
+<p>Control publikuje w <code>/health</code> niesekretny kontrakt <code>subactor.control-safety-status/v1</code>. Ops Observer odwzorowuje go na metryki:</p>
+<ul>
+<li><code>subactor_control_safety_observation_ok</code>,</li>
+<li><code>subactor_control_safety_mode{mode=&quot;safe|execute_once|unsafe|unknown&quot;}</code>,</li>
+<li><code>subactor_control_execution_guard_valid</code>,</li>
+<li>metryki bramek mutacji, konsumenta kolejki i jego limitu.</li>
+</ul>
+<p>Prometheus alarmuje po 30 sekundach konfiguracji <code>unsafe</code>, po 2 minutach braku obserwacji oraz gdy poprawny <code>execute_once</code> nie wróci do safe mode przez 10 minut. Stan <code>waiting_external</code>, brak wykonywalnych ticketów i prawidłowy krótki one-shot nie są alarmami.</p>
 <hr />
 <h2>2. Gaps (better autonomy + subtask delegation)</h2>
 <table>

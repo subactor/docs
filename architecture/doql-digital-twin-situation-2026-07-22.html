@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DOQL/1 — Digital Twin Situation Query — Subactor Docs</title>
+  <style>
+    :root { --bg:#0f1419; --fg:#e7ecf1; --muted:#9aa7b5; --accent:#3d9cf0; --line:#243041; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:"IBM Plex Sans","Segoe UI",sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #1a2a3d, var(--bg));
+      color: var(--fg); line-height:1.6; min-height:100vh; }
+    main { max-width: 52rem; margin:0 auto; padding:3rem 1.5rem 5rem; }
+    a { color: var(--accent); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    h1,h2,h3,h4 { letter-spacing:-0.01em; line-height:1.25; }
+    h1 { font-size:1.9rem; } h2 { font-size:1.4rem; margin-top:2.2rem; }
+    h3 { font-size:1.15rem; margin-top:1.8rem; }
+    code { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.88em;
+      background:#1a2331; border:1px solid var(--line); border-radius:4px; padding:0.1em 0.35em; }
+    pre { background:#0b1017; border:1px solid var(--line); border-radius:8px;
+      padding:1rem; overflow-x:auto; }
+    pre code { background:none; border:none; padding:0; }
+    table { border-collapse:collapse; width:100%; margin:1rem 0; display:block; overflow-x:auto; }
+    th,td { border:1px solid var(--line); padding:0.45rem 0.7rem; text-align:left;
+      font-size:0.92rem; }
+    th { background:#161f2c; }
+    blockquote { border-left:3px solid var(--accent); margin:1rem 0; padding:0.2rem 1rem;
+      color: var(--muted); }
+    hr { border:0; border-top:1px solid var(--line); margin:2rem 0; }
+    .docnav { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.8rem;
+      margin-bottom:2rem; color:var(--muted); }
+  </style>
+</head>
+<body>
+<main>
+  <nav class="docnav"><a href="../index.html">subactor/docs</a></nav>
+<hr />
+<p>{ &quot;schema&quot;: &quot;subactor.doc/v1&quot;, &quot;id&quot;: &quot;docs.architecture.doql-digital-twin-situation-2026-07-22&quot;, &quot;version&quot;: 1, &quot;status&quot;: &quot;current&quot;, &quot;updated&quot;: &quot;2026-07-22&quot; }</p>
+<hr />
+<h1>DOQL/1 — Digital Twin Situation Query</h1>
+<h2>Co się stało z DOQL</h2>
+<p>DOQL nie został usunięty. W istniejącym pakiecie <code>oqlos/doql</code> pozostały parser, model <code>DigitalTwinView</code>, bezpieczna projekcja <code>self</code> i deklaratywne pliki <code>.doql.less</code>. Komenda <code>doql query</code> jest jednak nadal stubem. W Subactorze Digital Twin został rozwinięty przede wszystkim jako subject-bound, read-only widok pojedynczego aktora. Brakowało wykonawczej warstwy agregującej zbiór obiektów do obrazu sytuacji.</p>
+<p>Ten brak domyka <code>subactor.doql-situation-profile/v1</code>. W Subactorze skrót DOQL oznacza teraz precyzyjnie <strong>Digital Object Query Language</strong>: deklaratywne, ograniczone komponowanie sytuacji Digital Twin. Nie zastępuje DQL.</p>
+<h2>Granice odpowiedzialności</h2>
+<table>
+<thead><tr><th>Warstwa</th><th>Odpowiada na pytanie</th><th>Czego nie robi</th></tr></thead>
+<tbody>
+<tr><td>Intent Contract</td><td>czego chce człowiek lub maszyna?</td><td>nie przyznaje authority</td></tr>
+<tr><td>DOQL</td><td>jaki jest zagregowany stan obiektów i jakie decyzje rozważyć?</td><td>nie diagnozuje przyczyny i nie wykonuje zmian</td></tr>
+<tr><td>DQL</td><td>który inwariant jest naruszony?</td><td>nie naprawia</td></tr>
+<tr><td>Strategy DSL</td><td>którą zatwierdzoną strategię wybrać?</td><td>nie nadaje uprawnień</td></tr>
+<tr><td>AQL</td><td>kto może zdecydować lub wykonać?</td><td>nie opisuje operacji</td></tr>
+<tr><td>OQL / URI Process</td><td>jakie kroki wykonać?</td><td>nie dowodzi rezultatu</td></tr>
+<tr><td>EQL</td><td>czy oczekiwany rezultat został osiągnięty?</td><td>nie wykonuje naprawy</td></tr>
+<tr><td>SODL / Planfile</td><td>co zaszło i jaki jest lifecycle pracy?</td><td>nie zastępuje stanu domenowego</td></tr>
+</tbody></table>
+<p>Kolejność kontrolna ma postać:</p>
+<pre><code class="language-text">obiekty domenowe → DOQL Situation Snapshot → DQL findings
+                 → Strategy DSL → ticket/AQL → OQL/URI Process
+                 → świeży snapshot → EQL receipt → SODL/Planfile</code></pre>
+<h2>Zaimplementowany przekrój</h2>
+<ul>
+<li>Contracts zawiera JSON Schema i kanoniczny profil DOQL.</li>
+<li>Core zawiera deterministyczny evaluator operacji <code>count</code>, <code>count_where</code>,</li>
+</ul>
+<p><code>sum</code>, <code>distinct_count</code> i <code>ratio</code>.</p>
+<ul>
+<li>Oceny sytuacji oraz wybór zadeklarowanych kandydatów decyzji korzystają z</li>
+</ul>
+<p>parsera wyrażeń TestQL, a nie z <code>eval</code> ani z kodu dostarczonego w profilu.</p>
+<ul>
+<li>Platform odczytuje wszystkie osiem <code>projekty/*/project.manifest.json</code> i</li>
+</ul>
+<p>uruchamia profil <code>organization.project-portfolio-situation</code>.</p>
+<ul>
+<li>Wynik DOQL jest przekazywany do osobnego profilu DQL, który sprawdza schema,</li>
+</ul>
+<p>read-only boundary oraz brak surowych obiektów.</p>
+<ul>
+<li><code>npm run doql:check</code> jest częścią <code>test:meta</code>.</li>
+</ul>
+<p>Aktualny read-back: 8 projektów, 8 domen, pełne pokrycie domen, unikalna tożsamość domenowa, zero kandydatów naprawczych oraz 2/2 zielone inwarianty DQL.</p>
+<h2>Kontrakt bezpieczeństwa</h2>
+<p>Profil wymusza <code>read_only=true</code>, <code>automatic_mutation_allowed=false</code> i <code>include_raw_objects=false</code>. Każde źródło oraz cały snapshot mają limity liczby obiektów. Raport przechowuje wyłącznie liczniki, hashe, metryki, oceny i wcześniej zadeklarowane kandydatury decyzji.</p>
+<p>Kandydat decyzji wskazuje ownera, <code>strategy_ref</code> i <code>eql_ref</code>, ale nie może zawierać komendy, shella ani URI wykonawczego. Dalsza reakcja zawsze wymaga ticketu, AQL i EQL. DOQL nie może sam wybrać sobie nowych możliwości.</p>
+<h2>Następne etapy</h2>
+<ol>
+<li>Dodać typowane adaptery źródeł: tickety, procesy, DNS, WWW, konektory i SODL.</li>
+<li>Wersjonować Situation Snapshot w registry i przechowywać freshness receipt.</li>
+<li>Połączyć assessment z Strategy DSL bez omijania ticket-first preflight.</li>
+<li>Dodać temporalne agregacje okien SODL i rozdzielić fakt, korelację oraz</li>
+</ol>
+<p>hipotezę przyczyny.</p>
+<ol>
+<li>Wynieść wspólny parser/profil do <code>oqlos/doql</code>, zastępując stub <code>doql query</code>,</li>
+</ol>
+<p>dopiero po uzgodnieniu kompatybilności pakietu.</p>
+<p>Nie należy tworzyć osobnego runtime do mutacji. DOQL jest read model/query runtime w Core. Konektor URI jest potrzebny dopiero dla pozyskania zdalnego, typowanego snapshotu; jego wynik pozostaje danymi wejściowymi, a nie authority.</p>
+</main>
+</body>
+</html>

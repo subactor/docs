@@ -2,9 +2,9 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.architecture.autonomy-ops-status-and-open-questions",
-  "version": 1,
+  "version": 2,
   "status": "current",
-  "updated": "2026-07-18"
+  "updated": "2026-07-29"
 }
 ---
 
@@ -213,7 +213,7 @@ publicznego HTTPS).
 | [`../plans/intent-capability-fallbacks.md`](../plans/intent-capability-fallbacks.md) | Krótka nota planowa |
 | [`../../platform/docs/URI_PROCESS_AUTONOMY.md`](../../platform/docs/URI_PROCESS_AUTONOMY.md) | AQL / OQL / URI |
 | [`../../platform/docs/AUTONOMY_CONTRACTS.md`](../../platform/docs/AUTONOMY_CONTRACTS.md) | Kontrakty autonomii |
-| [`../../www/deployment/PLESK.md`](../../www/deployment/PLESK.md) | Wzorzec www → subactor.com (działający) |
+| [`../../subactor-com/deployment/PLESK.md`](../../subactor-com/deployment/PLESK.md) | Wzorzec www → subactor.com (działający) |
 
 ---
 

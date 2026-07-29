@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Plan kontynuacji — Intent Contract, lifecycle i równoległe naprawy — Subactor Docs</title>
+  <style>
+    :root { --bg:#0f1419; --fg:#e7ecf1; --muted:#9aa7b5; --accent:#3d9cf0; --line:#243041; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:"IBM Plex Sans","Segoe UI",sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #1a2a3d, var(--bg));
+      color: var(--fg); line-height:1.6; min-height:100vh; }
+    main { max-width: 52rem; margin:0 auto; padding:3rem 1.5rem 5rem; }
+    a { color: var(--accent); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    h1,h2,h3,h4 { letter-spacing:-0.01em; line-height:1.25; }
+    h1 { font-size:1.9rem; } h2 { font-size:1.4rem; margin-top:2.2rem; }
+    h3 { font-size:1.15rem; margin-top:1.8rem; }
+    code { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.88em;
+      background:#1a2331; border:1px solid var(--line); border-radius:4px; padding:0.1em 0.35em; }
+    pre { background:#0b1017; border:1px solid var(--line); border-radius:8px;
+      padding:1rem; overflow-x:auto; }
+    pre code { background:none; border:none; padding:0; }
+    table { border-collapse:collapse; width:100%; margin:1rem 0; display:block; overflow-x:auto; }
+    th,td { border:1px solid var(--line); padding:0.45rem 0.7rem; text-align:left;
+      font-size:0.92rem; }
+    th { background:#161f2c; }
+    blockquote { border-left:3px solid var(--accent); margin:1rem 0; padding:0.2rem 1rem;
+      color: var(--muted); }
+    hr { border:0; border-top:1px solid var(--line); margin:2rem 0; }
+    .docnav { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.8rem;
+      margin-bottom:2rem; color:var(--muted); }
+  </style>
+</head>
+<body>
+<main>
+  <nav class="docnav"><a href="../index.html">subactor/docs</a></nav>
+<hr />
+<p>{ &quot;schema&quot;: &quot;subactor.doc/v1&quot;, &quot;id&quot;: &quot;docs.plans.intent-contract-continuation-2026-07-22&quot;, &quot;version&quot;: 5, &quot;status&quot;: &quot;current&quot;, &quot;updated&quot;: &quot;2026-07-29&quot; }</p>
+<hr />
+<h1>Plan kontynuacji — Intent Contract, lifecycle i równoległe naprawy</h1>
+<h2>Cel</h2>
+<p>Utworzyć jedno, wersjonowane źródło prawdy dla intencji zapisanej przez człowieka lub maszynę, bez zastępowania istniejących AQL, OQL, EQL, URI Process, Process Packów, SODL i Planfile.</p>
+<h2>Stan wejściowy</h2>
+<h3>Postęp 2026-07-22</h3>
+<ul>
+<li>P0 wykonane: zaakceptowano ADR-009 i dodano JSON Schema</li>
+</ul>
+<p><code>subactor.intent-contract/v1</code>.</p>
+<ul>
+<li>P1 wykonane w zakresie bezpiecznego registry: Runtime ma deterministyczną</li>
+</ul>
+<p>kanonikalizację, SHA-256, walidację lifecycle, fail-closed secret/execution-field scan, projekcję Markdown/form oraz semantic diff. Control zapisuje append-only propozycje i rewizje oraz udostępnia API <code>propose/revise/get/preview/diff</code>; nie ma endpointu akceptacji ani wykonania.</p>
+<ul>
+<li>P2 rozpoczęte kontraktowo: <code>subactor.intent-binding/v1</code> wiąże hash intencji,</li>
+</ul>
+<p>rewizję projektu i immutable rewizje Process Pack/Strategy/AQL/OQL/EQL.</p>
+<ul>
+<li>Artifact Registry v2 obejmuje teraz również kanoniczne schemy z repozytorium</li>
+</ul>
+<p>Contracts.</p>
+<ul>
+<li>Nadal otwarte: write-back z formularza jako wyspecjalizowana projekcja,</li>
+</ul>
+<p>niezależny test zgodności hasha między implementacjami, bramka akceptacji, deterministyczny binder i integracja z Planfile.</p>
+<h3>Wykonane</h3>
+<ul>
+<li>Process Pack i <code>subactor.process-envelope.v2</code> wiążą AQL, EQL, OQL i kroki URI.</li>
+<li>Runtime ma współdzielony, fail-closed kontrakt readiness ticketu.</li>
+<li>Control oferuje obserwacyjną reconciliację oraz egzekwowane przejście</li>
+</ul>
+<p>pojedynczego ticketu do <code>ready</code>.</p>
+<ul>
+<li>Completion receipt zachowuje <code>expected</code>, verifier oraz <code>verified_by</code> kroków.</li>
+<li>SODL/1 zapisuje odwracalne zdarzenia Planfile i Control z korelacją.</li>
+<li>Strategy DSL wybiera zatwierdzone strategie i capabilities, bez generowania</li>
+</ul>
+<p>URI przez LLM.</p>
+<ul>
+<li>Problem Reaction ma Problem Profile, fingerprint, deduplikację obserwacji i</li>
+</ul>
+<p>klasyfikację reakcji bez automatycznej mutacji.</p>
+<ul>
+<li>Planfile posiada atomowy, idempotentny zapis evidence dla efektów zewnętrznych;</li>
+</ul>
+<p>Bridge rozróżnia skuteczny efekt od opóźnionego zapisu dowodu.</p>
+<h3>Otwarte luki</h3>
+<ul>
+<li>brak kontrolowanej akceptacji instancji intencji i powiązania zaakceptowanego</li>
+</ul>
+<p>hasha z lifecycle ticketu;</p>
+<ul>
+<li>bezpośrednie UI/API Planfile może zapisać <code>ready</code> bez wspólnego preflightu;</li>
+<li>Problem Reaction grupuje obserwacje po fingerprint, ale nie ma <code>ProblemCase</code>,</li>
+</ul>
+<p><code>Occurrence</code> i konkurencyjnych <code>RepairCandidate</code>;</p>
+<ul>
+<li>pętla <code>reaction → ticket → URIrun → EQL → completion</code> pozostaje obserwacyjna;</li>
+<li>brak formularza pokazującego semantic diff przed akceptacją intencji.</li>
+</ul>
+<h2>P0 — ADR i schema Intent Contract v1</h2>
+<p>Status: <strong>wykonane</strong>.</p>
+<p>Rezultat:</p>
+<ul>
+<li>ADR potwierdzający, że Intent Contract jest kopertą danych, nie nowym runtime</li>
+</ul>
+<p>DSL;</p>
+<ul>
+<li>JSON Schema <code>subactor.intent-contract/v1</code>;</li>
+<li>statusy, reguły wersjonowania, canonical JSON i <code>contract_hash</code>;</li>
+<li>typy statementów człowieka, bota i systemu;</li>
+<li>jawny zakaz sekretów, caller-controlled URI oraz samonadawania authority.</li>
+</ul>
+<p>Kryterium zakończenia: pozytywne i negatywne fixtures przechodzą meta-schema, canonicalization i secret scan.</p>
+<h2>P1 — parser, renderer i registry</h2>
+<p>Status: **wykonane w zakresie bezpiecznego registry; round-trip formularza i cross-runtime hash pozostają rozszerzeniem**.</p>
+<p>Rezultat:</p>
+<ul>
+<li>biblioteka Runtime walidująca i haszująca kontrakt;</li>
+<li>deterministyczny renderer JSON → Markdown/form oraz round-trip formularza do</li>
+</ul>
+<p>nowej wersji JSON;</p>
+<ul>
+<li>wpisy Artifact Registry z immutable revision URI;</li>
+<li>API Control do propose, revise, list, preview, diff i pobrania wersji bez</li>
+</ul>
+<p>akceptacji lub mutacji wykonawczej;</p>
+<ul>
+<li>append-only registry z optimistic concurrency (<code>base_hash</code>) i immutable URI</li>
+</ul>
+<p><code>intent://subactor/&lt;id&gt;/v&lt;version&gt;</code>.</p>
+<p>Kryterium zakończenia: Node i ewentualny Python generują identyczny hash, a renderer nie zmienia danych kanonicznych.</p>
+<h2>P2 — integracja z Process Pack i Planfile</h2>
+<p>Status: <strong>w toku</strong> — kontrakt bindingu istnieje, ale binder, wspólna bramka Planfile i dowód odrzucenia false-ready pozostają otwarte.</p>
+<p>Rezultat:</p>
+<ul>
+<li>kontrakt <code>subactor.intent-binding/v1</code> wiążący immutable rewizje zależności;</li>
+<li>zaakceptowany Intent Contract wybiera istniejący Process Pack i typowane</li>
+</ul>
+<p>bindingi;</p>
+<ul>
+<li>ticket v2 przechowuje <code>intent_ref</code> oraz <code>intent_hash</code>;</li>
+<li>zmiana kontraktu unieważnia niezgodny <code>plan_hash</code> i apply grant;</li>
+<li>Planfile otrzymuje wersjonowany readiness policy hook wywołujący ten sam</li>
+</ul>
+<p>kontrakt Runtime dla UI, API i Control.</p>
+<p>Kryterium zakończenia: nie da się utworzyć false-ready ani wykonać planu związanego ze starszą wersją intencji.</p>
+<h2>P3 — współautorstwo człowieka i maszyny</h2>
+<p>Status: <strong>planowane</strong>.</p>
+<p>Rezultat:</p>
+<ul>
+<li>formularz pokazuje oryginalne statements, proponowaną normalizację,</li>
+</ul>
+<p>niejednoznaczności, constraints i acceptance criteria;</p>
+<ul>
+<li>poprawka człowieka tworzy nowy statement oraz semantic diff;</li>
+<li>akceptacja jest związana z principalem, timestampem i hashem;</li>
+<li>maszyna może ponownie zinterpretować tekst, ale nie nadpisuje zaakceptowanej</li>
+</ul>
+<p>wersji.</p>
+<p>Kryterium zakończenia: audyt pozwala jednoznacznie odpowiedzieć kto co napisał, co zaproponował model, co poprawił człowiek i która wersja została wykonana.</p>
+<h2>P4 — ProblemCase i równoległe RepairCandidate</h2>
+<p>Status: <strong>planowane</strong>.</p>
+<p>Rezultat:</p>
+<ul>
+<li>schemy <code>ProblemCase</code>, <code>Occurrence</code>, <code>RepairCandidate</code> i relacje</li>
+</ul>
+<p><code>derived_from</code>, <code>alternative_to</code>, <code>conflicts_with</code>, <code>supersedes</code>, <code>resolved_by</code>;</p>
+<ul>
+<li>osobny fingerprint obserwacji, <code>problem_id</code> przyczyny i <code>candidate_id</code></li>
+</ul>
+<p>sposobu naprawy;</p>
+<ul>
+<li>izolowane branche/worktree oraz jeden lease promocji na mutowany zasób;</li>
+<li>wspólny EQL dla kandydatów i niezależne receipts walidatora.</li>
+</ul>
+<p>Kryterium zakończenia: dwie różne naprawy mogą być testowane równolegle bez scalenia ich jako duplikatów i bez równoległej mutacji produkcji.</p>
+<h2>P5 — doctor → repair → validator</h2>
+<p>Status: <strong>planowane w ramach tego kontraktu</strong> — istniejące komponenty agentów nie zamykają jeszcze kryterium ProblemCase/RepairCandidate i receipt end-to-end.</p>
+<p>Rezultat:</p>
+<ul>
+<li>Doctor zapisuje occurrence, dowody i hipotezę, ale nie deklaruje sam przyczyny</li>
+</ul>
+<p>jako faktu;</p>
+<ul>
+<li>Repair działa wyłącznie z autoryzowanego ticketu kandydata i ograniczonego</li>
+</ul>
+<p>worktree/capability;</p>
+<ul>
+<li>Validator uruchamia wspólne EQL na świeżym baseline i emituje receipt;</li>
+<li>promocja wybiera jednego zwycięzcę albo jawnie kompatybilny zestaw;</li>
+<li>kandydaci niewybrani otrzymują <code>rejected</code> lub <code>superseded</code>, zachowując wiedzę.</li>
+</ul>
+<p>Kryterium zakończenia: kontrolowany test błędu przechodzi pełną pętlę do receipt, a ponowienie nie tworzy drugiego efektu zewnętrznego.</p>
+<h2>P6 — migracja i obserwacja</h2>
+<p>Status: <strong>planowane</strong>.</p>
+<p>Rezultat:</p>
+<ul>
+<li>nowe zadania otrzymują Intent Contract obowiązkowo;</li>
+<li>legacy tickety są migrowane jako oznaczone projekcje, bez przepisywania</li>
+</ul>
+<p>historycznych wypowiedzi;</p>
+<ul>
+<li>dashboard pokazuje intencję, ticket, problem, kandydata, wykonanie i receipt;</li>
+<li>metryki obejmują clarification rate, stale intent, false-ready, superseded</li>
+</ul>
+<p>repairs oraz czas od occurrence do zweryfikowanego rozwiązania.</p>
+<p>Kryterium zakończenia: read-back wykazuje pełne referencje i brak niejawnej mutacji poza AQL/ticket/grant.</p>
+<h2>Kolejność realizacji</h2>
+<p>P0 i P1 są warunkiem dalszej integracji. P2 zamyka lukę lifecycle u źródła. P3 można rozwijać równolegle z P4 po zamrożeniu schematu v1. P5 wymaga P2 i P4. P6 rozpoczyna się dopiero po pozytywnym pilocie P5.</p>
+<p>Każda faza powinna otrzymać osobny ticket z Process Envelope v2, właścicielem, EQL, exact URI lub jawną granicą pracy człowieka oraz completion receipt.</p>
+</main>
+</body>
+</html>

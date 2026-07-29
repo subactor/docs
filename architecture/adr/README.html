@@ -35,6 +35,9 @@
 <body>
 <main>
   <nav class="docnav"><a href="../../index.html">subactor/docs</a></nav>
+<hr />
+<p>{ &quot;schema&quot;: &quot;subactor.doc/v1&quot;, &quot;id&quot;: &quot;docs.architecture.adr.readme&quot;, &quot;version&quot;: 4, &quot;status&quot;: &quot;current&quot;, &quot;updated&quot;: &quot;2026-07-25&quot; }</p>
+<hr />
 <h1>ADR — indeks decyzji autonomii</h1>
 <p><strong>Cel:</strong> krótkie ADR-y zaakceptowane jako SSOT decyzji (Faza 0 + luki grant/rollback/vault). <strong>Pełna rekomendacja:</strong> <a href="../autonomy-recommended-solution.html"><code>../autonomy-recommended-solution.md</code></a> <strong>Status implementacji / evidence:</strong> <a href="../autonomy-implementation-status.html"><code>../autonomy-implementation-status.md</code></a> <strong>Roadmapa:</strong> <a href="../../plans/autonomy-implementation-roadmap.html"><code>../../plans/autonomy-implementation-roadmap.md</code></a> <strong>Baseline:</strong> commit docs <code>5894906</code> (status ops + pytania otwarte).</p>
 <table>
@@ -47,6 +50,11 @@
 <tr><td><a href="./005-rollback.html">005</a></td><td>Rollback i failure semantics</td><td><strong>Accepted</strong></td></tr>
 <tr><td><a href="./006-secrets-ownership.html">006</a></td><td>Ownership sekretów / vault</td><td><strong>Accepted</strong></td></tr>
 <tr><td><a href="./007-canonical-component-paths.html">007</a></td><td>Kanoniczne ścieżki vs <code>platform/components</code></td><td><strong>Accepted</strong></td></tr>
+<tr><td><a href="./008-resource-lifecycle-control-plane.html">008</a></td><td>Wspólny lifecycle zasobów control plane</td><td><strong>Accepted</strong></td></tr>
+<tr><td><a href="./009-intent-contract-source-of-truth.html">009</a></td><td>Wspólne źródło prawdy intencji człowieka i maszyny</td><td><strong>Accepted</strong></td></tr>
+<tr><td><a href="./010-organization-constitution-and-ticket-currency.html">010</a></td><td>Constitution i waluta ticketów</td><td><strong>Accepted</strong></td></tr>
+<tr><td><a href="./011-consolidated-decision-forms-and-digital-twin-service-map.html">011</a></td><td>Formularze + mapa usług Digital Twin</td><td><strong>Accepted</strong></td></tr>
+<tr><td><a href="./012-uri-twin-observe-layer.html">012</a></td><td>uri-twin observe vs urirun mutate</td><td><strong>Accepted</strong></td></tr>
 </tbody></table>
 <p>Akceptacja ADR-001–006 zamyka odpowiadające pytania w <a href="../autonomy-ops-status-and-open-questions.html"><code>../autonomy-ops-status-and-open-questions.md</code></a> §5 (sekcja governance/DNS/verify/secrets/scope/rollback).</p>
 <p><strong>Uwaga:</strong> Accepted ≠ zaimplementowane end-to-end. Evidence PR1–PR4: <a href="../autonomy-implementation-status.html"><code>../autonomy-implementation-status.md</code></a>.</p>

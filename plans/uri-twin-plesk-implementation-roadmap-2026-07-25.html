@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Plan implementacji: Plesk URI Twin (observe, bez zmian polityki hitl) — Subactor Docs</title>
+  <style>
+    :root { --bg:#0f1419; --fg:#e7ecf1; --muted:#9aa7b5; --accent:#3d9cf0; --line:#243041; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:"IBM Plex Sans","Segoe UI",sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #1a2a3d, var(--bg));
+      color: var(--fg); line-height:1.6; min-height:100vh; }
+    main { max-width: 52rem; margin:0 auto; padding:3rem 1.5rem 5rem; }
+    a { color: var(--accent); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    h1,h2,h3,h4 { letter-spacing:-0.01em; line-height:1.25; }
+    h1 { font-size:1.9rem; } h2 { font-size:1.4rem; margin-top:2.2rem; }
+    h3 { font-size:1.15rem; margin-top:1.8rem; }
+    code { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.88em;
+      background:#1a2331; border:1px solid var(--line); border-radius:4px; padding:0.1em 0.35em; }
+    pre { background:#0b1017; border:1px solid var(--line); border-radius:8px;
+      padding:1rem; overflow-x:auto; }
+    pre code { background:none; border:none; padding:0; }
+    table { border-collapse:collapse; width:100%; margin:1rem 0; display:block; overflow-x:auto; }
+    th,td { border:1px solid var(--line); padding:0.45rem 0.7rem; text-align:left;
+      font-size:0.92rem; }
+    th { background:#161f2c; }
+    blockquote { border-left:3px solid var(--accent); margin:1rem 0; padding:0.2rem 1rem;
+      color: var(--muted); }
+    hr { border:0; border-top:1px solid var(--line); margin:2rem 0; }
+    .docnav { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.8rem;
+      margin-bottom:2rem; color:var(--muted); }
+  </style>
+</head>
+<body>
+<main>
+  <nav class="docnav"><a href="../index.html">subactor/docs</a></nav>
+<hr />
+<p>{ &quot;schema&quot;: &quot;subactor.doc/v1&quot;, &quot;id&quot;: &quot;docs.plans.uri-twin-plesk-implementation-roadmap-2026-07-25&quot;, &quot;version&quot;: 9, &quot;status&quot;: &quot;current&quot;, &quot;updated&quot;: &quot;2026-07-29&quot; }</p>
+<hr />
+<h1>Plan implementacji: Plesk URI Twin (observe, bez zmian polityki hitl)</h1>
+<p><strong>Stan realizacji 2026-07-29:</strong> fazy 0–3 są wykonane. Plan pozostaje częściowy, ponieważ jeden warunkowy element federacji z fazy 4 jest nadal otwarty. Katalog, attestacje i generator propozycji review-required są wykonane.</p>
+<h2>Cel</h2>
+<p>Wersjonowany, kanałowo stabilny, SSOT dla żywego stanu Plesk jako warstwa <strong>observe</strong>, przy zachowaniu istniejącego modelu urirun mutacji i Control governance.</p>
+<h2>Założenia projektowe (zgodne z Twoją notatką)</h2>
+<ol>
+<li>Nie tworzymy osobnych repo na typy Plesk (<code>PLESK</code>, <code>PLESK-MODULES</code>, <code>PLESK-DNS</code>, <code>PLESK-SUBSCRIPTIONS</code>) w fazie 1.</li>
+<li>Tworzymy obserwacyjny twin (query/snapshot) niezależny od apply/grant.</li>
+<li>Wydawanie faktów jest kanałem <code>query</code> URI (<code>plesk://host/.../query/...</code>), a HTTP w Control pozostaje tylko projekcją.</li>
+<li>Jedna logika twin-ów działa dla wielu instancji przez <code>instance_id</code> + binding/credential handle + feature flags.</li>
+</ol>
+<h2>Fazy realizacji</h2>
+<h3>Faza 0 — stabilizacja podstawy (już częściowo wykonana)</h3>
+<ul>
+<li>[x] Opis architektoniczny w ADR: <a href="../architecture/adr/012-uri-twin-observe-layer.html">012-uri-twin-observe-layer.md</a></li>
+<li>[x] Knowledge: <code>knowledge://subactor/architecture.uri-twin-scope/v1</code></li>
+<li>[x] Szkielet org <code>~/github/uri-twin/</code> (<code>uri-twin-core</code>, <code>uri-twin-plesk</code> + catalog v1)</li>
+<li>[x] Weryfikacja problemu: ad-hoc <code>GET /api/connectors/plesk/docroot</code> i brak jednolitego SSOT</li>
+<li>[x] Przygotowanie prototypu query-faktu docroot w bridge: <code>GET /plesk/docroot</code></li>
+<li>[x] Projekcja HTTP do Control: <code>GET /api/connectors/plesk/docroot</code></li>
+</ul>
+<h3>Faza 1 — migracja do prawdziwego URI twin (v1)</h3>
+<ul>
+<li>[x] Handler <code>plesk://host/site/query/docroot</code> w <code>urirun-connector-plesk</code> (+ manifest/README/test)</li>
+<li>[x] Envelope <code>subactor.twin-fact/v1</code> + <code>snapshot_hash</code> / <code>fact_quality</code></li>
+<li>[x] Reality-check czyta docroot twin (bridge projekcja → <code>sources.plesk_docroot_twin</code>); <code>last_error</code> nie jest SSOT topologii</li>
+<li>[x] <code>plesk://host/subscription/query/snapshot</code> jako twin-fact</li>
+<li>[x] <code>plesk://host/dns/query/authority</code> normalizacja do twin-fact</li>
+<li>[x] Plan faz/commitów: <a href="./uri-twin-phase-commits-2026-07-25.html">uri-twin-phase-commits-2026-07-25.md</a></li>
+<li>[x] fail-open: docroot/subscription → <code>estimated</code>; dns inconsistent → <code>stale</code> + fail kodem authority</li>
+</ul>
+<h3>Faza 2 — spójność planowania i readiness</h3>
+<ul>
+<li>[x] Reality-check findings dla subscription/dns twins (advisory; bez usuwania HITL)</li>
+<li>[x] publish/readiness recipes wymuszają dokumentację docroot fact w planie</li>
+<li>[x] Testy E2E check-run na żywym panelu po deployu connectora</li>
+</ul>
+<h3>Faza 3 — przygotowanie do autonomii</h3>
+<ul>
+<li>[x] Nie usuwamy blokad <code>human_boundary</code>; mapujemy je do konkretnych klas ryzyka:</li>
+<ul>
+<li>publish dry-run: auto</li>
+<li>apply + ryzyko R2: requires grant</li>
+<li>only-operator/owner steps: founder/tenant human path</li>
+</ul>
+<li>[x] Dodać KPI testów: % publish opartych o aktualny fact vs legacy path —</li>
+</ul>
+<p><code>reality-check.metrics.publish_twin_coverage</code> rozdziela <code>current_fact</code>, <code>legacy_path</code> i <code>stale_or_unverified</code>; aktualny fakt wymaga jakości <code>fresh</code>, znacznika czasu i wieku nieprzekraczającego 15 minut.</p>
+<ul>
+<li>[x] Utworzyć runbook deploya twin i roll-back: <a href="../operations/uri-twin-plesk-deploy-runbook.html">uri-twin-plesk-deploy-runbook.md</a></li>
+<li>[x] Opublikować publiczne repo <code>uri-twin-core</code> i <code>uri-twin-plesk</code> z CI i</li>
+</ul>
+<p>wersjonowanymi tagami.</p>
+<ul>
+<li>[x] Ładować Plesk baseline z Git jako primary; zwracać commit/digest i używać</li>
+</ul>
+<p>zwalidowanego cache/embedded wyłącznie jako oznaczony fallback.</p>
+<ul>
+<li>[x] Dodać mapę środowiska, usług, typów zasobów i nazwanych workflow oraz</li>
+</ul>
+<p>bezpieczne wzbogacanie przez dane API.</p>
+<ul>
+<li>[x] Dodać alternatywnych providerów i zależności wielu konektorów (Plesk/</li>
+</ul>
+<p><code>cloudflaredns</code> albo Namecheap dla DNS).</p>
+<ul>
+<li>[x] Blokować command przed dispatch, gdy twin-fact ma decyzję <code>refuse</code> albo</li>
+</ul>
+<p>nieświeżą jakość (<code>precondition-blocked</code>).</p>
+<h3>Faza 4 — federacja twinów</h3>
+<ul>
+<li>[x] Katalog organizacji <code>uri-twin</code> z maszynowo czytelnym indeksem repo →</li>
+</ul>
+<p>family → baseline → obsługiwane schematy: publiczne <code>uri-twin-catalog</code> v0.1.0 ma CI i conformance względem tagów/pakietów/baseline. Loader twin-map rozwiązuje domyślne źródło przez katalog, ogranicza repo do organizacji, zapisuje provenance katalogu i zachowuje direct/cache/embedded fallback.</p>
+<ul>
+<li>[x] Podpisane wydania/attestacje baseline i polityka dozwolonych signerów w</li>
+</ul>
+<p>loaderze: Plesk v0.2.4 ma odłączoną attestację Ed25519, CI/offline verify, signer secret w Actions i publiczny fingerprint przypięty w consumerze.</p>
+<ul>
+<li>[x] Generator propozycji PR z <code>review-required</code> discoveries: deterministyczny</li>
+</ul>
+<p>draft ma <code>authority_change: none</code>, filtr sekretów i wymagane review, manifest-route conformance oraz nową attestację.</p>
+<ul>
+<li>[ ] Dodać kolejne platformy jako osobne repo twin dopiero przy realnym</li>
+</ul>
+<p>konektorze i teście manifest-route conformance.</p>
+<h2>Minimalny podział odpowiedzialności</h2>
+<ul>
+<li><code>uri-twin-core</code>:</li>
+<ul>
+<li>envelope faktu (<code>subactor.twin-fact/v1</code>), freshness, schema/validation, metryki.</li>
+</ul>
+<li><code>uri-twin-plesk</code>:</li>
+<ul>
+<li>środowisko, services/resources/workflows, query dla</li>
+</ul>
+</ul>
+<p>subscriptions/docroot/dns i binding do wielu instancji.</p>
+<ul>
+<li><code>urirun-connector-plesk</code>:</li>
+<ul>
+<li>pozostaje jedynym kanałem mutacji (<code>command</code>, dry-run/apply/grant).</li>
+</ul>
+<li><code>Subactor Control</code>:</li>
+<ul>
+<li>POLICY/HITL/reality orchestration; HTTP jako projekcja istniejących URI.</li>
+</ul>
+</ul>
+<h2>Ryzyka operacyjne</h2>
+<ul>
+<li>Największe ryzyko to niespójność danych między live state (twin) a cache-control; to zamykać przez <code>snapshot_hash</code> + TTL.</li>
+<li>Bez explicit bindingu <code>instance_id</code> i feature flags twiny będą miały zbyt słabą izolację między panelami.</li>
+<li>Brak restartu usługi po wdrożeniu kodu =&gt; endpointy i registry mogą pozostać w stanie sprzecznym; każdy deploy musi uwzględniać rebuild/restart.</li>
+</ul>
+<h2>Odbiór i akceptacja</h2>
+<ul>
+<li>1) <code>plan</code> nie wykonuje żadnej mutacji opartych o obserwację;</li>
+<li>2) <code>site/query/docroot</code> działa przez URI i jest czytelny w <code>/api/connector-runtime</code> routes;</li>
+<li>3) <code>publish</code>/<code>reality-check</code> pokazują fakty twin zamiast jedynie błędów ticketów;</li>
+<li>4) <code>human_boundary</code> pozostaje aktywny tam, gdzie model ryzyka wymaga człowieka.</li>
+<li>5) Git provenance jest jawne, JS/Python obliczają ten sam <code>map_hash</code>, a URI</li>
+</ul>
+<p>providerów istnieją w aktywnych manifestach konektorów.</p>
+</main>
+</body>
+</html>

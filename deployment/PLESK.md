@@ -2,9 +2,9 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.deployment.plesk",
-  "version": 1,
+  "version": 2,
   "status": "current",
-  "updated": "2026-07-18"
+  "updated": "2026-07-29"
 }
 ---
 
@@ -18,7 +18,7 @@ Keep remote `.htaccess` and `.well-known/` (sync does not delete them).
 
 ## Automated path
 
-Same architecture as [`www/deployment/PLESK.md`](../../www/deployment/PLESK.md):
+Same architecture as [`subactor-com/deployment/PLESK.md`](../../subactor-com/deployment/PLESK.md):
 
 ```text
 NL / agent intent

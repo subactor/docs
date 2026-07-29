@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Postawa Foundera: zgoda i pomysły, nie kontrola ticketów — Subactor Docs</title>
+  <style>
+    :root { --bg:#0f1419; --fg:#e7ecf1; --muted:#9aa7b5; --accent:#3d9cf0; --line:#243041; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:"IBM Plex Sans","Segoe UI",sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #1a2a3d, var(--bg));
+      color: var(--fg); line-height:1.6; min-height:100vh; }
+    main { max-width: 52rem; margin:0 auto; padding:3rem 1.5rem 5rem; }
+    a { color: var(--accent); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    h1,h2,h3,h4 { letter-spacing:-0.01em; line-height:1.25; }
+    h1 { font-size:1.9rem; } h2 { font-size:1.4rem; margin-top:2.2rem; }
+    h3 { font-size:1.15rem; margin-top:1.8rem; }
+    code { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.88em;
+      background:#1a2331; border:1px solid var(--line); border-radius:4px; padding:0.1em 0.35em; }
+    pre { background:#0b1017; border:1px solid var(--line); border-radius:8px;
+      padding:1rem; overflow-x:auto; }
+    pre code { background:none; border:none; padding:0; }
+    table { border-collapse:collapse; width:100%; margin:1rem 0; display:block; overflow-x:auto; }
+    th,td { border:1px solid var(--line); padding:0.45rem 0.7rem; text-align:left;
+      font-size:0.92rem; }
+    th { background:#161f2c; }
+    blockquote { border-left:3px solid var(--accent); margin:1rem 0; padding:0.2rem 1rem;
+      color: var(--muted); }
+    hr { border:0; border-top:1px solid var(--line); margin:2rem 0; }
+    .docnav { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.8rem;
+      margin-bottom:2rem; color:var(--muted); }
+  </style>
+</head>
+<body>
+<main>
+  <nav class="docnav"><a href="../index.html">subactor/docs</a></nav>
+<hr />
+<p>{ &quot;schema&quot;: &quot;subactor.doc/v1&quot;, &quot;id&quot;: &quot;docs.operations.founder-delegation-posture-2026-07-24&quot;, &quot;version&quot;: 1, &quot;status&quot;: &quot;current&quot;, &quot;updated&quot;: &quot;2026-07-24&quot; }</p>
+<hr />
+<h1>Postawa Foundera: zgoda i pomysły, nie kontrola ticketów</h1>
+<h2>Cel</h2>
+<p>Founder:</p>
+<ol>
+<li><strong>TAK / NIE</strong> na konkretny <code>plan_hash</code> (formularz),</li>
+<li><strong>pomysły / planowanie</strong> (intent, strategia, piloty biznesowe),</li>
+<li><strong>sekrety / fakty prawne</strong> (vault form, legal).</li>
+</ol>
+<p>Founder <strong>nie</strong>:</p>
+<ul>
+<li>ręcznie prowadzi DNS, TLS, sync plików, ensure subdomeny,</li>
+<li>„babysituje” tickety remediacji,</li>
+<li>odblokowuje <code>master_mutation_gate</code> przez przeglądanie dziesiątek PLF-*.</li>
+</ul>
+<h2>Podział odpowiedzialności</h2>
+<table>
+<thead><tr><th>Bloker</th><th>Właściciel</th><th>Rola Foundera</th></tr></thead>
+<tbody>
+<tr><td><code>dns_not_ready</code></td><td><code>project-operator-bot</code></td><td>brak (chyba że sekrety Plesk)</td></tr>
+<tr><td><code>tls_not_ready</code></td><td><code>project-operator-bot</code></td><td>TAK/NIE tylko na <code>ssl-ensure</code> apply</td></tr>
+<tr><td><code>application_route_not_ready</code></td><td><code>project-operator-bot</code></td><td>TAK/NIE na dry-run <code>plan_hash</code></td></tr>
+<tr><td><code>mutation_gate_disabled</code></td><td>Founder (formularz)</td><td>jedna decyzja publikacji</td></tr>
+<tr><td><code>founder_publish_approval_required</code></td><td>Founder</td><td><code>approve_once</code></td></tr>
+<tr><td><code>legal_documents_incomplete</code></td><td>Founder</td><td>fakty / dokumenty</td></tr>
+<tr><td><code>plesk_system_profile_not_ready</code></td><td>Founder</td><td>sekrety do vault</td></tr>
+</tbody></table>
+<h2>Bramki mutacji</h2>
+<p>Po zgodzie Foundera bot <strong>wykonuje</strong> plan, gdy:</p>
+<ul>
+<li><code>AUTONOMY_MUTATIONS_ENABLED=1</code> (master gate),</li>
+<li><code>PLESK_SYNC_APPLY=1</code> (sync plików httpdocs),</li>
+<li>podpisany apply-grant dla dokładnego <code>plan_hash</code> (gdzie wymagany).</li>
+</ul>
+<p>Gdy master gate = 0, zatwierdzony plan parkował się na <code>administrator-bot</code> z <code>master_mutation_gate_disabled</code> — stąd wrażenie „nic nie działa”.</p>
+<h2>Shell (bez ręcznej kontroli ticketów)</h2>
+<pre><code class="language-bash">subactor reality contracts.subactor.com
+subactor get '/api/connectors/plesk/domains?name=contracts.subactor.com'
+# dry-run (apply=false domyślnie):
+subactor uri 'plesk://host/site/command/subdomain-ensure' \
+  '{&quot;domain&quot;:&quot;contracts.subactor.com&quot;,&quot;parent_domain&quot;:&quot;subactor.com&quot;}'</code></pre>
+<h2>Implementacja (2026-07-24)</h2>
+<ul>
+<li><code>blocker-responsibility.mjs</code> — ops → bot</li>
+<li><code>project-remediation.mjs</code> — TLS/route na <code>project-operator-bot</code>; boty startują <code>ready</code></li>
+<li>po approval + <code>mutationsEnabled</code> → <code>apply_ready</code> na operator-bot (nie parking master gate)</li>
+<li><code>founder-attention-policy</code> — ignore ops remediacji</li>
+<li>env: <code>AUTONOMY_MUTATIONS_ENABLED=1</code>, <code>PLESK_SYNC_APPLY=1</code></li>
+</ul>
+</main>
+</body>
+</html>

@@ -1,0 +1,65 @@
+{
+  "schema": "subactor.completion-receipt.v1",
+  "ticket_id": "docs.plans.uri-twin-phase-commits-2026-07-25",
+  "outcome": "succeeded",
+  "actor": "codex:subactor-maintainer",
+  "reason": "Zweryfikowano kompletność faz 0-3 Plesk URI Twin, zachowanie granic HITL, publiczne wydania twinów i zielone testy implementacji.",
+  "correlation_id": "uri-twin-phase-commits:2026-07-29",
+  "completed_at": "2026-07-29T13:29:41.000Z",
+  "eql": [
+    {
+      "id": "phase-0-versioned-baselines",
+      "passed": true,
+      "expected": "Publiczne, wersjonowane pakiety uri-twin-core i uri-twin-plesk z zielonymi testami.",
+      "actual": "uri-twin-core v0.2.3 (8ed3864) i uri-twin-plesk v0.2.2 (069008b) są na main; testy pakietów przeszły.",
+      "verifier": "git-and-node-test",
+      "evidence": [
+        "https://github.com/uri-twin/uri-twin-core/tree/v0.2.3",
+        "https://github.com/uri-twin/uri-twin-plesk/tree/v0.2.2"
+      ]
+    },
+    {
+      "id": "phase-1-docroot-twin-contract",
+      "passed": true,
+      "expected": "Docroot działa jako read-only URI twin-fact i jest konsumowany przez Control bez zmiany human_boundary.",
+      "actual": "Testy connectora i Control potwierdzają envelope twin-fact, jakość, snapshot hash, advisory findings i brak mutacji.",
+      "verifier": "pytest-and-node-test",
+      "evidence": [
+        "repo://urirun-connectors/urirun-connector-plesk/tests/test_plesk.py",
+        "repo://core/services/control/tests/plesk-twin-sources.test.mjs",
+        "repo://core/services/control/tests/project-reality-check.test.mjs"
+      ]
+    },
+    {
+      "id": "phase-2-query-readiness",
+      "passed": true,
+      "expected": "Docroot, subscription i DNS query są dostępne, a publish/readiness korzysta z URI Process.",
+      "actual": "Manifesty, testy connectora, recipe site-publish i testy reality-check potwierdzają trzy query oraz preflight docroot przed sync.",
+      "verifier": "manifest-and-test-suite",
+      "evidence": [
+        "repo://platform/config/recipes/site-publish.urirun.json",
+        "repo://core/services/control/tests/project-reality-check.test.mjs",
+        "repo://urirun-connectors/urirun-connector-plesk/urirun_connector_plesk/connector.manifest.json"
+      ]
+    },
+    {
+      "id": "phase-3-deploy-kpi-governance",
+      "passed": true,
+      "expected": "Istnieje sprawdzony deploy/rollback, KPI obserwowanego stanu i niezmienione bramki mutacji.",
+      "actual": "Runbook opisuje live smoke i rollback; reality-check publikuje KPI twin-vs-legacy; dry-run jest R1 auto, apply R2 wymaga grantu/HITL.",
+      "verifier": "runbook-and-node-test",
+      "evidence": [
+        "artifact://subactor/docs/operations/uri-twin-plesk-deploy-runbook.md/r4",
+        "repo://core/services/control/tests/site-publish-decide.test.mjs",
+        "repo://core/services/control/tests/publish-autonomy.test.mjs",
+        "repo://core/services/control/tests/plesk-twin-sources.test.mjs"
+      ]
+    }
+  ],
+  "artifacts": [
+    "artifact://subactor/docs/plans/uri-twin-phase-commits-2026-07-25.md/r8",
+    "artifact://subactor/docs/operations/uri-twin-plesk-deploy-runbook.md/r4",
+    "https://github.com/uri-twin/uri-twin-core/tree/v0.2.3",
+    "https://github.com/uri-twin/uri-twin-plesk/tree/v0.2.2"
+  ]
+}

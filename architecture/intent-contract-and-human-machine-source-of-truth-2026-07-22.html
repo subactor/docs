@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Intent Contract — wspólne źródło prawdy człowieka i maszyny — Subactor Docs</title>
+  <style>
+    :root { --bg:#0f1419; --fg:#e7ecf1; --muted:#9aa7b5; --accent:#3d9cf0; --line:#243041; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:"IBM Plex Sans","Segoe UI",sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #1a2a3d, var(--bg));
+      color: var(--fg); line-height:1.6; min-height:100vh; }
+    main { max-width: 52rem; margin:0 auto; padding:3rem 1.5rem 5rem; }
+    a { color: var(--accent); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    h1,h2,h3,h4 { letter-spacing:-0.01em; line-height:1.25; }
+    h1 { font-size:1.9rem; } h2 { font-size:1.4rem; margin-top:2.2rem; }
+    h3 { font-size:1.15rem; margin-top:1.8rem; }
+    code { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.88em;
+      background:#1a2331; border:1px solid var(--line); border-radius:4px; padding:0.1em 0.35em; }
+    pre { background:#0b1017; border:1px solid var(--line); border-radius:8px;
+      padding:1rem; overflow-x:auto; }
+    pre code { background:none; border:none; padding:0; }
+    table { border-collapse:collapse; width:100%; margin:1rem 0; display:block; overflow-x:auto; }
+    th,td { border:1px solid var(--line); padding:0.45rem 0.7rem; text-align:left;
+      font-size:0.92rem; }
+    th { background:#161f2c; }
+    blockquote { border-left:3px solid var(--accent); margin:1rem 0; padding:0.2rem 1rem;
+      color: var(--muted); }
+    hr { border:0; border-top:1px solid var(--line); margin:2rem 0; }
+    .docnav { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.8rem;
+      margin-bottom:2rem; color:var(--muted); }
+  </style>
+</head>
+<body>
+<main>
+  <nav class="docnav"><a href="../index.html">subactor/docs</a></nav>
+<hr />
+<p>{ &quot;schema&quot;: &quot;subactor.doc/v1&quot;, &quot;id&quot;: &quot;docs.architecture.intent-contract-and-human-machine-source-of-truth-2026-07-22&quot;, &quot;version&quot;: 4, &quot;status&quot;: &quot;current&quot;, &quot;updated&quot;: &quot;2026-07-22&quot; }</p>
+<hr />
+<h1>Intent Contract — wspólne źródło prawdy człowieka i maszyny</h1>
+<h2>Werdykt</h2>
+<p>Subactor nie powinien dodawać kolejnego samodzielnego DSL wykonawczego. System ma już rozdzielone języki i kontrakty dla authority, operacji, efektu, wykonania oraz historii. Brakuje mu natomiast **wersjonowanej instancji intencji**, która zachowuje to, co napisał człowiek lub maszyna, oraz oddziela oryginalną wypowiedź od jej deterministycznej interpretacji.</p>
+<p>Rekomendowanym rozwiązaniem jest <code>subactor.intent-contract/v1</code>: kanoniczny, walidowany dokument JSON, renderowany ludziom jako formularz lub Markdown. Kontrakt intencji nie wykonuje kodu i nie nadaje authority. Po akceptacji wiąże się z Process Packiem, AQL, OQL, EQL, URI Process i ticketem Planfile.</p>
+<h2>Ocena dwóch wariantów RULE-DSL</h2>
+<p>Przeanalizowano lokalne warianty:</p>
+<ul>
+<li><code>wellmanifest/new-project/GPT56Luna/CONTRIBUTING.md</code>;</li>
+<li><code>wellmanifest/new-project/Opus48Medium/CONTRIBUTING.md</code>.</li>
+</ul>
+<p>Oba trafnie formalizują stany, priorytety, reguły <code>WHEN/THEN</code>, wymagane dowody, bramki publikacji i warunki zakończenia. Wariant GPT56Luna jest dokładniejszą maszyną stanów i dzieli reguły na moduły. Wariant Opus48Medium jest krótszy, czytelniejszy i lepiej pokazuje precedencję polityk.</p>
+<p>Nie powinny jednak zostać skopiowane jako źródło prawdy Subactora:</p>
+<ul>
+<li>są pseudojęzykiem bez wersjonowanego parsera, typów i kanonicznego AST;</li>
+<li>mieszają intencję, politykę repozytorium, stan środowiska i polecenia shell;</li>
+<li>literalne ścieżki i nazwy narzędzi szybko stają się nieaktualne;</li>
+<li>samo zdanie <code>DO RUN</code> nie jest dowodem authority, wykonania ani spełnienia</li>
+</ul>
+<p>postcondition;</p>
+<ul>
+<li>swobodny tekst maszyny mógłby niejawnie rozszerzyć dozwolone operacje.</li>
+</ul>
+<p>Najbardziej wartościowe elementy tych dokumentów należy przejąć do schematu: precedencję, jawne stany, reguły stop, wymagane evidence, Definition of Done oraz rozdzielenie faktu potwierdzonego od deklaracji.</p>
+<h2>Języki i kontrakty, które już istnieją</h2>
+<table>
+<thead><tr><th>Warstwa</th><th>Odpowiedzialność</th><th>Czego nie powinna przejmować</th></tr></thead>
+<tbody>
+<tr><td>Intent Pack</td><td>rozpoznanie klasy intencji i typowanych slotów</td><td>pojedynczej wypowiedzi i jej akceptacji</td></tr>
+<tr><td>Strategy DSL</td><td>wybór zatwierdzonej strategii i abstrakcyjnych capabilities</td><td>authority i dowolnego URI</td></tr>
+<tr><td>AQL</td><td>kto ma authority, w jakim zakresie i czasie</td><td>szczegółowego planu wykonania</td></tr>
+<tr><td>OQL</td><td>kanoniczna operacja i zależności</td><td>transportu i sekretów</td></tr>
+<tr><td>URI Process</td><td>dokładny adres wykonania</td><td>decyzji biznesowej</td></tr>
+<tr><td>EQL</td><td>oczekiwany rezultat i niezależna weryfikacja</td><td>uznawania samego HTTP 200 za sukces celu</td></tr>
+<tr><td>Process Envelope v2</td><td>komplet definicji procesu przypisany do ticketu</td><td>oryginalnego dialogu jako authority</td></tr>
+<tr><td>SODL/1</td><td>append-only zdarzenie, korelacja i kontrolowany replay</td><td>logiki biznesowej i planowania</td></tr>
+<tr><td>Planfile</td><td>stan pracy, historia i completion receipt</td><td>niezatwierdzonej interpretacji LLM jako faktu</td></tr>
+</tbody></table>
+<p>Nie istnieje więc jeden brakujący „język wykonawczy”. Istnieje luka pomiędzy surową wypowiedzią a wybranym, zatwierdzonym Process Packiem.</p>
+<h2>Zaimplementowany rdzeń Intent Contract v1</h2>
+<p>Kanoniczna instancja zawiera:</p>
+<pre><code class="language-json">{
+  &quot;schema&quot;: &quot;subactor.intent-contract/v1&quot;,
+  &quot;id&quot;: &quot;INT-...&quot;,
+  &quot;version&quot;: 1,
+  &quot;status&quot;: &quot;proposed&quot;,
+  &quot;statements&quot;: [
+    {
+      &quot;actor&quot;: &quot;human:founder&quot;,
+      &quot;kind&quot;: &quot;request&quot;,
+      &quot;text&quot;: &quot;...&quot;,
+      &quot;recorded_at&quot;: &quot;...&quot;,
+      &quot;content_hash&quot;: &quot;sha256:...&quot;
+    },
+    {
+      &quot;actor&quot;: &quot;bot:planner&quot;,
+      &quot;kind&quot;: &quot;interpretation&quot;,
+      &quot;text&quot;: &quot;...&quot;,
+      &quot;recorded_at&quot;: &quot;...&quot;,
+      &quot;content_hash&quot;: &quot;sha256:...&quot;
+    }
+  ],
+  &quot;normalized&quot;: {
+    &quot;goal&quot;: &quot;...&quot;,
+    &quot;constraints&quot;: [],
+    &quot;non_goals&quot;: [],
+    &quot;inputs&quot;: {},
+    &quot;expected_outcomes&quot;: [],
+    &quot;acceptance_criteria&quot;: []
+  },
+  &quot;bindings&quot;: {
+    &quot;process_pack_ref&quot;: &quot;...&quot;,
+    &quot;aql_ref&quot;: &quot;...&quot;,
+    &quot;eql_refs&quot;: [],
+    &quot;capabilities&quot;: []
+  },
+  &quot;decision&quot;: {
+    &quot;state&quot;: &quot;pending&quot;,
+    &quot;accepted_by&quot;: null,
+    &quot;accepted_at&quot;: null,
+    &quot;contract_hash&quot;: &quot;sha256:...&quot;
+  },
+  &quot;links&quot;: {
+    &quot;ticket_ids&quot;: [],
+    &quot;problem_id&quot;: null,
+    &quot;knowledge_refs&quot;: []
+  }
+}</code></pre>
+<p>Ostateczny wire contract znajduje się w <code>contracts/schemas/intent-contract.schema.v1.json</code>, a deterministyczna kanonikalizacja, hashowanie i reguły semantyczne w <code>runtime/src/intent-contract.mjs</code>. URI, transport, vault entry i sekrety nie mogą być generowane przez model. <code>capabilities</code> pochodzą z katalogu, a dokładne URI dopiero z deterministycznego bindingu po AQL.</p>
+<p>Runtime udostępnia również deterministyczne projekcje Markdown/form oraz semantic diff. Projekcje zawsze wskazują <code>base_hash</code>; nie mogą zapisać zmiany, zaakceptować intencji ani uruchomić procesu.</p>
+<p>Control posiada teraz append-only Intent Registry. Udostępnia ograniczone scope'ami API do utworzenia propozycji, dopisania nowej wersji z kontrolą <code>base_hash</code>, pobrania wersji, projekcji Markdown/form i semantic diff. Rejestr odrzuca statusy zaakceptowane i wykonawcze, podszycie autora, nieznane pola oraz mutację wcześniejszej wersji. Nie istnieje endpoint <code>accept</code> ani <code>execute</code>.</p>
+<p><code>subactor.intent-binding/v1</code> formalizuje osobny, niemutowalny związek pomiędzy hashem intencji, rewizją projektu i dokładnymi rewizjami Process Packa, Strategy/AQL/OQL/EQL lub artefaktów. Binding nie zawiera URI wykonawczego i nie nadaje authority. Obecnie jest kontraktem Schema + fixture; deterministyczny binder i bramka akceptacji pozostają kolejnym etapem.</p>
+<h2>Zasady współautorstwa człowieka i maszyny</h2>
+<ol>
+<li>Oryginalna wypowiedź jest niezmienna i zachowuje autora oraz hash.</li>
+<li>Interpretacja maszyny jest osobnym statementem, nigdy podmianą wypowiedzi.</li>
+<li>Zmiana znaczenia tworzy nową wersję kontraktu; wcześniejsza pozostaje</li>
+</ol>
+<p>audytowalna.</p>
+<ol>
+<li>Człowiek może poprawić pola znormalizowane formularzem albo dodać kolejny</li>
+</ol>
+<p>statement. System pokazuje semantyczny diff przed akceptacją.</p>
+<ol>
+<li>Akceptacja wiąże hash dokładnej wersji. Późniejsza zmiana unieważnia plan i</li>
+</ol>
+<p>wymaga ponownego preflightu.</p>
+<ol>
+<li>LLM może proponować pack i sloty tylko z allowlisty. Nie tworzy authority,</li>
+</ol>
+<p>tras, odbiorców eskalacji ani nowych capabilities.</p>
+<ol>
+<li>Ticket wykonawczy odwołuje się do niezmiennego <code>intent_ref</code>; zamknięcie</li>
+</ol>
+<p>ticketu nie może przepisać historycznej intencji.</p>
+<h2>Lifecycle intencji</h2>
+<pre><code class="language-text">draft → proposed → clarification_required → accepted → planned
+      → executing → verified → closed
+      ↘ rejected
+      ↘ superseded</code></pre>
+<p><code>verified</code> wymaga receipt EQL. <code>closed</code> oznacza osiągnięcie celu albo jawną decyzję o zakończeniu. Sam merge, wysłanie wiadomości lub odpowiedź API nie przesuwają kontraktu do <code>verified</code>.</p>
+<h2>Problemy i równoległe naprawy</h2>
+<p>Intent Contract może wskazywać jeden <code>problem_id</code>, ale każda alternatywna naprawa otrzymuje osobny <code>candidate_id</code> i ticket. Kandydaci dzielą oczekiwany rezultat EQL, lecz zachowują własny plan, branch, evidence i receipt. Deduplikacja dotyczy identycznych obserwacji albo ponownego wykonania tego samego kandydata, nie różnych hipotez rozwiązania.</p>
+<h2>Źródło prawdy</h2>
+<p>Kanonicznym zapisem powinien być walidowany JSON z hashem i wersją. Formularz, Markdown, odpowiedź API oraz prompt LLM są projekcjami tego samego dokumentu. Surowe statements są provenance, a zaakceptowana sekcja <code>normalized</code> jest wiążącą intencją. AQL pozostaje jedynym źródłem authority, Planfile źródłem stanu wykonania, a EQL receipt źródłem potwierdzonego rezultatu.</p>
+<h2>Stan wdrożenia</h2>
+<ul>
+<li>wykonane: schema, fixture, walidacja Runtime, canonical hash, projekcje,</li>
+</ul>
+<p>semantic diff, append-only registry oraz API <code>propose/revise/get/preview/diff</code>;</p>
+<ul>
+<li>wykonane kontraktowo: <code>subactor.intent-binding/v1</code> wiążący intencję, projekt i</li>
+</ul>
+<p>wersjonowane zależności governance;</p>
+<ul>
+<li>otwarte: akceptacja przez uprawnionego principal-a, deterministyczny binder,</li>
+</ul>
+<p><code>intent_ref</code>/<code>intent_hash</code> w Process Envelope i Planfile oraz wspólny readiness hook blokujący wykonanie nieaktualnej intencji.</p>
+<p>Szczegółowy plan implementacji znajduje się w <a href="../plans/intent-contract-continuation-2026-07-22.html"><code>../plans/intent-contract-continuation-2026-07-22.md</code></a>.</p>
+</main>
+</body>
+</html>

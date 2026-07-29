@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Autonomy Evolution Loop — Subactor Docs</title>
+  <style>
+    :root { --bg:#0f1419; --fg:#e7ecf1; --muted:#9aa7b5; --accent:#3d9cf0; --line:#243041; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:"IBM Plex Sans","Segoe UI",sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #1a2a3d, var(--bg));
+      color: var(--fg); line-height:1.6; min-height:100vh; }
+    main { max-width: 52rem; margin:0 auto; padding:3rem 1.5rem 5rem; }
+    a { color: var(--accent); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    h1,h2,h3,h4 { letter-spacing:-0.01em; line-height:1.25; }
+    h1 { font-size:1.9rem; } h2 { font-size:1.4rem; margin-top:2.2rem; }
+    h3 { font-size:1.15rem; margin-top:1.8rem; }
+    code { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.88em;
+      background:#1a2331; border:1px solid var(--line); border-radius:4px; padding:0.1em 0.35em; }
+    pre { background:#0b1017; border:1px solid var(--line); border-radius:8px;
+      padding:1rem; overflow-x:auto; }
+    pre code { background:none; border:none; padding:0; }
+    table { border-collapse:collapse; width:100%; margin:1rem 0; display:block; overflow-x:auto; }
+    th,td { border:1px solid var(--line); padding:0.45rem 0.7rem; text-align:left;
+      font-size:0.92rem; }
+    th { background:#161f2c; }
+    blockquote { border-left:3px solid var(--accent); margin:1rem 0; padding:0.2rem 1rem;
+      color: var(--muted); }
+    hr { border:0; border-top:1px solid var(--line); margin:2rem 0; }
+    .docnav { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.8rem;
+      margin-bottom:2rem; color:var(--muted); }
+  </style>
+</head>
+<body>
+<main>
+  <nav class="docnav"><a href="../index.html">subactor/docs</a></nav>
+<hr />
+<p>{ &quot;schema&quot;: &quot;subactor.doc/v1&quot;, &quot;id&quot;: &quot;docs.architecture.autonomy-evolution-loop&quot;, &quot;version&quot;: 4, &quot;status&quot;: &quot;current&quot;, &quot;updated&quot;: &quot;2026-07-23&quot; }</p>
+<hr />
+<h1>Autonomy Evolution Loop</h1>
+<h2>Cel</h2>
+<p>Autonomia ma zwiększać ilość poprawnie zakończonej pracy na jednostkę czasu, kosztu, ryzyka i uwagi człowieka. Liczba cykli kontrolera, wywołań LLM albo utworzonych ticketów nie jest miarą sukcesu.</p>
+<p>System może proponować i testować własne ulepszenia, lecz nie może:</p>
+<ul>
+<li>sam rozszerzyć AQL lub root authority;</li>
+<li>zmienić Constitution bez Foundera albo wymaganego quorum;</li>
+<li>promować zmiany na podstawie własnego receipt;</li>
+<li>ominąć canary, niezależnego EQL albo rollbacku;</li>
+<li>uznać częściowego snapshotu za pełną sytuację;</li>
+<li>tworzyć wielu kandydatów dla tego samego fingerprintu.</li>
+</ul>
+<h2>Pętla</h2>
+<pre><code class="language-text">Observe -&gt; Aggregate -&gt; Diagnose -&gt; Select
+   ^                                |
+   |                                v
+Learn &lt;- Measure &lt;- Promote &lt;- Experiment
+                  \- Rollback/Retire</code></pre>
+<h3>Observe</h3>
+<p>SODL zapisuje zdarzenia, receipts, koszty i odpowiedzialność. Wymagane są stabilne correlation ID, fingerprint, czas monotoniczny i jawna świeżość.</p>
+<h3>Aggregate</h3>
+<p>DOQL buduje sytuację oraz trendy. Każde źródło deklaruje expected scope, observed count, freshness, snapshot hash i completeness receipt.</p>
+<h3>Diagnose</h3>
+<p>DQL sprawdza bezpieczeństwo, liveness, progress, currency, uniqueness, independence, recoverability i coverage. Finding nie jest jeszcze przyczyną ani uprawnieniem do naprawy.</p>
+<h3>Select</h3>
+<p>Jeden ProblemCase grupuje wspólną przyczynę. Improvement Candidate ma hipotezę, baseline, przewidywaną wartość, koszt, ryzyko, confidence, odwracalność, właściciela i limit zasobów.</p>
+<h3>Experiment</h3>
+<p>Strategy DSL wybiera dozwoloną reakcję, AQL ogranicza principal, OQL opisuje operacje, URI Process wykonuje przypięte kroki, a EQL określa niezależny rezultat. Eksperyment zaczyna się od symulacji i izolowanego canary.</p>
+<h3>Promote</h3>
+<p>Poziomy dojrzałości capability:</p>
+<ol>
+<li><code>observe</code>;</li>
+<li><code>recommend</code>;</li>
+<li><code>simulate</code>;</li>
+<li><code>canary</code>;</li>
+<li><code>bounded_execute</code>;</li>
+<li><code>autonomous</code>;</li>
+<li><code>self_improving</code>.</li>
+</ol>
+<p>Promocja zwiększa tylko wcześniej zatwierdzony zakres. Awaria cofa capability o poziom albo uruchamia rollback.</p>
+<h3>Measure and Learn</h3>
+<p>Raport before/after porównuje lead time, throughput, retry, rollback, rework, koszt, liczbę ręcznych reakcji oraz jakość EQL. Wynik aktualizuje Knowledge, profil DQL i katalog strategii albo prowadzi do wycofania eksperymentu.</p>
+<h2>Budżety</h2>
+<p>Każdy eksperyment ma:</p>
+<ul>
+<li>limit czasu i prób;</li>
+<li>limit tokenów oraz kosztu API;</li>
+<li>limit ticketów i równoległości;</li>
+<li>dozwolony scope zasobów;</li>
+<li>limit mutacji;</li>
+<li>maksymalny blast radius;</li>
+<li>automatyczny stop;</li>
+<li>preimage i rollback;</li>
+<li>termin przeglądu wiedzy.</li>
+</ul>
+<h2>Pierwszy backlog</h2>
+<ol>
+<li>Rozszerzyć bazowy <code>controller.progress</code> o SLA obowiązków, retry i</li>
+</ol>
+<p>eskalacje.</p>
+<ol>
+<li>Zebrać co najmniej dwanaście cykli podtelemetrii <code>problem_reactions</code>, w tym</li>
+</ol>
+<p>co najmniej jeden rzeczywisty <code>ticket_creation</code>.</p>
+<ol>
+<li>Finding Outbox i deduplikowany ProblemCase.</li>
+<li>Receipts kompletności źródeł DOQL.</li>
+<li>Migracja aktywnych ticketów do Constitution binding.</li>
+<li>Analiza decyzji <code>notify</code>.</li>
+<li>Zewnętrzny Sentinel.</li>
+<li>Rozdzielenie runtime i principals Doctor, Repair oraz Validator.</li>
+<li>Router modeli oparty o koszt, confidence i wpływ decyzji.</li>
+</ol>
+<h2>Dowód początkowy</h2>
+<p>Schedule-aware liveness, izolacja instancji, progress oraz obsługa aktywnego cyklu przeszły 14/14 testów i live read-back. Przy okresie 300000 ms oraz jitterze 30000 ms próg wynosi 630000 ms.</p>
+<p>Pierwszy cykl najnowszej instancji został zapisany jako <code>startup</code>. Miał zero wykonywalnych ticketów i 33 formalne powiadomienia, ale utworzył jeden deduplikowany ticket reakcji, dlatego progress wyniósł dokładnie jedną jednostkę. Wcześniejszy live shadow podczas startu zwrócił <code>cycle_running</code> z jawnym <code>cycle_id</code>, bez naruszeń i bez mutacji zewnętrznych.</p>
+<p>To rozdziela trzy wcześniej mieszane sytuacje: poprawne oczekiwanie na start, trwającą pracę i rzeczywisty zastój. Zaobserwowany czas startowych cykli był zmienny (od 2302 ms do około 131 s), dlatego następny krok to telemetria etapów, a nie arbitralne skrócenie timeoutu. Profil nadal nie mierzy wieku najstarszego obowiązku ani skuteczności późniejszej reakcji człowieka lub bota.</p>
+<p>Telemetria etapów została wdrożona jako zamknięty kontrakt siedmiu kroków. Pierwszy read-back przypisał 2523 z 2623 ms do <code>problem_reactions</code>. Etap utworzył jeden ticket dla nowego fingerprintu; ostatnie tickety reakcji miały różne fingerprinty. Wniosek nie brzmi więc „usuń duplikaty”, lecz: rozdziel czas wyboru kandydata, kompilacji manifestu, zapisu Planfile i audytu oraz porównaj kilka cykli przed optymalizacją.</p>
+<p>Podetapy <code>problem_reactions</code> są już osobnym kontraktem. Pierwszy live cycle po wdrożeniu nie miał kandydata: selection zakończył się poprawnie, a manifest, Planfile create i audit zostały jawnie pominięte. Dzięki temu cykl bez pracy nie zanieczyszcza percentyli wykonania i nie udaje postępu. Następna decyzja optymalizacyjna wymaga naturalnego lub testowego, izolowanego przypadku z rzeczywistym kandydatem; produkcyjnego błędu nie należy wywoływać wyłącznie w celu zebrania metryki.</p>
+</main>
+</body>
+</html>

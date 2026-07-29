@@ -2,13 +2,17 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.plans.dql-autodiagnostics-continuation-2026-07-22",
-  "version": 1,
+  "version": 2,
   "status": "current",
-  "updated": "2026-07-22"
+  "updated": "2026-07-29"
 }
 ---
 
 # Plan kontynuacji — DQL i pętla Doctor/Repair/Validator
+
+**Stan przeglądu 2026-07-29:** P1–P6 pozostają otwarte, dopóki dokument nie
+wskaże completion receipt i wersjonowanego evidence dla danej fazy. Samo
+istnienie profilu lub testu statycznego nie zamyka pętli diagnostycznej.
 
 ## Stan wykonany
 

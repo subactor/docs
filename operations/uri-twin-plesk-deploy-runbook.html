@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Runbook: deploy / rollback uri-twin Plesk observe — Subactor Docs</title>
+  <style>
+    :root { --bg:#0f1419; --fg:#e7ecf1; --muted:#9aa7b5; --accent:#3d9cf0; --line:#243041; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:"IBM Plex Sans","Segoe UI",sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #1a2a3d, var(--bg));
+      color: var(--fg); line-height:1.6; min-height:100vh; }
+    main { max-width: 52rem; margin:0 auto; padding:3rem 1.5rem 5rem; }
+    a { color: var(--accent); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    h1,h2,h3,h4 { letter-spacing:-0.01em; line-height:1.25; }
+    h1 { font-size:1.9rem; } h2 { font-size:1.4rem; margin-top:2.2rem; }
+    h3 { font-size:1.15rem; margin-top:1.8rem; }
+    code { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.88em;
+      background:#1a2331; border:1px solid var(--line); border-radius:4px; padding:0.1em 0.35em; }
+    pre { background:#0b1017; border:1px solid var(--line); border-radius:8px;
+      padding:1rem; overflow-x:auto; }
+    pre code { background:none; border:none; padding:0; }
+    table { border-collapse:collapse; width:100%; margin:1rem 0; display:block; overflow-x:auto; }
+    th,td { border:1px solid var(--line); padding:0.45rem 0.7rem; text-align:left;
+      font-size:0.92rem; }
+    th { background:#161f2c; }
+    blockquote { border-left:3px solid var(--accent); margin:1rem 0; padding:0.2rem 1rem;
+      color: var(--muted); }
+    hr { border:0; border-top:1px solid var(--line); margin:2rem 0; }
+    .docnav { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.8rem;
+      margin-bottom:2rem; color:var(--muted); }
+  </style>
+</head>
+<body>
+<main>
+  <nav class="docnav"><a href="../index.html">subactor/docs</a></nav>
+<hr />
+<p>{ &quot;schema&quot;: &quot;subactor.doc/v1&quot;, &quot;id&quot;: &quot;docs.operations.uri-twin-plesk-deploy-runbook&quot;, &quot;version&quot;: 4, &quot;status&quot;: &quot;current&quot;, &quot;updated&quot;: &quot;2026-07-29&quot; }</p>
+<hr />
+<h1>Runbook: deploy / rollback uri-twin Plesk observe</h1>
+<h2>Cel</h2>
+<p>Włączyć <code>plesk://…/query/…</code> twin-facts w żywym <code>urirun-node</code> + Control reality-check bez zmian HITL / mutate.</p>
+<h2>Deploy</h2>
+<ol>
+<li>Kod connectora jest bind-mount: <code>~/github/urirun-connectors</code> → <code>/connector-repos</code>.</li>
+<li>Control <code>src</code> jest bind-mount: <code>core/services/control/src</code> → <code>/app/services/control/src</code>.</li>
+<li><code>urirun-connector-subactor-twin-map</code> ładuje domyślnie</li>
+</ol>
+<p><code>https://github.com/uri-twin/uri-twin-plesk.git</code> (<code>main</code>). Opcjonalne override'y operacyjne: <code>URI_TWIN_PLESK_REPOSITORY</code>, <code>URI_TWIN_PLESK_REF</code>, <code>URI_TWIN_PLESK_PATH</code>, <code>URI_TWIN_CACHE_DIR</code>, <code>URI_TWIN_OFFLINE</code>.</p>
+<ol>
+<li>Kanoniczne wdrożenie całego lokalnego stosu składa bazowy Compose, bezpieczny</li>
+</ol>
+<p>Control i bramę connector LAN. Polecenie wykonuje preflight, buduje obrazy, czeka na gotowość, sprawdza URIrun i mTLS oraz uruchamia wyłącznie podgląd kontrolera:</p>
+<pre><code class="language-bash">cd ~/github/subactor/platform
+npm run stack:deploy</code></pre>
+<p>Pełny restart bez usuwania wolumenów: <code>npm run stack:restart</code>. Sam preflight: <code>npm run stack:check</code>; stan żywego stosu: <code>npm run stack:status</code>. Opcja <code>--skip-controller</code> pomija read-only preview. Skrypt nigdy nie dodaje overlayu execute-once ani nie uruchamia kontrolera z <code>--execute</code>.</p>
+<ol>
+<li>Smoke (wymaga <code>SUBACTOR_ADMIN_TOKEN</code> z <code>.env</code>):</li>
+</ol>
+<pre><code class="language-bash">export SUBACTOR_CONTROL_URL=http://127.0.0.1:8091
+# routes
+subactor get /api/connector-runtime | jq -r '.routes[].uri' | rg 'plesk://host/(site/query/docroot|subscription/query/snapshot|dns/query/authority)'
+# Git-backed dynamic map
+subactor get /api/connector-runtime | jq -r '.routes[].uri' | rg 'twin://plesk/map/query/(snapshot|resolve|refresh)'
+# URI Process twin-fact
+subactor uri 'plesk://host/site/query/docroot' '{&quot;domain&quot;:&quot;docs.subactor.com&quot;,&quot;main_domain&quot;:&quot;subactor.com&quot;}'
+# reality-check: bridge projection
+subactor get '/api/projects/reality-check?domain=docs.subactor.com'
+# reality-check: URI Process preferred
+subactor get '/api/projects/reality-check?domain=docs.subactor.com&amp;via=uri'</code></pre>
+<h2>Akceptacja</h2>
+<ul>
+<li>Trzy URI widoczne w <code>route_count</code> / liście routes.</li>
+<li><code>via=uri</code> → <code>sources.plesk_docroot_twin.source == &quot;uri_process&quot;</code> i <code>schema == subactor.twin-fact/v1</code>.</li>
+<li>Bez <code>via</code> → <code>source == &quot;bridge_http&quot;</code> (projekcja), fail-open.</li>
+<li><code>twin://plesk/map/query/snapshot</code> → <code>baseline.loaded_from == &quot;git&quot;</code>, pełny</li>
+</ul>
+<p>commit, digest i <code>stale == false</code>; fallback cache/embedded musi mieć <code>stale == true</code>.</p>
+<ul>
+<li><code>observe-topology</code> zwraca query plan dependency-first. <code>publish-*</code> z</li>
+</ul>
+<p>docroot fact <code>decision=refuse</code> zwraca pusty plan i <code>execution_policy=precondition-blocked</code>.</p>
+<ul>
+<li><code>human_boundary</code> / granty nietknięte.</li>
+</ul>
+<h2>Live smoke mapy (2026-07-29)</h2>
+<ul>
+<li><code>urirun-node</code>: 644 trasy, w tym trzy <code>twin://plesk/map/query/*</code>.</li>
+<li>Git baseline: commit <code>069008bff9c08366d2e3e156c4c9b5b937eaa37e</code>,</li>
+</ul>
+<p>baseline v3, <code>loaded_from=git</code>, <code>stale=false</code>.</p>
+<ul>
+<li>Plesk: 19 subskrypcji; subscription/docroot/DNS facts <code>fresh</code>; katalog</li>
+</ul>
+<p>rozszerzeń dostępny; dynamiczna mapa zawierała 22 zasoby i zero discoveries.</p>
+<ul>
+<li><code>observe-topology</code>: resolved, dwa kroki query.</li>
+<li><code>publish-site-with-managed-dns</code>: zatrzymany przed command przez</li>
+</ul>
+<p><code>fact_refused: plesk.site.docroot</code> (zero kroków wykonawczych).</p>
+<h2>Live smoke (2026-07-25, Subactor)</h2>
+<table>
+<thead><tr><th>Domain</th><th>via=uri authority</th><th>decision</th><th>observed</th></tr></thead>
+<tbody>
+<tr><td>docs.subactor.com</td><td>observed</td><td>accept</td><td>/docs.subactor.com</td></tr>
+<tr><td>logo.subactor.com</td><td>observed</td><td>accept</td><td>/logo.subactor.com</td></tr>
+<tr><td>subactor.com</td><td>observed</td><td>accept</td><td>/httpdocs</td></tr>
+<tr><td>www.subactor.com</td><td>rule (domain missing in Plesk)</td><td>accept</td><td>—</td></tr>
+<tr><td>identity.subactor.com</td><td>rule (DNS + domain missing)</td><td>accept</td><td>—</td></tr>
+</tbody></table>
+<p>KPI <code>via=uri</code>: <strong>3/5 observed (60%)</strong> — non-observed cases are missing Plesk objects / DNS, not twin regressions. DNS authority twin: Cloudflare NS consensus <code>fresh</code> for <code>subactor.com</code>.</p>
+<h2>Rollback</h2>
+<p>Jeżeli nowe kontenery nie osiągną gotowości, <code>stack:deploy</code> podejmuje próbę odtworzenia poprzednich lokalnych obrazów i zachowuje wolumeny, po czym wypisuje diagnostykę. Bind-mounty nadal wskazują bieżący worktree, więc pełny rollback źródeł wymaga wskazania poprzedniego commita:</p>
+<pre><code class="language-bash"># przywróć poprzedni commit w urirun-connector-plesk + core, potem:
+npm run stack:restart -- --no-build</code></pre>
+<p>HTTP <code>/plesk/docroot</code> i stare reality-check bez twinów wracają automatycznie po cofnięciu kodu; mutacje nie zależą od query twin.</p>
+<p>Awaria GitHub nie wymaga rollbacku: loader użyje zwalidowanego last-known-good, a następnie embedded baseline i oznaczy go <code>stale</code>. Wymuszenie kontrolowanego offline: <code>URI_TWIN_OFFLINE=1</code>; nie traktować takiej mapy jako dowodu aktualności repozytorium.</p>
+<h2>KPI (ręczny odczyt)</h2>
+<p>Z reality-check reportów: udział <code>authority=observed</code> vs <code>rule</code> / <code>fact_quality=estimated</code>.</p>
+</main>
+</body>
+</html>

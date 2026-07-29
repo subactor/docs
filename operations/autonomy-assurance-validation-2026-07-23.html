@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Walidacja Constitution, Assurance i Controller — Subactor Docs</title>
+  <style>
+    :root { --bg:#0f1419; --fg:#e7ecf1; --muted:#9aa7b5; --accent:#3d9cf0; --line:#243041; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:"IBM Plex Sans","Segoe UI",sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #1a2a3d, var(--bg));
+      color: var(--fg); line-height:1.6; min-height:100vh; }
+    main { max-width: 52rem; margin:0 auto; padding:3rem 1.5rem 5rem; }
+    a { color: var(--accent); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    h1,h2,h3,h4 { letter-spacing:-0.01em; line-height:1.25; }
+    h1 { font-size:1.9rem; } h2 { font-size:1.4rem; margin-top:2.2rem; }
+    h3 { font-size:1.15rem; margin-top:1.8rem; }
+    code { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.88em;
+      background:#1a2331; border:1px solid var(--line); border-radius:4px; padding:0.1em 0.35em; }
+    pre { background:#0b1017; border:1px solid var(--line); border-radius:8px;
+      padding:1rem; overflow-x:auto; }
+    pre code { background:none; border:none; padding:0; }
+    table { border-collapse:collapse; width:100%; margin:1rem 0; display:block; overflow-x:auto; }
+    th,td { border:1px solid var(--line); padding:0.45rem 0.7rem; text-align:left;
+      font-size:0.92rem; }
+    th { background:#161f2c; }
+    blockquote { border-left:3px solid var(--accent); margin:1rem 0; padding:0.2rem 1rem;
+      color: var(--muted); }
+    hr { border:0; border-top:1px solid var(--line); margin:2rem 0; }
+    .docnav { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.8rem;
+      margin-bottom:2rem; color:var(--muted); }
+  </style>
+</head>
+<body>
+<main>
+  <nav class="docnav"><a href="../index.html">subactor/docs</a></nav>
+<hr />
+<p>{ &quot;schema&quot;: &quot;subactor.doc/v1&quot;, &quot;id&quot;: &quot;docs.operations.autonomy-assurance-validation-2026-07-23&quot;, &quot;version&quot;: 7, &quot;status&quot;: &quot;current&quot;, &quot;updated&quot;: &quot;2026-07-23&quot; }</p>
+<hr />
+<h1>Walidacja Constitution, Assurance i Controller</h1>
+<h2>Cel</h2>
+<p>Runbook sprawdza, czy Subactor:</p>
+<ul>
+<li>rozpoznaje aktualny, wykonywalny i nieaktualny ticket;</li>
+<li>zatrzymuje nieuprawnioną lub niekompletną operację;</li>
+<li>wykrywa anomalie kontrolera i architektury;</li>
+<li>przygotowuje tylko przypiętą, idempotentną naprawę;</li>
+<li>wymaga niezależnej walidacji i rollbacku;</li>
+<li>nie myli braku postępu z awarią ani częściowego snapshotu z pełną sytuacją.</li>
+</ul>
+<p>Procedura jest domyślnie read-only. Wywołania z <code>--apply</code>, publikacja evidence do Control i produkcyjne URI Process wymagają osobnej decyzji oraz AQL.</p>
+<h2>Model podlegający testom</h2>
+<pre><code class="language-text">Constitution
+  |
+  +-- validates authority, delegation and version binding
+  |
+Assurance Supervisor
+  +-- DOQL: aggregate situation
+  +-- DQL: evaluate invariants
+  +-- Doctor: diagnose without mutation
+  +-- Repair: pinned candidate in canary
+  +-- Validator: independent EQL/read-back
+  |
+Controller
+  +-- readiness + currency
+  +-- claim + URI execution
+  +-- receipts + completion
+  +-- reminders + lifecycle reconciliation</code></pre>
+<h2>Poziom 1 — walidacja artefaktów</h2>
+<pre><code class="language-bash">cd /home/tom/github/subactor/platform
+npm run artifacts:build
+npm run artifacts:check</code></pre>
+<p>Wynik zaliczony:</p>
+<ul>
+<li>brak findings Artifact Registry;</li>
+<li>Constitution, profile DQL/DOQL, AQL/OQL/EQL i URI Process mają immutable</li>
+</ul>
+<p>revision URL;</p>
+<ul>
+<li>zmieniony dokument z <code>version_source=declared</code> ma podniesioną wersję.</li>
+</ul>
+<h2>Poziom 2 — DQL i DOQL</h2>
+<pre><code class="language-bash">cd /home/tom/github/subactor
+node platform/scripts/run-diagnostic-profile.mjs
+node platform/scripts/run-doql-situation.mjs</code></pre>
+<p>Wynik zaliczony:</p>
+<ul>
+<li>DQL ma <code>ok=true</code>, wszystkie wymagane wejścia oraz zero findings;</li>
+<li>DOQL ma <code>read_only=true</code> i <code>automatic_mutation_allowed=false</code>;</li>
+<li>raport zawiera hash profilu i snapshotu;</li>
+<li>zakres wyniku jest opisany jako obserwowany zbiór, nie cała organizacja bez</li>
+</ul>
+<p>dowodu kompletności.</p>
+<p>Aktualny profil architektury sprawdza tylko trzy inwarianty i korzysta ze statycznego odczytu tras. Zielony wynik nie zastępuje live route registry.</p>
+<h2>Poziom 3 — Constitution i lifecycle</h2>
+<pre><code class="language-bash">cd /home/tom/github/subactor/platform
+node --test \
+  test/organization-constitution.test.mjs \
+  test/lifecycle-type-registry.test.mjs \
+  test/delegation-remediation-invariant.test.mjs</code></pre>
+<p>Wynik zaliczony:</p>
+<ul>
+<li>aktywna Constitution jest poprawna i hash-bound;</li>
+<li>nieznany typ encji powoduje błąd inventory;</li>
+<li>ticket naprawczy nie może utworzyć kolejnego ticketu naprawczego;</li>
+<li>istniejąca rekurencja daje finding, a terminalna historia nie jest</li>
+</ul>
+<p>traktowana jako aktywne naruszenie.</p>
+<h2>Poziom 4 — anomalie i stress bez efektów zewnętrznych</h2>
+<pre><code class="language-bash">cd /home/tom/github/subactor/autonomy-lab
+npm run check
+npm run stress
+npm run canary:stress</code></pre>
+<p>Minimalna macierz:</p>
+<table>
+<thead><tr><th>Anomalia</th><th>Oczekiwany wynik</th></tr></thead>
+<tbody>
+<tr><td>brak exact URI</td><td>brak promocji do ready</td></tr>
+<tr><td>trasa pojawia się po błędzie</td><td>jeden idempotentny recheck</td></tr>
+<tr><td>burst tego samego błędu</td><td>jeden cykl po deduplikacji</td></tr>
+<tr><td>częściowe wykonanie</td><td>zachowane receipts ukończonych kroków</td></tr>
+<tr><td>URI zaproponowane przez LLM</td><td>odmowa</td></tr>
+<tr><td>brak evidence propozycji LLM</td><td>odmowa</td></tr>
+<tr><td>błąd zapisu Repair</td><td>brak mutacji zewnętrznej</td></tr>
+<tr><td>czerwony Validator</td><td>rollback</td></tr>
+<tr><td>zmiana <code>candidate_hash</code></td><td>odmowa</td></tr>
+<tr><td>duplikat wykonania</td><td>jeden efekt i duplicate receipt</td></tr>
+</tbody></table>
+<p>Wynik zaliczony wymaga <code>external_mutations=0</code> i zera nieoczekiwanych failures.</p>
+<h2>Poziom 5 — read-only stan live</h2>
+<p>Token należy przekazać przez środowisko procesu. Nie wolno umieszczać go w URL, logu, tickecie ani raporcie.</p>
+<pre><code class="language-bash">cd /home/tom/github/subactor/autonomy-lab
+SUBACTOR_ADMIN_TOKEN='wartość-z-bezpiecznego-źródła' npm run e2e:live</code></pre>
+<p>Następnie należy wykonać uwierzytelnione:</p>
+<pre><code class="language-text">POST /api/tickets/lifecycle/reconcile
+{&quot;apply&quot;: false}</code></pre>
+<p>Sprawdzane pola:</p>
+<ul>
+<li><code>controller_observed_at</code> i skonfigurowany <code>periodic_interval_ms</code>;</li>
+<li><code>controller_instance_id</code>, <code>cycle_id</code>, <code>cycle_started_at</code>,</li>
+</ul>
+<p><code>cycle_completed_at</code> i czas trwania;</p>
+<ul>
+<li><code>controller_stage_telemetry</code>, kompletność siedmiu etapów, ich kolejność,</li>
+</ul>
+<p>sumę i najwolniejszy etap;</p>
+<ul>
+<li><code>summary.executable</code>, <code>notifications</code>, <code>blocked</code> i <code>ignored</code>;</li>
+<li><code>currency_current</code>, <code>currency_uncertain</code>, <code>currency_obsolete</code>;</li>
+<li><code>constitution_current</code>, <code>constitution_legacy_unbound</code>,</li>
+</ul>
+<p><code>constitution_stale</code>;</p>
+<ul>
+<li>liczba rechecków, promocji i odświeżonych diagnoz;</li>
+<li>brak mutacji zewnętrznych.</li>
+</ul>
+<p>Observer wylicza próg jako <code>max(120000, 2 * periodic_interval_ms + jitter_budget_ms)</code>. Brak lub błędny harmonogram daje <code>controller_schedule_invalid</code>, obserwacja z przyszłości poza budżetem daje <code>controller_clock_skew</code>, a okres przekraczający dobę daje <code>daily_liveness_not_met</code>.</p>
+<p>Dozwolone stany podczas startu:</p>
+<ul>
+<li><code>startup_pending</code> — nie minął jeszcze jawny grace i cykl nie wystartował;</li>
+<li><code>cycle_running</code> — cykl ma ID i czas startu, ale nie wystawił jeszcze</li>
+</ul>
+<p>completion eventu;</p>
+<ul>
+<li><code>ready</code> — istnieje świeży, ukończony cykl bieżącej instancji.</li>
+</ul>
+<p><code>cycle_running</code> jest zielony tylko do budżetu stale. Po jego przekroczeniu observer wystawia <code>controller_cycle_timeout</code>. <code>running=true</code> bez <code>cycle_started_at</code> daje <code>controller_cycle_start_missing</code>.</p>
+<p>Jeżeli scheduler reklamuje <code>cycle_telemetry_schema=subactor.controller-cycle-telemetry/v1</code>, ukończony cykl musi zawierać wszystkie etapy w ustalonej kolejności. Brak danych daje <code>controller_stage_telemetry_unavailable</code>, zmiana cyklu <code>controller_stage_telemetry_cycle_mismatch</code>, a niepełny wynik <code>controller_stage_telemetry_incomplete</code>. Podczas <code>cycle_running</code> stan telemetrii jest <code>collecting</code>, nie <code>unavailable</code>.</p>
+<p>Jeżeli scheduler reklamuje <code>problem_reaction_telemetry_schema=subactor.problem-reaction-telemetry/v1</code>, observer wymaga czterech podetapów w ustalonej kolejności. Dla braku kandydata dozwolony jest wyłącznie wynik:</p>
+<pre><code class="language-text">candidate_selection = completed
+manifest_compilation = skipped:no_candidate
+ticket_creation = skipped:no_candidate
+audit_receipt = skipped:no_candidate
+candidate_count = 0
+tickets_created = 0</code></pre>
+<p>Niespójność liczby kandydatów i ticketów, pominięcie pracy przy istniejącym kandydacie, błędny <code>cycle_id</code> albo niewłaściwa suma czasów są violations.</p>
+<p>Progress jest liczony wyłącznie z eventów bieżącego <code>controller_instance_id</code>. Jednostkami postępu są wykonane tickety, naprawy lifecycle, ukończone formularze, utworzone tickety reakcji, promocje readiness i nowe relacje currency. Sama liczba powiadomień nie jest postępem. Dwa kolejne cykle z <code>executable&gt;0</code> i zerem jednostek postępu dają <code>controller_progress_stalled</code>; <code>executable=0</code> z formalnymi powiadomieniami daje <code>waiting_external</code>.</p>
+<h2>Poziom 6 — shadow i produkcyjny canary</h2>
+<p>Shadow:</p>
+<ul>
+<li>zapisuje findings i RepairCandidate;</li>
+<li>nie tworzy grantów;</li>
+<li>nie wykonuje produkcyjnych URI;</li>
+<li>porównuje decyzję obecnego kontrolera z planowaną polityką <code>enforce</code>.</li>
+</ul>
+<p>Produkcyjny canary może dotyczyć wyłącznie odwracalnego, ograniczonego zasobu. Musi mieć:</p>
+<ul>
+<li>jeden ticket i jeden <code>candidate_hash</code>;</li>
+<li>jawny plan hash i minimalny AQL;</li>
+<li>preimage oraz rollback URI;</li>
+<li>limit czasu i prób;</li>
+<li>niezależnego Validatora;</li>
+<li>EQL oparty o publiczny lub niezależny read-back;</li>
+<li>automatyczne zatrzymanie po czerwonym wyniku.</li>
+</ul>
+<h2>Warunki przejścia <code>observe</code> → <code>enforce</code></h2>
+<p>Przejście jest dozwolone dopiero, gdy jednocześnie:</p>
+<ul>
+<li>aktywne <code>constitution_legacy_unbound == 0</code>;</li>
+<li><code>constitution_stale == 0</code>;</li>
+<li>dwa pełne okna kontrolera nie mają niewyjaśnionego zastoju;</li>
+<li>live observer używa progu zależnego od harmonogramu;</li>
+<li>źródła DOQL mają receipts kompletności i świeżości;</li>
+<li>Finding Outbox jest idempotentny;</li>
+<li>Doctor, Repair i Validator mają rozdzielone principals oraz AQL;</li>
+<li>stress, canary, rollback i niezależny read-back są zielone;</li>
+<li>zewnętrzny Sentinel wykrywa zatrzymanie Control.</li>
+</ul>
+<h2>Warunki natychmiastowego przerwania</h2>
+<ul>
+<li>nieznana wersja kontraktu albo Constitution;</li>
+<li>brak snapshotu wymaganego przez DQL/DOQL;</li>
+<li>LLM proponuje URI, authority, sekret lub shell;</li>
+<li>Repair i Validator mają ten sam principal lub credential;</li>
+<li>brak preimage/rollback dla mutacji;</li>
+<li>EQL nie wskazuje konkretnego <code>verified_by</code>;</li>
+<li>liczba aktywnych RepairCandidate dla fingerprintu przekracza jeden;</li>
+<li>green report nie ma dowodu kompletności źródeł;</li>
+<li>observer i scheduler używają sprzecznych zegarów.</li>
+</ul>
+<h2>Wynik bazowy z 2026-07-23</h2>
+<ul>
+<li>DQL Control: 3/3.</li>
+<li>DOQL output integrity: 2/2.</li>
+<li>Portfolio manifestów: 8/8 domen, bez dowodu kompletności Organization Core.</li>
+<li>Anomaly suite: 17/17.</li>
+<li>Controller stress: 1700/1700.</li>
+<li>Repair canary stress: 600/600.</li>
+<li>Constitution/lifecycle/remediation: 7/7.</li>
+<li>Live lifecycle: 32 aktywne, 32 current, 32 legacy unbound, 31 notify,</li>
+</ul>
+<p>1 ignore, 0 execute.</p>
+<ul>
+<li>Live observer po poprawce: wiek 218164 ms, okres 300000 ms, jitter 30000 ms,</li>
+</ul>
+<p>próg stale 630000 ms, <code>ok=true</code>, zero violations i zero mutacji zewnętrznych.</p>
+<ul>
+<li>Schedule-aware liveness, izolacja instancji, aktywny cykl i progress:</li>
+</ul>
+<p>14/14.</p>
+<ul>
+<li>Celowane testy Core kontrolera: 23/23.</li>
+<li>Live po restarcie: odrębny <code>controller_instance_id</code>, pierwszy completion z</li>
+</ul>
+<p>triggerem <code>startup</code>, 54 scanned, 33 considered, 0 executable, 0 blocked, 33 notifications, czas 2302 ms oraz jeden utworzony ticket reakcji. Progress: <code>productive</code>, jedna jednostka postępu, zero mutacji zewnętrznych.</p>
+<ul>
+<li>Live shadow podczas następnego startu: <code>cycle_running</code>, jawny <code>cycle_id</code>,</li>
+</ul>
+<p>brak violations i zero mutacji zewnętrznych.</p>
+<ul>
+<li>Stage telemetry live: 2627 ms całego cyklu, 2623 ms etapów;</li>
+</ul>
+<p><code>problem_reactions=2523 ms</code>, <code>snapshot_load=62 ms</code>, <code>queue_execution=22 ms</code>, pozostałe etapy łącznie 16 ms. Schemat kompletny, zgodny z <code>cycle_id</code>, zero violations i zero mutacji zewnętrznych.</p>
+<ul>
+<li>Po rozszerzeniu telemetrii: Core 27/27, Autonomy Lab 16/16, stress</li>
+</ul>
+<p>1700/1700.</p>
+<ul>
+<li>Pełny Core: 642 zaliczone, 7 pominiętych, 0 błędów.</li>
+<li>Po dodaniu podetapów reakcji: celowane Core 29/29, Autonomy Lab 18/18,</li>
+</ul>
+<p>stress 1700/1700, pełny Core 644 zaliczone, 7 pominiętych, 0 błędów.</p>
+<ul>
+<li>Live bez nowego kandydata: 88 ms etapów całego cyklu,</li>
+</ul>
+<p><code>candidate_count=0</code>, <code>tickets_created=0</code>, trzy jawne <code>skipped:no_candidate</code>, <code>waiting_external</code>, zero violations i zero mutacji zewnętrznych.</p>
+<ul>
+<li>Ręczna rekoncyliacja o <code>2026-07-23T20:47:45.289Z</code>: 8 projektów, z czego</li>
+</ul>
+<p><code>logo-subactor-com</code> jest <code>converged</code>, a 7 ma nadal obserwowalne blockery. Kontroler po rekoncyliacji: 55 ticketów, 35 otwartych, 20 zakończonych, 28 <code>waiting_input</code>, 5 <code>ready</code>, 2 <code>running</code>, 0 niespójności lifecycle.</p>
+<ul>
+<li>Stan domen projektowych: <code>autonomicznosc-pl</code>, <code>docs-stage-subactor-com</code>,</li>
+</ul>
+<p><code>docs-subactor-com</code> i <code>www-subactor-com</code> czekają na kontrolowaną bramę publikacji; <code>contracts-subactor-com</code> czeka kolejno na DNS, TLS i aplikację; <code>founder-subactor-com</code> ma poprawne DNS/TLS, lecz <code>/founder/action</code> nadal zwraca 404; <code>status-subactor-com</code> ma niezgodny artefakt aplikacji.</p>
+<ul>
+<li>Środowisko produkcyjne pozostaje fail-closed: master gate, auto-apply i</li>
+</ul>
+<p>wszystkie szczegółowe bramy Plesk są wyłączone. Istniejące zgody dla dokładnych <code>plan_hash</code> nie zostały wykonane i nie zostały rozszerzone.</p>
+<ul>
+<li>Skorygowano niepełne podsumowania dry-run w <code>PLF-913</code> i <code>PLF-914</code> na</li>
+</ul>
+<p>podstawie ich terminalnych ticketów wykonania, bez ponownego URI Process i bez <code>apply=true</code>: po 134 pliki oraz odpowiednio 2 200 242 i 2 200 235 bajtów. <code>plan_hash</code> pozostał bez zmian.</p>
+<ul>
+<li>Zielony receipt publikacji jest od tej wersji użyteczny tylko, gdy ma</li>
+</ul>
+<p>poprawny <code>plan_hash</code>, całkowite <code>file_count</code>, skończone <code>byte_count</code> oraz jawny boolean <code>changed</code>. Niepełny legacy receipt jest automatycznie odświeżany przez bezpieczny dry-run zamiast bezwarunkowo pomijać preflight.</p>
+<ul>
+<li>Test regresyjny receipt i formularzy: 35/35. Pełny Core po zmianie:</li>
+</ul>
+<p>646 zaliczonych, 7 pominiętych, 0 błędów.</p>
+<ul>
+<li>Odpowiedzialność po zatwierdzeniu dokładnego <code>plan_hash</code> jest kierowana do</li>
+</ul>
+<p><code>administrator-bot</code>, a Founder pozostaje wyłącznie odbiorcą eskalacji. <code>mutation_gate_disabled</code> z jawnym właścicielem <code>bot/machine/system</code> nie może już tworzyć kolejnego formularza Foundera.</p>
+<ul>
+<li>Fallback formularza lifecycle nie jest generowany dla ticketu z</li>
+</ul>
+<p><code>blocked-by:*</code>; użytkownik odpowiada na rzeczywisty ticket zależności zamiast na równoległą projekcję przyszłej pracy.</p>
+<ul>
+<li>Kontroler wygasił jako <code>canceled/superseded</code> dwa osierocone tickety</li>
+</ul>
+<p>formularzy <code>PLF-1178</code> i <code>PLF-1186</code>. Historia i relacja <code>source:*</code> zostały zachowane; źródłowe tickety nie zostały uznane za wykonane.</p>
+<ul>
+<li>Ręczny cykl po wdrożeniu: 53 scanned, 32 considered, 1 executable,</li>
+</ul>
+<p>31 notifications, 0 blocked. Kontroler wykonał <code>PLF-1190</code> przez cztery konkretne URI Process (<code>read</code>, <code>record</code>, <code>classify</code>, <code>audit</code>) i zamknął go z kompletnym EQL receipt.</p>
+<ul>
+<li>Aktualny Planfile po cyklu: 52 tickety, 32 aktywne, w tym 26</li>
+</ul>
+<p><code>waiting_input</code>, 5 <code>ready</code> i 1 ciągły kontroler <code>running</code>. Dwa formularze są anulowane, 17 ticketów jest <code>done</code>, jeden historyczny ticket diagnostyczny pozostaje <code>failed</code>.</p>
+<ul>
+<li>Pełny Core po zmianach odpowiedzialności i currency formularzy:</li>
+</ul>
+<p>649 zaliczonych, 7 pominiętych, 0 błędów. Testy celowane zmienionego przepływu: 63/63.</p>
+<h2>Autonomy Evolution Loop</h2>
+<p>Doskonalenie systemu jest osobnym lifecycle, a nie nieograniczonym prawem Control do modyfikowania siebie:</p>
+<pre><code class="language-text">SODL observations and receipts
+              |
+              v
+DOQL situation, trends and resource usage
+              |
+              v
+DQL finding or improvement opportunity
+              |
+              v
+one ProblemCase / one Improvement Candidate
+              |
+              v
+value-cost-risk selection
+              |
+              v
+Strategy DSL + AQL + OQL + pinned URI Process
+              |
+              v
+simulation -&gt; isolated canary -&gt; independent EQL
+              |
+       +------+------+
+       |             |
+       v             v
+bounded promote   rollback / retire
+       |
+       v
+before/after receipt -&gt; Knowledge -&gt; new invariant</code></pre>
+<h3>Procesy</h3>
+<ol>
+<li><code>autonomy.improvement.observe/v1</code> mierzy lead time, czas w stanie, liczbę</li>
+</ol>
+<p>cykli bez postępu, retry, rollback, rework, koszt LLM/API, uwagę człowieka oraz udział efektów potwierdzonych niezależnym EQL.</p>
+<ol>
+<li><code>autonomy.improvement.detect/v1</code> wykrywa wspólne przyczyny, błędne</li>
+</ol>
+<p><code>waiting_input</code>, brak exact URI, słabe EQL, nieskuteczne przypomnienia i zielone raporty bez kompletności źródeł.</p>
+<ol>
+<li><code>autonomy.improvement.select/v1</code> wybiera ograniczoną liczbę eksperymentów</li>
+</ol>
+<p>według wartości, częstotliwości, confidence, odwracalności, kosztu, ryzyka i kosztu koordynacji.</p>
+<ol>
+<li><code>autonomy.improvement.experiment/v1</code> przypina hipotezę, baseline,</li>
+</ol>
+<p><code>candidate_hash</code>, <code>plan_hash</code>, budżet, canary, EQL, rollback oraz warunek zatrzymania.</p>
+<ol>
+<li><code>autonomy.improvement.promote/v1</code> przechodzi stopniowo przez <code>observe</code>,</li>
+</ol>
+<p><code>recommend</code>, <code>simulate</code>, <code>canary</code>, <code>bounded_execute</code>, <code>autonomous</code> i <code>self_improving</code>.</p>
+<ol>
+<li><code>autonomy.improvement.review/v1</code> porównuje before/after i promuje, wycofuje</li>
+</ol>
+<p>albo usuwa zmianę oraz aktualizuje Knowledge i inwarianty.</p>
+<h3>Priorytet ograniczonych zasobów</h3>
+<pre><code class="language-text">priority =
+  expected_value
+  * occurrence_frequency
+  * evidence_confidence
+  * reversibility
+  / (implementation_cost + operational_risk + coordination_cost)</code></pre>
+<p>System powinien preferować deterministyczne reguły dla lifecycle, authority, hashy, exact URI, idempotency i completion. LLM jest uzasadniony dla niejednoznacznej diagnozy, interpretacji NL, generowania ograniczonych wariantów i oceny komunikacji. Droższy model jest fallbackiem po błędzie schematu, niskim confidence albo przy wysokim koszcie błędnej decyzji.</p>
+<h3>Najbliższe analizy</h3>
+<ul>
+<li>lejek <code>created -&gt; assigned -&gt; ready -&gt; running -&gt; verified -&gt; done</code>;</li>
+<li>przyczyny 31 decyzji <code>notify</code> i zera <code>execute</code>;</li>
+<li>exact URI blokujące największą liczbę ticketów;</li>
+<li>decyzje Foundera możliwe do zastąpienia zatwierdzoną polityką;</li>
+<li>lejek wiadomość -&gt; formularz -&gt; odpowiedź -&gt; zastosowany efekt;</li>
+<li>niezależność i siła EQL;</li>
+<li>kompletność i świeżość Digital Twin;</li>
+<li>powtarzalne problemy DNS, TLS, Plesk i publikacji;</li>
+<li>koszt tokenów, API, kliknięć, przypomnień i czasu człowieka;</li>
+<li>wspólna logika występująca w co najmniej trzech modułach.</li>
+</ul>
+<p>WIP auto-improvement powinien być ograniczony, przykładowo do jednej zmiany krytycznej i dwóch zwykłych. Jeden fingerprint może mieć najwyżej jeden aktywny ProblemCase i jeden Improvement Candidate.</p>
+</main>
+</body>
+</html>

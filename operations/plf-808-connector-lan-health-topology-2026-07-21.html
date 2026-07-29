@@ -35,6 +35,9 @@
 <body>
 <main>
   <nav class="docnav"><a href="../index.html">subactor/docs</a></nav>
+<hr />
+<p>{ &quot;schema&quot;: &quot;subactor.doc/v1&quot;, &quot;id&quot;: &quot;docs.operations.plf-808-connector-lan-health-topology-2026-07-21&quot;, &quot;version&quot;: 1, &quot;status&quot;: &quot;current&quot;, &quot;updated&quot;: &quot;2026-07-21&quot; }</p>
+<hr />
 <h1>PLF-808 — trwała topologia Connector LAN i pełny health</h1>
 <h2>Przyczyna</h2>
 <p><code>urirun-lan-gateway</code> działał w prywatnej sieci <code>connector-execution</code> i łączył się z aliasem <code>hr-bridge-process-guard</code>. Bridge otrzymywał tę sieć wyłącznie z opcjonalnego pliku <code>docker-compose.connector-lan.yml</code>. Zwykłe odtworzenie Bridge z bazowego <code>docker-compose.yml</code> usuwało jego członkostwo w sieci. Gateway pozostawał uruchomiony, ale <code>/health</code> kończyło się błędem upstream/timeout.</p>

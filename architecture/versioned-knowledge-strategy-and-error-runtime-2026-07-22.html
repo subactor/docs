@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wersjonowana wiedza, Strategy DSL i reakcje ERROR — Subactor Docs</title>
+  <style>
+    :root { --bg:#0f1419; --fg:#e7ecf1; --muted:#9aa7b5; --accent:#3d9cf0; --line:#243041; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:"IBM Plex Sans","Segoe UI",sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #1a2a3d, var(--bg));
+      color: var(--fg); line-height:1.6; min-height:100vh; }
+    main { max-width: 52rem; margin:0 auto; padding:3rem 1.5rem 5rem; }
+    a { color: var(--accent); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    h1,h2,h3,h4 { letter-spacing:-0.01em; line-height:1.25; }
+    h1 { font-size:1.9rem; } h2 { font-size:1.4rem; margin-top:2.2rem; }
+    h3 { font-size:1.15rem; margin-top:1.8rem; }
+    code { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.88em;
+      background:#1a2331; border:1px solid var(--line); border-radius:4px; padding:0.1em 0.35em; }
+    pre { background:#0b1017; border:1px solid var(--line); border-radius:8px;
+      padding:1rem; overflow-x:auto; }
+    pre code { background:none; border:none; padding:0; }
+    table { border-collapse:collapse; width:100%; margin:1rem 0; display:block; overflow-x:auto; }
+    th,td { border:1px solid var(--line); padding:0.45rem 0.7rem; text-align:left;
+      font-size:0.92rem; }
+    th { background:#161f2c; }
+    blockquote { border-left:3px solid var(--accent); margin:1rem 0; padding:0.2rem 1rem;
+      color: var(--muted); }
+    hr { border:0; border-top:1px solid var(--line); margin:2rem 0; }
+    .docnav { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.8rem;
+      margin-bottom:2rem; color:var(--muted); }
+  </style>
+</head>
+<body>
+<main>
+  <nav class="docnav"><a href="../index.html">subactor/docs</a></nav>
+<hr />
+<p>{ &quot;schema&quot;: &quot;subactor.doc/v1&quot;, &quot;id&quot;: &quot;docs.architecture.versioned-knowledge-strategy-and-error-runtime-2026-07-22&quot;, &quot;version&quot;: 1, &quot;status&quot;: &quot;current&quot;, &quot;updated&quot;: &quot;2026-07-22&quot; }</p>
+<hr />
+<h1>Wersjonowana wiedza, Strategy DSL i reakcje ERROR</h1>
+<p>Data stanu: 2026-07-22</p>
+<h2>Wynik</h2>
+<p>Control korzysta z dwóch uzupełniających się, deterministycznych źródeł kontekstu:</p>
+<ul>
+<li>wersjonowanej bazy wiedzy Markdown, która opisuje fakty, decyzje, ograniczenia,</li>
+</ul>
+<p>relacje i jawne luki badawcze;</p>
+<ul>
+<li>registry artefaktów tekstowych, które wskazuje właściwy dokument, konfigurację,</li>
+</ul>
+<p>schemat albo DSL wraz z wersją treści, formatem, governing schema, hashem i wynikiem walidacji.</p>
+<p>Klasyfikacja problemów oraz plan DNS nie są już zaszyte jako lista wyjątków w funkcjach domenowych. Strategy DSL wybiera intencję i capability, a osobne bindingi mapują capability na aktualne URI konektorów.</p>
+<h2>Przepływ decyzji</h2>
+<pre><code class="language-text">zadanie / problem
+  -&gt; Artifact Registry: właściwy kontrakt i jego poprawność
+  -&gt; Knowledge Base: fakty, relacje, ograniczenia i luki
+  -&gt; Strategy DSL: intencja, authority, warunki i capability
+  -&gt; URI binding: aktualny konektor domenowy
+  -&gt; ticket + AQL + kontrolowany URIrun + EQL receipt</code></pre>
+<p>Pierwsze cztery etapy są zaimplementowane dla opisanego zakresu. Ostatni etap nie jest jeszcze kompletną, ogólną pętlą wykonawczą dla wszystkich zdarzeń <code>ERROR</code>; szczegóły opisuje sekcja „Stan reakcji ERROR”.</p>
+<h2>Baza wiedzy Markdown</h2>
+<p>Źródłem prawdy są wpisy w <code>platform/config/knowledge/entries</code>. Każdy wpis ma:</p>
+<ul>
+<li>stabilne <code>id</code> i wersję, tworzące URI</li>
+</ul>
+<p><code>knowledge://subactor/&lt;id&gt;/v&lt;version&gt;</code>;</p>
+<ul>
+<li>provenance, okres ważności i właścicieli;</li>
+<li>relacje do innych wpisów;</li>
+<li>perspektywy takie jak fakty, decyzje, ograniczenia i alternatywy;</li>
+<li>zadeklarowane luki badawcze oraz informację, czy wymagają obserwacji systemu,</li>
+</ul>
+<p>czy precyzyjnego zapytania internetowego;</p>
+<ul>
+<li>wskazówki dla LLM, kiedy użyć wpisu i czego nie wywnioskowywać.</li>
+</ul>
+<p>Control udostępnia widok dla ludzi oraz API:</p>
+<ul>
+<li><code>GET /knowledge</code> i <code>GET /knowledge/&lt;id&gt;/v&lt;version&gt;</code>;</li>
+<li><code>GET /api/knowledge</code>;</li>
+<li><code>GET /api/knowledge/context?q=&lt;temat&gt;</code>;</li>
+<li><code>GET /api/knowledge/research-queries?...</code>.</li>
+</ul>
+<p>Kontekst jest ograniczony rozmiarem i rozszerzany relacjami. Wpis po terminie przeglądu jest domyślnie odrzucany. Źródło zewnętrzne może być provenance, ale nie staje się zależnością runtime ani zamiennikiem wewnętrznego, wersjonowanego wniosku.</p>
+<h2>Registry artefaktów tekstowych</h2>
+<p><code>platform/config/artifact-registry.json</code> jest generowaną projekcją plików wskazanych przez <code>platform/config/artifact-registry.policy.json</code>. Dla każdego artefaktu przechowuje między innymi:</p>
+<ul>
+<li>stabilne <code>artifact_id</code>;</li>
+<li>dokładne, niemutowalne <code>canonical_uri</code> w postaci</li>
+</ul>
+<p><code>artifact://subactor/&lt;path&gt;/r&lt;revision&gt;</code>;</p>
+<ul>
+<li>wersję deklarowaną albo rewizję wyliczoną z treści;</li>
+<li>nazwę i wersję formatu oraz media type;</li>
+<li><code>schema_ref</code>, SHA-256 i profil treści;</li>
+<li>receipt walidacji na poziomach syntax, schema, semantic i version.</li>
+</ul>
+<p>Wersja formatu mówi, jak parsować dokument. Wersja deklarowana opisuje kontrakt autora. Rewizja identyfikuje konkretną treść. Te trzy wartości nie są zamienne.</p>
+<p>Jawnie wersjonowany dokument nie może zmienić treści bez zwiększenia wersji. Dokument legacy może korzystać z <code>registry-revision</code>, co pozwala wdrażać model stopniowo. Błędny lub rozjechany registry zatrzymuje start Control fail-closed.</p>
+<p>API registry:</p>
+<ul>
+<li><code>GET /artifacts</code> i <code>GET /api/artifacts</code>;</li>
+<li><code>GET /api/artifacts/context?q=&lt;zadanie&gt;</code>;</li>
+<li><code>GET /api/artifacts/resolve?ref=&lt;artifact-uri-lub-path&gt;</code>;</li>
+<li><code>GET /api/artifacts/validate?ref=&lt;artifact-uri-lub-path&gt;</code>.</li>
+</ul>
+<p>Wszystkie endpointy wymagają scope <code>audit:read</code>.</p>
+<h3>Procedura zmiany tekstu</h3>
+<ol>
+<li>Odszukaj artefakt w registry i sprawdź jego wersję, format, <code>schema_ref</code> oraz</li>
+</ol>
+<p>receipt.</p>
+<ol>
+<li>Zmień źródło. Jeśli <code>version_source=declared</code>, podnieś wersję dokumentu.</li>
+<li>W katalogu Platform uruchom <code>npm run artifacts:build</code>.</li>
+<li>Uruchom <code>npm run artifacts:check</code>; drift lub błąd walidacji blokuje commit.</li>
+<li>W strategii, tickecie albo raporcie używaj stabilnego URI, a przy dowodzie</li>
+</ol>
+<p>dokładnej treści używaj URI z rewizją.</p>
+<h2>Strategy DSL</h2>
+<p>Katalog <code>platform/config/problem-strategies/catalog.v1.json</code> oddziela:</p>
+<ul>
+<li>warunki i priorytet wyboru strategii;</li>
+<li>intencję, authority, oczekiwany wynik i referencje wiedzy;</li>
+<li>atomowe kroki wyrażone jako capability;</li>
+<li>binding capability do URI konkretnego konektora.</li>
+</ul>
+<p>Interpreter jest deterministyczny i fail-closed: brak strategii, remis priorytetów, brak bindingu, nieznany operator albo brak wartości slotu kończą się błędem zamiast zgadywaniem przez LLM.</p>
+<p>Dla <code>management_plane=plesk</code> i <code>sync_extension=cloudflaredns</code> capability <code>dns.record.reconcile</code> wybiera binding:</p>
+<pre><code class="language-text">plesk://host/dns/command/replace</code></pre>
+<p>Plesk pozostaje miejscem wykonania zmiany DNS, a rozszerzenie synchronizuje stan do Cloudflare. Bezpośredni token Cloudflare nie jest w tym wariancie wymagany.</p>
+<h2>Stan reakcji ERROR</h2>
+<p>Zakończone są:</p>
+<ul>
+<li>Problem Profile i normalizacja zdarzenia;</li>
+<li><code>problem.detected</code>, fingerprint i trwała deduplikacja w oknie;</li>
+<li>wybór strategii <code>observe</code>, <code>retry_candidate</code>, <code>escalate_candidate</code> albo</li>
+</ul>
+<p><code>containment_candidate</code>;</p>
+<ul>
+<li>ograniczony exponential backoff i progi eskalacji z polityki DSL;</li>
+<li>jawne authority oraz referencje do wersjonowanej wiedzy;</li>
+<li>zakaz bezpośredniej mutacji (<code>automatic_mutation_allowed=false</code>).</li>
+</ul>
+<p>Nie jest zakończona ogólna pętla:</p>
+<pre><code class="language-text">reaction -&gt; deduplikowany ticket -&gt; AQL -&gt; idempotentny URIrun -&gt; EQL -&gt; completion receipt</code></pre>
+<p>Dlatego <code>retry_candidate</code> jest klasyfikacją i propozycją reakcji, a nie dowodem, że retry lub naprawa zostały wykonane. Brak ten jest zapisany jako wewnętrzna luka badawczo-implementacyjna, nie jako temat do zastąpienia ogólnym wynikiem z Internetu.</p>
+<h2>Stan PLF-592</h2>
+<p>Warstwa DNS jest zakończona: dry-run Plesk nie wykazał zmiany, publiczny rekord A wskazuje <code>217.160.250.222</code>, a bezpośredni token Cloudflare nie jest potrzebny. Aktywny blocker to <code>public_application_route_not_ready</code>: strict HTTPS dociera do originu, lecz <code>/founder/action</code> zwraca HTTP 404. System czeka na obserwowalny, uwierzytelniony upstream zamiast wymyślać topologię aplikacji.</p>
+<h2>Kontrakty i dowody</h2>
+<ul>
+<li>wiedza: <code>platform/config/knowledge/schema.v1.json</code>;</li>
+<li>strategie: <code>platform/config/problem-strategies/schema.v1.json</code>;</li>
+<li>registry: <code>platform/config/artifact-registry/schema.v1.json</code>;</li>
+<li>dokumenty Markdown: <code>platform/config/artifact-registry/document.schema.v1.json</code>;</li>
+<li>polityka zakresu: <code>platform/config/artifact-registry.policy.json</code>;</li>
+<li>implementacja runtime: <code>core/services/control/src/knowledge-base.mjs</code>,</li>
+</ul>
+<p><code>artifact-registry.mjs</code> i <code>strategy-dsl.mjs</code>;</p>
+<ul>
+<li>walidacja: testy Core, testy meta Platform i runtime smoke Control.</li>
+</ul>
+</main>
+</body>
+</html>

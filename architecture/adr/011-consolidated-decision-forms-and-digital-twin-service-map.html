@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ADR 011: Skonsolidowane Formularze Decyzyjne oraz Mapa Usług Digital Twin — Subactor Docs</title>
+  <style>
+    :root { --bg:#0f1419; --fg:#e7ecf1; --muted:#9aa7b5; --accent:#3d9cf0; --line:#243041; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:"IBM Plex Sans","Segoe UI",sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #1a2a3d, var(--bg));
+      color: var(--fg); line-height:1.6; min-height:100vh; }
+    main { max-width: 52rem; margin:0 auto; padding:3rem 1.5rem 5rem; }
+    a { color: var(--accent); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    h1,h2,h3,h4 { letter-spacing:-0.01em; line-height:1.25; }
+    h1 { font-size:1.9rem; } h2 { font-size:1.4rem; margin-top:2.2rem; }
+    h3 { font-size:1.15rem; margin-top:1.8rem; }
+    code { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.88em;
+      background:#1a2331; border:1px solid var(--line); border-radius:4px; padding:0.1em 0.35em; }
+    pre { background:#0b1017; border:1px solid var(--line); border-radius:8px;
+      padding:1rem; overflow-x:auto; }
+    pre code { background:none; border:none; padding:0; }
+    table { border-collapse:collapse; width:100%; margin:1rem 0; display:block; overflow-x:auto; }
+    th,td { border:1px solid var(--line); padding:0.45rem 0.7rem; text-align:left;
+      font-size:0.92rem; }
+    th { background:#161f2c; }
+    blockquote { border-left:3px solid var(--accent); margin:1rem 0; padding:0.2rem 1rem;
+      color: var(--muted); }
+    hr { border:0; border-top:1px solid var(--line); margin:2rem 0; }
+    .docnav { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.8rem;
+      margin-bottom:2rem; color:var(--muted); }
+  </style>
+</head>
+<body>
+<main>
+  <nav class="docnav"><a href="../../index.html">subactor/docs</a></nav>
+<hr />
+<p>{ &quot;schema&quot;: &quot;subactor.doc/v1&quot;, &quot;id&quot;: &quot;docs.architecture.adr.011-consolidated-decision-forms-and-digital-twin-service-map&quot;, &quot;version&quot;: 3, &quot;status&quot;: &quot;current&quot;, &quot;updated&quot;: &quot;2026-07-29&quot; }</p>
+<hr />
+<h1>ADR 011: Skonsolidowane Formularze Decyzyjne oraz Mapa Usług Digital Twin</h1>
+<h2>Status</h2>
+<p>Zaakceptowany (Accepted) — uzupełniony o runtime kontrolera i live evidence 2026-07-24 (v2 dokumentu)</p>
+<h2>Kontekst</h2>
+<p>W miarę rozwoju systemu autonomii Subactor, w panelu sterowania Foundera (Control) pojawiły się interaktywne formularze decyzji dotyczące ticketów (np. <code>PLF-1281</code>). W poprzedniej wersji interfejs prezentował dwa niezależne pola tekstowe:</p>
+<ul>
+<li><code>cancellation_reason</code> („Powód anulowania”)</li>
+<li><code>decision_context</code> („Dodatkowe wyjaśnienie decyzji”)</li>
+</ul>
+<p>Prowadziło to do zbędnej redukcji czytelności UX oraz powielania wpisów w audit logu.</p>
+<p>Równolegle rozwinięto architekturę <strong>Digital Twin</strong> dla usług publicznych (<code>founder.subactor.com</code>, <code>autonomicznosc.pl</code>, <code>status.subactor.com</code>, <code>www.subactor.com</code>, <code>docs.subactor.com</code>, <code>contracts.subactor.com</code>). Część ticketów automatycznych błędnie zakładała wymóg <code>managed_tunnel_credential_required</code> dla serwisów, dla których Founder wyznaczył tryb <code>public_ingress_mode=plesk_public_origin</code> z <code>tunnel_mode=none</code>.</p>
+<h2>Decyzja</h2>
+<ol>
+<li><strong>Konsolidacja Formularzy Decyzyjnych (<code>decision_context</code>)</strong>:</li>
+<ul>
+<li>Wprowadzono jedno uniwersalne pole tekstowe <code>decision_context</code> („Notatka (opcjonalnie)”) do uzasadnienia dowolnego wyboru opcji radio (np. „Kontynuuj”, „Odłóż”, „Anuluj ticket”).</li>
+<li>Dodano automatyczną dedupikację w <code>normalizeInteractiveForm</code> (<a href="../../../core/services/control/src/interactive-form.mjs">interactive-form.mjs</a>), która usuwa legacy pole <code>cancellation_reason</code>, gwarantując obecność dokładnie jednego pola notatki.</li>
+<li>Zachowano pełną wsteczną kompatybilność w trasie backendowej (<code>applyFounderFormEffects</code>), przyjmującą opcjonalnie dawne odpowiedzi <code>cancellation_reason</code>.</li>
+</ul>
+</ol>
+<ol>
+<li><strong>Mapa Usług Digital Twin &amp; Brak Tunelu dla Plesk Ingress</strong>:</li>
+<ul>
+<li>Wprowadzono sformalizowany profil DOQL <code>public-site-service-map.doql.json</code> oraz <code>public-site-capability-inventory.doql.json</code>.</li>
+<li>Zaktualizowano wszystkie manifesty projektów (<code>projekty/*/project.manifest.json</code>), jawnie deklarując <code>public_ingress_mode: &quot;plesk_public_origin&quot;</code> oraz <code>tunnel_mode: &quot;none&quot;</code>.</li>
+<li>Stworzono skrypt uruchomieniowy <code>platform/scripts/run-public-site-service-map.mjs</code> do weryfikacji sytuacji bez mutacji środowiska.</li>
+</ul>
+</ol>
+<ol>
+<li><strong>Gwarancje i Rejestr Artefaktów</strong>:</li>
+<ul>
+<li>Utrzymano wymóg 100% zwalidowanego rejestru artefaktów (<code>npm run artifacts:build &amp;&amp; npm run artifacts:check</code>).</li>
+<li>Wiedza append-only: aktualnie <code>knowledge://subactor/architecture.digital-twin.public-site-service-map/v4</code> (v3 superseded).</li>
+</ul>
+</ol>
+<ol>
+<li><strong>Runtime kontrolera (doprecyzowanie 2026-07-24)</strong>:</li>
+<ul>
+<li>Etap <code>managed_tunnel_followup</code> supersede’uje tickety credential przy <code>tunnel_mode=none</code> (<code>supersession_reason=public_site_binding_tunnel_mode_none</code>).</li>
+<li>Odblokowuje tickety źródłowe na <code>application_route_not_ready</code> (nie na tunnel).</li>
+<li>Filtr credential jest wąski (label/nazwa intake) — nie wolno anulować ticketów deployment.</li>
+<li>Remediacja plesk-origin nie czeka na managed-tunnel i nie powinna trzymać kroku <code>provide-upstream</code>.</li>
+<li><code>hr-control</code> montuje live <code>core/services/control/src</code> (RO), aby uniknąć stale image po poprawkach policy.</li>
+</ul>
+</ol>
+<h2>Konsekwencje</h2>
+<ul>
+<li>Ujednolicony i czysty interfejs modalny w panelu Control Foundera.</li>
+<li>Brak fałszywych ticketów blokujących dla Cloudflare Tunnel tam, gdzie ruchem zarządza Plesk.</li>
+<li>Przejrzysty i powtarzalny proces weryfikacji readiness tras publicznych (service-map API + unit tests control).</li>
+<li><strong>Nie</strong> eliminuje błędów wykonania Pleska (proxy/upstream/treść) — te pozostają na trasie <code>application_route_not_ready</code> z dry-run i master gate.</li>
+<li>Live: PLF-1272 supersede OK; founder.subactor.com nadal default page Pleska (blocker treści, nie tunnel).</li>
+</ul>
+<h2>Odwołania</h2>
+<ul>
+<li>Ops: <code>docs/operations/digital-twin-service-map-operations-guide.md</code> (v2)</li>
+<li>Knowledge: <code>knowledge://subactor/architecture.digital-twin.public-site-service-map/v4</code></li>
+</ul>
+</main>
+</body>
+</html>

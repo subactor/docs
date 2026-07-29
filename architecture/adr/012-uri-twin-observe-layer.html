@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ADR-012: Warstwa uri-twin (observe) vs urirun connectors (mutate) — Subactor Docs</title>
+  <style>
+    :root { --bg:#0f1419; --fg:#e7ecf1; --muted:#9aa7b5; --accent:#3d9cf0; --line:#243041; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:"IBM Plex Sans","Segoe UI",sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #1a2a3d, var(--bg));
+      color: var(--fg); line-height:1.6; min-height:100vh; }
+    main { max-width: 52rem; margin:0 auto; padding:3rem 1.5rem 5rem; }
+    a { color: var(--accent); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    h1,h2,h3,h4 { letter-spacing:-0.01em; line-height:1.25; }
+    h1 { font-size:1.9rem; } h2 { font-size:1.4rem; margin-top:2.2rem; }
+    h3 { font-size:1.15rem; margin-top:1.8rem; }
+    code { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.88em;
+      background:#1a2331; border:1px solid var(--line); border-radius:4px; padding:0.1em 0.35em; }
+    pre { background:#0b1017; border:1px solid var(--line); border-radius:8px;
+      padding:1rem; overflow-x:auto; }
+    pre code { background:none; border:none; padding:0; }
+    table { border-collapse:collapse; width:100%; margin:1rem 0; display:block; overflow-x:auto; }
+    th,td { border:1px solid var(--line); padding:0.45rem 0.7rem; text-align:left;
+      font-size:0.92rem; }
+    th { background:#161f2c; }
+    blockquote { border-left:3px solid var(--accent); margin:1rem 0; padding:0.2rem 1rem;
+      color: var(--muted); }
+    hr { border:0; border-top:1px solid var(--line); margin:2rem 0; }
+    .docnav { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.8rem;
+      margin-bottom:2rem; color:var(--muted); }
+  </style>
+</head>
+<body>
+<main>
+  <nav class="docnav"><a href="../../index.html">subactor/docs</a></nav>
+<hr />
+<p>{ &quot;schema&quot;: &quot;subactor.doc/v1&quot;, &quot;id&quot;: &quot;docs.architecture.adr.012-uri-twin-observe-layer&quot;, &quot;version&quot;: 3, &quot;status&quot;: &quot;current&quot;, &quot;updated&quot;: &quot;2026-07-29&quot; }</p>
+<hr />
+<h1>ADR-012: Warstwa uri-twin (observe) vs urirun connectors (mutate)</h1>
+<ul>
+<li><strong>Status:</strong> Accepted  </li>
+<li><strong>Data:</strong> 2026-07-25  </li>
+<li><strong>Kontekst:</strong> false-reality / brak żywego Plesk twin; propozycja org</li>
+</ul>
+<p><code>~/github/uri-twin/*</code>; <a href="../../../platform/config/knowledge/entries/architecture.uri-twin-scope.v1.html"><code>knowledge://subactor/architecture.uri-twin-scope/v1</code></a></p>
+<h2>Decyzja</h2>
+<p>Wprowadzamy org <strong>uri-twin</strong> jako warstwę <strong>obserwacji</strong> z API URI:</p>
+<table>
+<thead><tr><th>Warstwa</th><th>Odpowiedzialność</th><th>Nie robi</th></tr></thead>
+<tbody>
+<tr><td><code>uri-twin-core</code></td><td>envelope faktu, freshness, naming</td><td>apply, grant, vault secret</td></tr>
+<tr><td><code>uri-twin-plesk</code></td><td>typed query (subscriptions, docroot, dns) jako packages</td><td>mutacje DNS/site</td></tr>
+<tr><td><code>urirun-connector-plesk</code></td><td>command + dry-run/apply + existing routes</td><td>być jedynym SSOT stanu</td></tr>
+<tr><td>Subactor Control</td><td>POLICY, tickets, projekcja HTTP</td><td>inventować twin URI</td></tr>
+</tbody></table>
+<h3>URI (kanoniczne)</h3>
+<ul>
+<li>Observe: <code>plesk://host/&lt;resource&gt;/query/&lt;name&gt;</code></li>
+<li>Mutate: <code>plesk://host/&lt;resource&gt;/command/&lt;name&gt;</code> (pozostaje w connectorze)</li>
+<li>HTTP <code>/api/connectors/plesk/...</code> = projekcja, nie SSOT</li>
+</ul>
+<h3>Plesk v1 (minimalny zestaw)</h3>
+<ol>
+<li><code>plesk://host/subscription/query/snapshot</code></li>
+<li><code>plesk://host/site/query/docroot</code></li>
+<li><code>plesk://host/dns/query/authority</code> → normalizacja do <code>subactor.twin-fact/v1</code></li>
+</ol>
+<h3>Instancje</h3>
+<p>Wiele paneli Plesk = wiele <strong>bindings</strong> (<code>instance_id</code>, credential handle, feature flags), jedno repo <code>uri-twin-plesk</code>. Nie osobne repo na instalację.</p>
+<h3>Repo strategy</h3>
+<p>Start: <strong>2 publiczne repo</strong> (<a href="https://github.com/uri-twin/uri-twin-core"><code>uri-twin-core</code></a>, <a href="https://github.com/uri-twin/uri-twin-plesk"><code>uri-twin-plesk</code></a>). Nie tworzyć od razu <code>PLESK-MODULES</code>, <code>PLESK-DNS</code>, <code>PLESK-SUBSCRIPTIONS</code> jako osobnych gitów.</p>
+<h3>Git baseline + API overlay</h3>
+<ul>
+<li>Konektor ładuje baseline bezpośrednio z Git przy starcie i zapisuje dokładny</li>
+</ul>
+<p>commit oraz digest treści.</p>
+<ul>
+<li>Brak sieci nie rozszerza uprawnień: używany jest zwalidowany last-known-good,</li>
+</ul>
+<p>a następnie osadzony fallback oznaczony jako <code>stale</code>.</p>
+<ul>
+<li>Obserwacja API może dodać instancje zatwierdzonych typów zasobów, potwierdzić</li>
+</ul>
+<p>flagę lub zablokować capability. Nie może dodać wykonywalnej trasy.</p>
+<ul>
+<li>Nieznane moduły są widoczne jako <code>review-required</code> i wymagają zmiany baseline'u</li>
+</ul>
+<p>w Git.</p>
+<h3>Graf wielu konektorów</h3>
+<p>Workflow wskazuje wymagane capability, a capability może mieć kilku providerów. Resolver wybiera provider na podstawie aktywnego manifestu tras, bindingu środowiska i nazw uchwytów poświadczeń. Przykład DNS wybiera Plesk/ <code>cloudflaredns</code> albo Namecheap bez przekazywania wartości sekretu do twina.</p>
+<p>Decyzja <code>refuse</code> lub nieświeży twin-fact blokuje zależną komendę jako <code>precondition-blocked</code>. Dzięki temu spodziewany problem nie staje się najpierw błędem konektora i nowym ticketem.</p>
+<h2>Konsekwencje</h2>
+<ul>
+<li>Publish/readiness muszą czytać twin fact (docroot/topology), nie tylko</li>
+</ul>
+<p><code>last_error</code> ticketu.</p>
+<ul>
+<li>NL2URI mapuje na zatwierdzone query URI w katalogu zdolności.</li>
+<li>Ad‑hoc bridge <code>GET .../docroot</code> migruje do URI Process; do czasu migracji</li>
+</ul>
+<p>jest prototypem faktu.</p>
+<ul>
+<li>Pełna autonomia nadal wymaga osobno: ownership ops→bot i granice</li>
+</ul>
+<p><code>human_boundary</code> (ADR-003) — twin tego nie usuwa.</p>
+<ul>
+<li><code>map_hash</code> ma identyczną, kanoniczną postać w implementacji JS i Python;</li>
+</ul>
+<p>zmiana opisu nie zmienia tożsamości mapy, a zmiana decyzji wykonawczej tak.</p>
+<h2>Weryfikacja 2026-07-29</h2>
+<ul>
+<li><code>uri-twin-core</code> <code>v0.2.3</code>, <code>uri-twin-plesk</code> <code>v0.2.2</code>, baseline Plesk <code>v3</code>.</li>
+<li>Start konektora pobrał baseline z Git z commita</li>
+</ul>
+<p><code>069008bff9c08366d2e3e156c4c9b5b937eaa37e</code> i zweryfikował digest.</p>
+<ul>
+<li>Żywy Plesk zwrócił świeże fakty dla 19 subskrypcji, docroot i DNS oraz katalog</li>
+</ul>
+<p>rozszerzeń; wszystkie cztery query były obecne w rejestrze 644 tras.</p>
+<ul>
+<li><code>observe-topology</code> rozwiązał plan 2/2. Obserwowany docroot z decyzją <code>refuse</code></li>
+</ul>
+<p>zatrzymał <code>publish-site-with-managed-dns</code> przed wykonaniem z gapem <code>fact_refused: plesk.site.docroot</code>; nie uruchomiono żadnej komendy.</p>
+<h2>Powiązane</h2>
+<ul>
+<li>ADR-001 (scope / LLM nie tworzy URI)</li>
+<li>ADR-002 (DNS SSOT)</li>
+<li>ADR-004 (publish DoD)</li>
+<li>ADR-011 (digital twin service map)</li>
+<li><code>architecture.autonomy-architecture-blockers/v2</code></li>
+</ul>
+</main>
+</body>
+</html>

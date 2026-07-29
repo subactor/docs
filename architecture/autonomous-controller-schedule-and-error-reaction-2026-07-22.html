@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Harmonogram kontrolera i reakcja na błędy — Subactor Docs</title>
+  <style>
+    :root { --bg:#0f1419; --fg:#e7ecf1; --muted:#9aa7b5; --accent:#3d9cf0; --line:#243041; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:"IBM Plex Sans","Segoe UI",sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #1a2a3d, var(--bg));
+      color: var(--fg); line-height:1.6; min-height:100vh; }
+    main { max-width: 52rem; margin:0 auto; padding:3rem 1.5rem 5rem; }
+    a { color: var(--accent); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    h1,h2,h3,h4 { letter-spacing:-0.01em; line-height:1.25; }
+    h1 { font-size:1.9rem; } h2 { font-size:1.4rem; margin-top:2.2rem; }
+    h3 { font-size:1.15rem; margin-top:1.8rem; }
+    code { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.88em;
+      background:#1a2331; border:1px solid var(--line); border-radius:4px; padding:0.1em 0.35em; }
+    pre { background:#0b1017; border:1px solid var(--line); border-radius:8px;
+      padding:1rem; overflow-x:auto; }
+    pre code { background:none; border:none; padding:0; }
+    table { border-collapse:collapse; width:100%; margin:1rem 0; display:block; overflow-x:auto; }
+    th,td { border:1px solid var(--line); padding:0.45rem 0.7rem; text-align:left;
+      font-size:0.92rem; }
+    th { background:#161f2c; }
+    blockquote { border-left:3px solid var(--accent); margin:1rem 0; padding:0.2rem 1rem;
+      color: var(--muted); }
+    hr { border:0; border-top:1px solid var(--line); margin:2rem 0; }
+    .docnav { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.8rem;
+      margin-bottom:2rem; color:var(--muted); }
+  </style>
+</head>
+<body>
+<main>
+  <nav class="docnav"><a href="../index.html">subactor/docs</a></nav>
+<hr />
+<p>{ &quot;schema&quot;: &quot;subactor.doc/v1&quot;, &quot;id&quot;: &quot;docs.architecture.autonomous-controller-schedule-and-error-reaction-2026-07-22&quot;, &quot;version&quot;: 6, &quot;status&quot;: &quot;current&quot;, &quot;updated&quot;: &quot;2026-07-22&quot; }</p>
+<hr />
+<h1>Harmonogram kontrolera i reakcja na błędy</h1>
+<p>Data stanu: 2026-07-22. Dokument opisuje, <strong>kiedy</strong> uruchamia się kontroler autonomicznej kolejki, <strong>gdzie</strong> jest jego konfiguracja, oraz <strong>co dokładnie</strong> dzieje się po wystąpieniu błędu. Zawiera wynik kontrolowanego testu wykonanego na działającym stosie.</p>
+<h2>Wynik w jednym zdaniu</h2>
+<p>Pętla `błąd → wykrycie → deduplikacja → klasyfikacja → eskalacja → ticket → wykonanie → completion receipt z asercjami EQL` **domyka się i została zweryfikowana end-to-end<strong>. Domyka się jednak do </strong>zweryfikowanej diagnozy**, nie do naprawy — pack reakcji ma etykietę <code>diagnosis-only</code> i <code>automatic_mutation_allowed: false</code>.</p>
+<h2>Gdzie jest konfiguracja</h2>
+<p>Nie ma crona ani jednostki systemd. Kontroler to pętla wewnątrz procesu <code>hr-control</code>, zadeklarowana w <code>core/services/control/src/server.mjs</code>:</p>
+<pre><code>:2092   setTimeout(autonomousQueueConsumerCycle, AUTOMATION_STARTUP_GRACE_MS)
+:2093   setInterval(autonomousQueueConsumerCycle, AUTONOMOUS_QUEUE_CONSUMER_INTERVAL_MS)</code></pre>
+<p>Pokrętła czytane ze środowiska (<code>server.mjs:154-162</code>):</p>
+<table>
+<thead><tr><th>zmienna</th><th>domyślnie</th><th>walidacja przy starcie</th></tr></thead>
+<tbody>
+<tr><td><code>AUTONOMOUS_QUEUE_CONSUMERS_ENABLED</code></td><td><code>1</code></td><td>—</td></tr>
+<tr><td><code>AUTONOMOUS_QUEUE_CONSUMER_INTERVAL_MS</code></td><td><code>30000</code></td><td>min 10 000; poniżej start pada <code>autonomous_queue_consumer_interval_invalid</code></td></tr>
+<tr><td><code>AUTONOMOUS_QUEUE_CONSUMER_LIMIT</code></td><td><code>5</code></td><td>zakres 1–20; poza nim <code>autonomous_queue_consumer_limit_invalid</code></td></tr>
+<tr><td><code>AUTOMATION_STARTUP_GRACE_MS</code></td><td><code>30000</code></td><td>zakres 0–300 000; poza nim <code>automation_startup_grace_invalid</code></td></tr>
+<tr><td><code>AUTONOMOUS_QUEUE_ERROR_TRIGGER_ENABLED</code></td><td><code>1</code></td><td>—</td></tr>
+<tr><td><code>AUTONOMOUS_QUEUE_ERROR_TRIGGER_DELAY_MS</code></td><td><code>1000</code></td><td>zakres 100–60 000; poza nim <code>autonomous_queue_error_trigger_delay_invalid</code></td></tr>
+</tbody></table>
+<blockquote><strong>Luka konfiguracyjna — ZAMKNIĘTA 2026-07-22 20:17.</strong> Wszystkie sześć kluczy<br />istniało w <code>platform/.env.example</code>, ale **żadnego nie było w<br /><code>platform/.env</code>**: stos chodził na domyślnych z kodu, a operator szukający<br />harmonogramu w <code>.env</code> niczego tam nie znajdował.<br /><br /><strong>Nie edytuje się <code>.env</code> ręcznie.</strong> <code>scripts/validate-env.mjs</code> woła<br /><code>initializeEnv({templateFile, contractFile, targetFile})</code>, które<br />automigruje brakujące klucze z kanonicznego kontraktu<br />(<code>config/env-contract.json</code>) i raportuje `Environment auto-migrated: added N<br />variables.` Wystarczy:<br /><br />```bash<br />cd platform &amp;&amp; node scripts/validate-env.mjs   # albo: make env-check<br />```<br /><br />Dopisało 20 zmiennych, w tym wszystkie sześć powyższych, z wartościami<br />identycznymi jak domyślne w kodzie — czyli <strong>bez zmiany zachowania</strong>.<br />Zweryfikowane: bramka CI zielona, kontener <code>hr-control</code> zdrowy.<br /><br />Jeden skutek uboczny wart odnotowania: migracja wnosi też<br /><code>ANALYTICS_SERVICE_TOKEN=__GENERATE_ANALYTICS_TOKEN__</code>. Przed migracją <code>.env</code><br />nie miał ani jednego placeholdera, po niej ma jeden. Jest bezpieczny —<br />w <code>docker-compose.yml</code> nie ma usługi <code>analytics</code>, a żaden kod nie czyta tej<br />zmiennej — ale gdy taka usługa powstanie, token trzeba wygenerować, zanim<br />ruszy.</blockquote>
+<h3>Wszystkie pętle czasowe w control</h3>
+<table>
+<thead><tr><th>linia</th><th>pętla</th><th>odstęp</th></tr></thead>
+<tbody>
+<tr><td><code>:2057</code></td><td>cykl delegacji (anonimowa, własna bramka czasowa)</td><td>stała w kodzie</td></tr>
+<tr><td><code>:2082</code></td><td>konsument autonomicznej kolejki</td><td><code>AUTONOMOUS_QUEUE_CONSUMER_INTERVAL_MS</code></td></tr>
+<tr><td><code>:2089</code></td><td>dzienny digest foundera</td><td><code>FOUNDER_DAILY_DIGEST_INTERVAL_MS</code></td></tr>
+<tr><td><code>:2162</code></td><td>pilne sprawy foundera</td><td><code>FOUNDER_URGENT_INTERVAL_MS</code></td></tr>
+<tr><td><code>:2182</code></td><td>watchdog zawieszonych wykonań</td><td><code>STALE_EXECUTION_WATCHDOG_INTERVAL_MS</code></td></tr>
+<tr><td><code>:2190</code></td><td>rekoncyliacja projektów</td><td><code>PROJECT_RECONCILIATION_INTERVAL_MS</code></td></tr>
+</tbody></table>
+<p>Numery linii w <code>server.mjs</code> przesuwają się szybko — plik urósł o ~50 linii w ciągu jednej sesji. Szukaj po nazwie funkcji (<code>autonomousQueueConsumerCycle</code>, <code>founderDailyDigestCycle</code>, …), a nie po numerze.</p>
+<h3>„Raz na dzień&quot; to nie odstęp, tylko bramka zegarowa</h3>
+<p>Kontroler kolejki <strong>nie chodzi raz dziennie — chodzi co 30 sekund</strong>, więc wymóg dzienny jest spełniony z dużym zapasem.</p>
+<p>Raz dziennie chodzi <strong>digest foundera</strong>, i jest zbudowany inaczej, niż sugeruje nazwa zmiennej: <code>FOUNDER_DAILY_DIGEST_INTERVAL_MS=60000</code> to jedynie <strong>tyknięcie co minutę</strong>, a o faktycznym wystrzale decyduje bramka zegarowa. Te klucze <strong>są</strong> obecne w <code>platform/.env</code> (175–179):</p>
+<pre><code>FOUNDER_DAILY_DIGEST_ENABLED=true
+FOUNDER_DAILY_DIGEST_HOUR=8
+FOUNDER_DAILY_DIGEST_MINUTE=0
+FOUNDER_DAILY_DIGEST_TIMEZONE=Europe/Warsaw</code></pre>
+<p>Mylenie <code>INTERVAL_MS</code> z częstotliwością zdarzenia jest tu najłatwiejszym błędem — zmiana <code>INTERVAL_MS</code> na 86 400 000 nie zrobi „raz dziennie&quot;, tylko sprawi, że bramka 08:00 będzie sprawdzana raz na dobę i najpewniej ją przegapi.</p>
+<h2>Ścieżka reakcji na błąd</h2>
+<p>Wyzwolenie jest <strong>zdarzeniowe na całej długości</strong>. Do 2026-07-22 18:15 druga połowa była odpytywana (ticket czekał na najbliższy cykl 30-sekundowy); <code>core/services/control/src/autonomous-controller-trigger.mjs</code> zamienił to na wyzwalanie zdarzeniem. Obie wersje zmierzono — patrz „Test kontrolowany&quot;.</p>
+<pre><code class="language-text">błędna odpowiedź HTTP z control
+  └─ observeProblemResponses (server.mjs:1993)
+       └─ journalProblem (server.mjs:1984)
+            ├─ audit &quot;problem.detected&quot;
+            └─ recordProblemReaction  → grupa wg fingerprintu, licznik w oknie
+                 └─ audit &quot;problem.classified&quot;  (strategia + authority)
+
+            └─ shouldTriggerAutonomousController (autonomous-controller-trigger.mjs)
+                 │   true gdy reaction.ticket_required === true
+                 │   albo severity ∈ {error, fatal}
+                 └─ cykl kontrolera po debounce AUTONOMOUS_QUEUE_ERROR_TRIGGER_DELAY_MS
+
+cykl kontrolera (wyzwolony zdarzeniem albo planowy co 30 s)
+  └─ ensureProblemReactionTickets (server.mjs:1417)
+       └─ problemReactionTicketCandidates  → wymaga reaction.ticket_required === true
+            └─ POST /tickets  (pack problem.reaction.observer, limit 1 na cykl)
+
+NASTĘPNY cykl (celowo nie ten sam)
+  └─ runAutonomousQueueCycle → claim → execute → completion receipt + EQL</code></pre>
+<p>Wyzwalacz nie zastępuje harmonogramu, tylko go wyprzedza: <code>setInterval</code> nadal tyka co 30 s jako siatka bezpieczeństwa, a zdarzenie skraca oczekiwanie do <code>delayMs</code>. Debounce jest konieczny, bo pojedynczy incydent potrafi wygenerować serię błędów — bez niego każdy z nich budziłby osobny cykl.</p>
+<p>Zwrotka: <strong>każda</strong> błędna odpowiedź HTTP z control staje się <code>problem.detected</code>. Stąd wolumen — 1595 wykryć w dzienniku audytu z 26 godzin. Skąd naprawdę pochodziły, opisuje osobna sekcja niżej.</p>
+<p>Odcisk palca to <code>sha256(code, component, environment, resource)</code> (<code>runtime/src/problem-details.mjs:193</code>), gdzie <code>resource</code> to ścieżka URL bez query. Dwa błędy tego samego rodzaju na tej samej ścieżce trafiają do jednej grupy.</p>
+<p>Świeżo utworzony ticket reakcji **celowo nie jest wykonywany w tym samym cyklu** (<code>server.mjs:1418-1420</code>) — Planfile ma czas utrwalić envelope, a to daje naturalny backpressure. Zmierzone opóźnienie od eskalacji do utworzenia ticketu wynosi ~2 s (wyzwalacz), a wykonanie następuje w kolejnym cyklu.</p>
+<h2>Polityka klasyfikacji</h2>
+<p>Progi z <code>platform/config/problem-strategies/catalog.v1.json</code>:</p>
+<pre><code>window_ms                300000   (5 minut)
+retry_base_ms             30000
+retry_max_ms             900000
+retry_escalation_count         3
+access_escalation_count        5
+max_groups                  1000</code></pre>
+<p>Strategie w kolejności priorytetu (wygrywa najwyższy):</p>
+<table>
+<thead><tr><th>prio</th><th>strategia</th><th>warunek</th><th><code>ticket_required</code></th></tr></thead>
+<tbody>
+<tr><td>1000</td><td><code>problem.security.contain</code></td><td><code>problem.security == true</code></td><td>—</td></tr>
+<tr><td>900</td><td><code>problem.dependency.escalate</code></td><td>kategoria <code>dependency</code>/<code>rate_limit</code> + próg</td><td>—</td></tr>
+<tr><td>800</td><td><code>problem.dependency.retry</code></td><td>kategoria <code>dependency</code>/<code>rate_limit</code>, retryable</td><td><code>false</code></td></tr>
+<tr><td>700</td><td><code>problem.internal.diagnose</code></td><td>kategoria <code>internal</code> <strong>lub</strong> severity <code>error</code>/<code>fatal</code></td><td><code>true</code></td></tr>
+<tr><td>600</td><td><code>problem.access.review</code></td><td>kategoria <code>authentication</code>/<code>authorization</code> <strong>oraz</strong> <code>occurrences &gt;= 5</code></td><td><code>true</code></td></tr>
+<tr><td>0</td><td><code>problem.observe</code></td><td>fallback: istnieje fingerprint</td><td><code>false</code></td></tr>
+</tbody></table>
+<p>Kluczowa konsekwencja: <strong>HTTP 404 nigdy nie eskaluje sam z siebie.</strong> Ma kategorię <code>not_found</code> i severity <code>warn</code> (<code>runtime/src/problem-details.mjs:85-87</code>), więc nie łapie się na żaden warunek poza fallbackiem. Dlatego dominującą klasyfikacją jest <code>problem.observe</code> — to zachowanie zgodne z polityką, nie zator.</p>
+<h2>Test kontrolowany — przebieg i wynik</h2>
+<p>Test wykonano na działającym stosie 2026-07-22. Metoda: pięć nieuwierzytelnionych żądań <code>GET http://127.0.0.1:8091/api/delegation/manager</code> (HTTP 401 → kategoria <code>authentication</code>). Żadnej mutacji, żadnej zmiany konfiguracji.</p>
+<p><strong>Przewidywanie sformułowane przed uruchomieniem</strong>, wyłącznie na podstawie katalogu strategii: wystąpienia 1–4 dadzą <code>problem.observe</code> (authority <code>component-owner</code>), wystąpienie 5 przekroczy <code>access_escalation_count</code> i da <code>problem.access.review</code> (authority <code>security</code>).</p>
+<h3>Obserwacja 1 — klasyfikacja i próg</h3>
+<pre><code>18:04:57 | occ_okno: 1 | occ_total: 3 | problem.observe        | authority:component-owner
+18:05:25 | occ_okno: 2 | occ_total: 4 | problem.observe        | authority:component-owner
+18:05:26 | occ_okno: 3 | occ_total: 5 | problem.observe        | authority:component-owner
+18:05:27 | occ_okno: 4 | occ_total: 6 | problem.observe        | authority:component-owner
+18:05:28 | occ_okno: 5 | occ_total: 7 | problem.access.review  | authority:security</code></pre>
+<p>Przewidywanie trafione co do jednego żądania. Potwierdzone jednocześnie: deduplikacja do jednej grupy, licznik w oknie rosnący 1→5 niezależnie od licznika całkowitego (3→7), próg wyzwalający się dokładnie na piątym wystąpieniu, oraz eskalacja authority.</p>
+<p>Reakcja po eskalacji:</p>
+<pre><code>ticket_required            : true
+notification_due           : true
+automatic_mutation_allowed : false
+fingerprint                : 48537a5a89fb72ce…</code></pre>
+<h3>Obserwacja 2 — trzy kolejne cykle kontrolera</h3>
+<pre><code>18:05:30 | scanned 992 | considered 46 | executable 0 | executed 0 | reaction_tickets_created: 1
+18:06:16 | scanned 993 | considered 47 | executable 1 | executed 1 | reaction_tickets_created: 0
+18:06:29 | scanned 993 | considered 46 | executable 0 | executed 0 | reaction_tickets_created: 0</code></pre>
+<p>Cykl bezpośrednio po eskalacji utworzył ticket i <strong>go nie wykonał</strong> — zgodnie z zaprojektowanym backpressure. Wykonanie nastąpiło w cyklu następnym, po czym ticket zniknął z puli rozważanych.</p>
+<h3>Obserwacja 3 — co ticket faktycznie zrobił</h3>
+<p>Ticket <code>PLF-1046</code>, „Diagnose problem 48537a5a89fb — subactor.auth.authentication…&quot;, etykiety <code>problem-reaction</code>, <code>diagnosis-only</code>. Start 18:05:59, koniec 18:06:11 (12 sekund), status <code>done</code>, aktor <code>safety-operator-bot</code>.</p>
+<p>Cztery procesy URI, wszystkie OK:</p>
+<pre><code>read      problem://events/query/by-fingerprint
+record    problem://reaction/command/record-occurrence
+classify  problem://reaction/query/classification
+audit     audit://problem/command/append-classification</code></pre>
+<p>Completion receipt, <strong>6/6 asercji EQL zdanych</strong>, każda z cytowanym dowodem:</p>
+<pre><code>PASS canonical-problem   verifier: process-step-receipt
+PASS deduplicated        verifier: process-step-receipt
+PASS deterministic       verifier: process-step-receipt
+PASS observation-only    verifier: process-step-receipt
+PASS governed-followup   verifier: process-step-receipt
+PASS safe-evidence       verifier: process-step-receipt</code></pre>
+<blockquote><strong>Pułapka przy weryfikacji.</strong> Asercje leżą w<br /><code>outputs.completion_receipt.eql</code>, a nie w <code>outputs.assertions</code> ani<br /><code>outputs.result.assertions</code>. Odczyt z niewłaściwego pola zwraca pustą listę<br />i wygląda jak brak weryfikacji Definition of Done, choć weryfikacja<br />przebiegła poprawnie.</blockquote>
+<h3>Runda druga — pomiar wyzwalacza zdarzeniowego</h3>
+<p>Runda pierwsza (18:04–18:06) wypadła na buildzie <strong>sprzed</strong> wyzwalacza; kontener został zrestartowany o 18:15:31 z <code>autonomous-controller-trigger.mjs</code>. Test powtórzono na nowym buildzie, tą samą metodą, z pomiarem czasu:</p>
+<pre><code>18:17:38.4   żądanie 1                        → problem.observe   (okno 1)
+18:17:39.5   żądanie 2                        → problem.observe   (okno 2)
+18:17:40.6   żądanie 3                        → problem.observe   (okno 3)
+18:17:41.8   żądanie 4                        → problem.observe   (okno 4)
+18:17:42.9   żądanie 5                        → problem.access.review (okno 5)
+18:17:45.0   cykl kontrolera → reaction_tickets_created: 1
+18:18:01     PLF-1048 start wykonania
+18:18:14     PLF-1048 done, 6/6 EQL, 4 procesy URI
+18:18:19.1   cykl odnotowuje executed: 1</code></pre>
+<p><strong>Opóźnienie od eskalacji do utworzenia ticketu: 2,14 s.</strong> Poprzedni cykl zakończył się o 18:17:31.8, więc planowy następny wypadałby ok. 18:18:01 — cykl ruszył <strong>16 sekund przed terminem</strong>. To jest dowód działania wyzwalacza, a nie trafu: przy samym <code>setInterval</code> ticket czekałby do 18:18:01.</p>
+<p>Porównanie obu rund (ten sam odcisk palca <code>48537a5a89fb</code>, ta sama ścieżka):</p>
+<table>
+<thead><tr><th></th><th>runda 1 (bez wyzwalacza)</th><th>runda 2 (z wyzwalaczem)</th></tr></thead>
+<tbody>
+<tr><td>próg eskalacji</td><td>5. wystąpienie</td><td>5. wystąpienie</td></tr>
+<tr><td>eskalacja → ticket</td><td>do 30 s (traf: 2 s)</td><td><strong>2,14 s, deterministycznie</strong></td></tr>
+<tr><td>wykonanie ticketu</td><td>cykl następny</td><td>cykl następny</td></tr>
+<tr><td>asercje EQL</td><td>6/6</td><td>6/6</td></tr>
+<tr><td>ticket</td><td>PLF-1046</td><td>PLF-1048</td></tr>
+</tbody></table>
+<p>Próg, deduplikacja i weryfikacja zachowały się identycznie — zmieniło się wyłącznie opóźnienie reakcji, i zmieniło się z „do 30 sekund&quot; na przewidywalne 2 sekundy.</p>
+<h2>Co z tego wynika</h2>
+<p>Działa i jest udowodnione:</p>
+<ul>
+<li>kontroler żyje i tyka co 30 s (1249 zapisów <code>autonomous_queue.cycle.completed</code>),</li>
+</ul>
+<p>a wyzwalacz zdarzeniowy wyprzedza harmonogram w ~2 s po eskalacji;</p>
+<ul>
+<li>deduplikacja po odcisku palca z oknem 5 minut;</li>
+<li>progi eskalacji egzekwowane co do jednego wystąpienia;</li>
+<li>deterministyczny wybór strategii wg priorytetu;</li>
+<li>eskalacja tworzy ticket, kolejny cykl go wykonuje, wynik ma receipt z</li>
+</ul>
+<p>asercjami EQL i dowodami;</p>
+<ul>
+<li>zakaz automatycznej mutacji utrzymany na całej ścieżce.</li>
+</ul>
+<p>Nie działa, albo działa inaczej, niż można oczekiwać:</p>
+<ol>
+<li><strong>Pętla domyka się do diagnozy, nie do naprawy.</strong> Pack ma etykietę</li>
+</ol>
+<p><code>diagnosis-only</code>. Nie istnieje krok „diagnoza → naprawa&quot; i to jest świadoma granica, a nie usterka — ale trzeba ją znać, zanim ktoś uzna, że system „sam się naprawia&quot;.</p>
+<ol>
+<li><strong>~~1577 wykryć zdominowanych przez nierozwiązany upstream.~~</strong> Pierwsza</li>
+</ol>
+<p>wersja tego dokumentu przypisywała wolumen blockerowi PLF-592. **To był domysł i był błędny** — sprawdzone i sprostowane, patrz „Skąd wziął się wolumen wykryć&quot; niżej. Krótko: 91,8 % pochodziło z jednego wewnętrznego endpointu, a przyczyna została naprawiona commitem <code>3a7dfa7</code> o 14:47.</p>
+<ol>
+<li><strong>Widoczność harmonogramu w <code>.env</code> została naprawiona.</strong> Automigracja</li>
+</ol>
+<p>kontraktu środowiska uzupełnia wszystkie klucze kontrolera; patrz opis zamkniętej luki wyżej.</p>
+<ol>
+<li><strong>28 ticketów pozostaje aktywnych, 0 jest wykonywalnych automatycznie.</strong></li>
+</ol>
+<p>Stan z 2026-07-22 23:16 CEST: 24 <code>waiting_input</code>, 2 <code>ready</code> i 2 <code>running</code>. Dwa tickety <code>ready</code> mają wykonawców ludzkich, więc kontroler poprawnie kieruje powiadomienie zamiast wykonywać ich pracę.</p>
+<h2>Ponowny preflight aktualizuje diagnozę blokady</h2>
+<p>Do wersji wdrożonej przed 2026-07-22 23:13 kontroler ponownie sprawdzał tickety botów w <code>waiting_input</code>, ale zachowywał tylko wynik pozytywny. Gdy kontrakt lub topologia zmieniły się po pierwotnym odrzuceniu, pole <code>execution.last_error</code> nadal pokazywało historyczną przyczynę. Nie prowadziło to do niebezpiecznego wykonania, ale utrudniało naprawę właściwej zależności.</p>
+<p>Od commita Core <code>3fa32ad</code> recheck zwraca zarówno kandydatów do promocji, jak i odrzucone decyzje. Dla odrzuconego ticketu kontroler:</p>
+<ol>
+<li>buduje aktualny <code>readiness_preflight:&lt;reason&gt;</code> wraz z listą brakujących</li>
+</ol>
+<p>exact URI, jeśli decyzja ją zawiera;</p>
+<ol>
+<li>odczytuje ponownie ticket i porównuje <code>updated_at</code>, aby nie nadpisać</li>
+</ol>
+<p>równoległej decyzji;</p>
+<ol>
+<li>zapisuje tylko zmieniony <code>last_error</code>, pozostawiając stan</li>
+</ol>
+<p><code>waiting_input</code> i nie wykonując efektów;</p>
+<ol>
+<li>emituje <code>ticket_lifecycle.readiness_diagnosis_refreshed</code>, a cykl raportuje</li>
+</ol>
+<p>licznik <code>readiness_refreshed</code>.</p>
+<p>Test live po przebudowie <code>hr-control</code>:</p>
+<pre><code class="language-text">PLF-690 przed:
+  readiness_preflight:process_actor_not_registered:research
+
+PLF-690 po autonomicznym cyklu:
+  readiness_preflight:actor_contract_gap:research:
+  uri_process_not_allowed:plesk://host/ftpuser/query/capabilities
+
+autor historii: autonomous-queue-controller
+stan: waiting_input
+efekty zewnętrzne: 0</code></pre>
+<p>Wynik rozdziela dwie zależności, których nie wolno naprawiać jednym skrótem:</p>
+<ul>
+<li>AQL <code>security-bot</code> nie dopuszcza obecnie URI Pleska; rozszerzenie tego</li>
+</ul>
+<p>kontraktu jest zmianą granicy bezpieczeństwa, a nie zwykłą korektą danych;</p>
+<ul>
+<li><code>plesk://host/ftpuser/query/capabilities</code> nadal ma klasyfikację</li>
+</ul>
+<p><code>blueprint-only</code> i wymaga read-only implementacji w konektorze Pleska.</p>
+<p>Pełna walidacja Core po zmianie: 462 testy zaliczone, 7 pominiętych, 0 błędów. Audyt tras aktywnych ticketów: 0 tras <code>unsupported</code>, 15 <code>blueprint-only</code>, 1 nierozwiązany placeholder (PLF-592), 0 <code>false_ready</code>.</p>
+<h2>Skąd wziął się wolumen wykryć — dochodzenie i sprostowanie</h2>
+<p>Pierwsza wersja tego dokumentu stwierdzała, że 1577 wykryć „wygląda na nierozwiązany blocker PLF-592 mielony w kółko&quot;. **To był domysł, nie pomiar, i okazał się nieprawdziwy.** Poniżej faktyczny rozkład.</p>
+<h3>Pomiar</h3>
+<p>Z 1595 wpisów <code>problem.detected</code> obejmujących 2026-07-21 18:18 → 2026-07-22 20:00:</p>
+<table>
+<thead><tr><th>udział</th><th>zasób</th></tr></thead>
+<tbody>
+<tr><td><strong>1465 (91,8 %)</strong></td><td><code>/api/internal/integrations/resolve</code></td></tr>
+<tr><td>13 (0,8 %)</td><td><code>/api/founder/delegations/respond</code></td></tr>
+<tr><td>12 (0,8 %)</td><td><code>/api/projects/reconciliation/run</code></td></tr>
+<tr><td>12 (0,8 %)</td><td><code>/api/processes/run</code></td></tr>
+<tr><td>12 (0,8 %)</td><td><code>/api/delegation/manager</code></td></tr>
+</tbody></table>
+<p>Unikalnych odcisków palca: 52. PLF-592 nie występuje w czołówce w ogóle.</p>
+<h3>Mechanizm</h3>
+<p>Wykrycia przychodziły <strong>seriami po pięć w ciągu milisekund</strong>. Źródłem jest <code>connectors/services/bridge/src/server.mjs:1387</code>:</p>
+<pre><code class="language-js">const [email, slack, teams, webhook] =
+  await Promise.all([&quot;email&quot;, &quot;slack&quot;, &quot;teams&quot;, &quot;webhook&quot;].map(dynamicProfile));</code></pre>
+<p>Cztery rozwiązania równolegle plus wcześniejsze <code>plesk</code> — dokładnie pięć. Każde woła <code>/api/internal/integrations/resolve</code>. Gdy integracja nie jest skonfigurowana, control odpowiadał 404 <code>integration_not_found</code>, a <code>observeProblemResponses</code> zapisywało to jako problem. Brak skonfigurowanej integracji opcjonalnej jest <strong>normalnym stanem</strong>, więc telemetria pokazywała tysiąc zdarzeń o niczym.</p>
+<h3>Naprawa i weryfikacja</h3>
+<p>Naprawione commitem <code>3a7dfa7</code> „fix(connectors): preserve evidence after external effects&quot; (2026-07-22 14:47):</p>
+<pre><code class="language-diff">-    resolveDynamicIntegration(null, {system_provider: provider})
++    resolveDynamicIntegration(null, {system_provider: provider, optional: true})</code></pre>
+<p>Control ma dla tego jawną gałąź (<code>routes/integrations.mjs:16</code>): gdy <code>optional === true</code> i nie podano <code>integration_id</code>, zwraca <strong>200</strong> z <code>integration: null</code> zamiast 404. Zweryfikowane bezpośrednio na wdrożonym kodzie:</p>
+<pre><code>{system_provider:&quot;plesk&quot;, optional:true}          -&gt; 200  {&quot;integration&quot;: null}
+{system_provider:&quot;plesk&quot;}                         -&gt; 404  integration_not_found
+{integration_id:&quot;nope&quot;, optional:true}            -&gt; 404  integration_not_found</code></pre>
+<p>Rozkład godzinowy potwierdza skutek:</p>
+<pre><code>07-21 19:00   716   ← szczyt
+07-21 21:00    40
+07-22 06:00    72
+07-22 07:00    35
+07-22 08:00+    0   ← koniec</code></pre>
+<p>Po 07:25 nie ma ani jednego wpisu z tego zasobu. Dwa widoczne o 20:00:48 to artefakty powyższej sondy weryfikacyjnej — celowe 404 wywołane, żeby udowodnić, że gałąź <code>optional</code> działa.</p>
+<h3>Co z tego zostaje</h3>
+<ul>
+<li><strong>Bieżąca telemetria jest czysta.</strong> Liczba 91,8 % jest prawdziwa</li>
+</ul>
+<p>historycznie i myląca jako opis stanu na dziś.</p>
+<ul>
+<li>Trzeci wiersz tabeli weryfikacyjnej pokazuje, że <code>optional: true</code> <strong>nie</strong></li>
+</ul>
+<p>tłumi 404, gdy podano konkretne <code>integration_id</code>. To wygląda na decyzję celową — nazwanie konkretnej integracji, której nie ma, jest błędem, a nie brakiem opcjonalnej konfiguracji. Zostawione bez zmian.</p>
+<ul>
+<li>Wniosek ogólny: przy tej architekturze **każdy nowy wewnętrzny endpoint</li>
+</ul>
+<p>zwracający 4xx dla stanu normalnego zamienia się w telemetryczny szum**. Warto to sprawdzać przy dodawaniu tras, a nie po fakcie w dzienniku.</p>
+<h2>Jak powtórzyć test</h2>
+<pre><code class="language-bash"># 1. stan przed
+docker exec subactor-platform-hr-control-1 sh -c \
+  'grep -c &quot;\&quot;problem.classified\&quot;&quot; /data/audit.jsonl'
+
+# 2. pięć nieuwierzytelnionych żądań (401 → kategoria authentication)
+for i in 1 2 3 4 5; do
+  curl -s -o /dev/null -w &quot;%{http_code}\n&quot; \
+    http://127.0.0.1:8091/api/delegation/manager
+  sleep 1
+done
+
+# 3. klasyfikacje — oczekiwane: 4× problem.observe, potem problem.access.review
+docker exec subactor-platform-hr-control-1 sh -c \
+  'grep &quot;\&quot;problem.classified\&quot;&quot; /data/audit.jsonl | tail -5'
+
+# 4. cykle kontrolera — oczekiwane: reaction_tickets_created 1, potem executed 1
+docker exec subactor-platform-hr-control-1 sh -c \
+  'grep autonomous_queue.cycle.completed /data/audit.jsonl | tail -3'</code></pre>
+<p>Test jest bezpieczny: nie mutuje stanu, nie dotyka DNS, Pleska ani sekretów. Tworzy jeden ticket diagnostyczny, który sam się zamyka.</p>
+<h2>Kontrakty i źródła</h2>
+<ul>
+<li>harmonogram: <code>core/services/control/src/server.mjs:152-157, 2039-2040</code></li>
+<li>ścieżka reakcji: <code>core/services/control/src/server.mjs:1984-1993, 1413-1450</code></li>
+<li>klasyfikacja: <code>core/services/control/src/problem-reaction.mjs</code></li>
+<li>bramka ticketu: <code>core/services/control/src/problem-reaction-ticket.mjs:19-46</code></li>
+<li>polityka i strategie: <code>platform/config/problem-strategies/catalog.v1.json</code></li>
+<li>odcisk palca i katalog problemów: <code>runtime/src/problem-details.mjs:85-107, 193-200</code></li>
+<li>pack: <code>platform/config/process-packs/problem-reaction-observer/</code></li>
+<li>asercje: <code>core/services/control/src/autonomous-queue-controller.mjs</code></li>
+</ul>
+<p>(<code>completionAssertionsForTicket</code>)</p>
+</main>
+</body>
+</html>

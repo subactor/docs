@@ -2,15 +2,17 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.plans.resolution-continuity-implementation",
-  "version": 1,
+  "version": 2,
   "status": "current",
-  "updated": "2026-07-19"
+  "updated": "2026-07-29"
 }
 ---
 
 # Resolution Continuity — plan i mapa wdrożenia
 
-Status: wdrożony rdzeń P0–P3; integracje produkcyjne wymagają podpisanych mandatów i adapterów dostawców.
+Status: wdrożony rdzeń P0–P3; produkcyjne P0–P4 pozostają otwarte do czasu
+podpisanych mandatów, adapterów dostawców i evidence z testu awarii całej
+ścieżki.
 
 ## Niezmienniki
 

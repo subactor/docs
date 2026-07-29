@@ -35,6 +35,9 @@
 <body>
 <main>
   <nav class="docnav"><a href="../index.html">subactor/docs</a></nav>
+<hr />
+<p>{ &quot;schema&quot;: &quot;subactor.doc/v1&quot;, &quot;id&quot;: &quot;docs.architecture.unresolved-live-autonomy-blockers-2026-07-19&quot;, &quot;version&quot;: 2, &quot;status&quot;: &quot;current&quot;, &quot;updated&quot;: &quot;2026-07-22&quot; }</p>
+<hr />
 <h1>Blokery pełnej autonomii, których nie można zamknąć lokalnie</h1>
 <p><strong>Stan na:</strong> 2026-07-19, Europe/Warsaw <strong>Zakres:</strong> produkcyjna praca platformy Subactor: publikowanie stron, komunikacja z ludźmi, telefon, e-mail, kontrakty, outsourcing i działanie w wielu jurysdykcjach. <strong>Charakter dokumentu:</strong> rejestr brakujących uprawnień, danych, umów i decyzji zewnętrznych. Dokument nie zawiera sekretów i nie jest opinią prawną.</p>
 <h2>1. Co oznacza „nie można rozwiązać teraz”</h2>
@@ -81,7 +84,7 @@
   &quot;can_create_domain&quot;: false,
   &quot;reason&quot;: &quot;subscription_domain_limit_unknown&quot;
 }</code></pre>
-<p>SFTP i FTP są dostępne, ale dostęp do transportu nie jest dowodem prawa ani limitu utworzenia domeny. Dry-run <code>projekty/02_landing</code> dla <code>autonomicznosc.pl</code> przeszedł: 8 plików, 32 934 bajty, plan hash <code>8cec51cdbf70dcaa0c795f1b1f4e826bcdd7b62d60472435c795d3c47c794c23</code>. Nie wykonano produkcyjnego apply.</p>
+<p>SFTP i FTP są dostępne, ale dostęp do transportu nie jest dowodem prawa ani limitu utworzenia domeny. Dry-run <code>projekty/autonomicznosc-pl/02_landing</code> dla <code>autonomicznosc.pl</code> przeszedł: 8 plików, 32 934 bajty, plan hash <code>8cec51cdbf70dcaa0c795f1b1f4e826bcdd7b62d60472435c795d3c47c794c23</code>. Nie wykonano produkcyjnego apply.</p>
 <h3>Dlaczego Subactor nie może zamknąć problemu sam</h3>
 <p>Platforma nie może przyjąć, że <code>null</code> oznacza brak limitu. Nie może również zmienić planu hostingowego, kupić rozszerzenia ani zaakceptować nowej umowy z hostingiem bez istniejącego mandatu i budżetu. Próba utworzenia domeny „dla sprawdzenia” byłaby mutacją produkcyjną i mogłaby wywołać koszt lub konflikt z istniejącą konfiguracją.</p>
 <h3>Wymagane działanie zewnętrzne</h3>

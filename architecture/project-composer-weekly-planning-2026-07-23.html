@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Project Composer — opis projektu, graf pracy i symulacja tygodnia — Subactor Docs</title>
+  <style>
+    :root { --bg:#0f1419; --fg:#e7ecf1; --muted:#9aa7b5; --accent:#3d9cf0; --line:#243041; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:"IBM Plex Sans","Segoe UI",sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #1a2a3d, var(--bg));
+      color: var(--fg); line-height:1.6; min-height:100vh; }
+    main { max-width: 52rem; margin:0 auto; padding:3rem 1.5rem 5rem; }
+    a { color: var(--accent); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    h1,h2,h3,h4 { letter-spacing:-0.01em; line-height:1.25; }
+    h1 { font-size:1.9rem; } h2 { font-size:1.4rem; margin-top:2.2rem; }
+    h3 { font-size:1.15rem; margin-top:1.8rem; }
+    code { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.88em;
+      background:#1a2331; border:1px solid var(--line); border-radius:4px; padding:0.1em 0.35em; }
+    pre { background:#0b1017; border:1px solid var(--line); border-radius:8px;
+      padding:1rem; overflow-x:auto; }
+    pre code { background:none; border:none; padding:0; }
+    table { border-collapse:collapse; width:100%; margin:1rem 0; display:block; overflow-x:auto; }
+    th,td { border:1px solid var(--line); padding:0.45rem 0.7rem; text-align:left;
+      font-size:0.92rem; }
+    th { background:#161f2c; }
+    blockquote { border-left:3px solid var(--accent); margin:1rem 0; padding:0.2rem 1rem;
+      color: var(--muted); }
+    hr { border:0; border-top:1px solid var(--line); margin:2rem 0; }
+    .docnav { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.8rem;
+      margin-bottom:2rem; color:var(--muted); }
+  </style>
+</head>
+<body>
+<main>
+  <nav class="docnav"><a href="../index.html">subactor/docs</a></nav>
+<hr />
+<p>{ &quot;schema&quot;: &quot;subactor.doc/v1&quot;, &quot;id&quot;: &quot;docs.architecture.project-composer-weekly-planning-2026-07-23&quot;, &quot;version&quot;: 1, &quot;status&quot;: &quot;current&quot;, &quot;updated&quot;: &quot;2026-07-23&quot; }</p>
+<hr />
+<h1>Project Composer — opis projektu, graf pracy i symulacja tygodnia</h1>
+<h2>Cel</h2>
+<p>Project Composer zamienia opis człowieka w ograniczony szkic projektu, kandydatury ticketów, propozycje przypisań oraz symulację pojemności ludzi i automatów. Podgląd korzysta z bieżącego snapshotu delegacji i nie tworzy ticketów Planfile, nie wykonuje URI Process, nie wysyła wiadomości i nie zmienia authority.</p>
+<p>Strona jest częścią zakładki <code>Projekty</code>:</p>
+<pre><code class="language-text">/?tab=projects&amp;action=compose&amp;week_start=YYYY-MM-DD&amp;horizon=7</code></pre>
+<p>Opis projektu nie trafia do URL. URL zawiera wyłącznie bezpieczny stan widoku, horyzont oraz ślad korelacji interakcji.</p>
+<h2>Przepływ</h2>
+<pre><code class="language-text">opis człowieka
+  → normalizacja i kontrola sekretów
+  → deterministyczny blueprint
+  → opcjonalna propozycja LLM ze ścisłym JSON Schema
+  → milestone’y i kandydatury ticketów
+  → klasyfikacja domeny i wymaganych capabilities
+  → aktualne reguły delegacji + AQL coverage
+  → sugestia roli, gdy nie istnieje reguła
+  → symulacja kolejki i pojemności
+  → bottlenecki, braki i dry-run receipt</code></pre>
+<p>LLM może proponować nazwy procesów i zadania, lecz wynik jest ponownie normalizowany. Pola wykonawcze, aktor, authority, URI, transport i sekrety nie są przyjmowane z odpowiedzi modelu.</p>
+<h2>Kontrakt wejściowy</h2>
+<p><code>subactor.project-composer-request/v1</code> zawiera:</p>
+<ul>
+<li>nazwę, typ oraz opis projektu;</li>
+<li>początek i długość horyzontu;</li>
+<li>dzienną pojemność człowieka;</li>
+<li>dzienną pojemność automatu;</li>
+<li>jawny wybór użycia LLM.</li>
+</ul>
+<p>Opis ma limit 12 000 znaków i odrzuca wartości wyglądające jak hasła, tokeny albo klucze API. Nie przyjmuje URI ani poleceń wykonawczych.</p>
+<h2>Kontrakt wyniku</h2>
+<p><code>subactor.project-composer-preview/v1</code> zawiera:</p>
+<ul>
+<li><code>draft_id</code> i deterministyczny <code>draft_hash</code>;</li>
+<li>cel projektu, milestone’y i kryteria sukcesu;</li>
+<li>kandydatury ticketów z tagami, estymatą i zależnościami;</li>
+<li>aktualne tickety uwzględnione w symulacji;</li>
+<li>wynik routingu i AQL dla każdej kandydatury;</li>
+<li>projekcję kolejki każdego aktora;</li>
+<li>przewidywane bottlenecki;</li>
+<li>braki implementacyjne;</li>
+<li>jawny bilans efektów ubocznych równy zero.</li>
+</ul>
+<h2>Semantyka przypisania</h2>
+<p>Composer rozróżnia:</p>
+<ol>
+<li><code>automatic_rule</code> — obecna aktywna reguła delegacji wybrała aktora, a</li>
+</ol>
+<p>kontrakt aktora pokrywa wymagania.</p>
+<ol>
+<li><code>matched_rule</code> — reguła pasuje, ale wymaga ręcznej decyzji.</li>
+<li><code>proposed_role</code> — nie istnieje pasująca reguła; Composer jedynie symuluje</li>
+</ol>
+<p>aktora z właściwej roli i sprawdza jego AQL.</p>
+<ol>
+<li><code>unassigned</code> — nie istnieje aktywny aktor z wymaganym pokryciem.</li>
+</ol>
+<p><code>proposed_role</code> nie jest automatycznym przypisaniem i nie może być materializowane bez jawnej polityki.</p>
+<h2>Model tygodnia</h2>
+<p>Symulacja wykorzystuje:</p>
+<ul>
+<li>bieżące <code>estimated_busy_minutes</code>;</li>
+<li>projekcję backlogu pozostałego na początek horyzontu;</li>
+<li>odrębną dzienną pojemność ludzi i automatów;</li>
+<li>dni robocze dla ludzi i wszystkie dni dla automatów;</li>
+<li>sekwencyjne zależności zadań wewnątrz procesu;</li>
+<li>przyrost kolejki po każdym proponowanym przypisaniu.</li>
+</ul>
+<p><code>waiting_input</code> jest obowiązkiem uwagi, a nie czasem wykonawczym. Dlatego nie zwiększa ETA, ale tworzy osobny bottleneck <code>attention_obligation</code>.</p>
+<p>Estymata nowego zadania pozostaje heurystyką opartą o domenę oraz rozmiar zadania. Przed materializacją musi zostać zaakceptowana albo zastąpiona historycznym modelem estymacji.</p>
+<h2>Stan implementacji</h2>
+<p>Zaimplementowano:</p>
+<ul>
+<li>stronę natural-language Project Composer;</li>
+<li>bezpieczny endpoint <code>POST /api/projects/composer/preview</code>;</li>
+<li>deterministyczny fallback;</li>
+<li>opcjonalną analizę przez istniejący LLM Gateway;</li>
+<li>normalizację odpowiedzi LLM;</li>
+<li>generowanie milestone’ów, tagów i zależności;</li>
+<li>routing przez aktualny Delegation Manager;</li>
+<li>AQL-aware dobór kandydatów;</li>
+<li>symulację pojemności i carry-in;</li>
+<li>listę aktualnych ticketów, kolejek i bottlenecków;</li>
+<li>zapis samego rekordu projektu Organization OS bez tworzenia ticketów;</li>
+<li>append-only zdarzenie <code>project_composer.previewed</code>.</li>
+</ul>
+<h2>Braki blokujące materializację</h2>
+<h3>1. Acceptance transition i Intent Binding</h3>
+<p>Intent Registry obsługuje <code>propose</code>, <code>revise</code>, <code>preview</code> i <code>diff</code>, lecz celowo nie ma <code>accept</code> ani <code>execute</code>. Potrzebny jest transition wykonywany przez uprawnionego principal-a oraz deterministyczny binding dokładnego <code>intent_hash</code> do rewizji projektu.</p>
+<h3>2. Kompilator grafu do Planfile</h3>
+<p>Brakuje idempotentnego kompilatora:</p>
+<pre><code class="language-text">accepted intent + project graph
+  → Planfile tickets
+  → parent/source/dependency relations
+  → Process Envelope
+  → purpose context
+  → materialization receipt</code></pre>
+<p>Ponowienie musi zwracać te same tickety albo semantic diff, nigdy duplikaty.</p>
+<h3>3. Kalendarze dostępności</h3>
+<p>Aktualne workloady nie zawierają urlopów, spotkań, godzin pracy ludzi ani maintenance windows automatów. Composer przyjmuje pojemność ręcznie.</p>
+<h3>4. Historyczne estymaty</h3>
+<p>Brakuje modelu czasu opartego o wykonane tickety, domenę, capability, wykonawcę oraz wariancję. Obecna projekcja jest jawnie oznaczona jako heurystyczna.</p>
+<h3>5. Trwały graf zależności</h3>
+<p>Kandydatury mają zależności w szkicu, lecz produkcyjny adapter zapisu cross-ticket dependency w Planfile nadal wymaga domknięcia.</p>
+<h2>Następne etapy</h2>
+<ol>
+<li>Dodać acceptance transition i Intent Binding.</li>
+<li>Zapisać wersjonowany Project Draft append-only.</li>
+<li>Dodać podgląd semantic diff przed materializacją.</li>
+<li>Zaimplementować idempotentny kompilator Planfile w trybie dry-run.</li>
+<li>Dodać zatwierdzaną operację materializacji z receipt.</li>
+<li>Podłączyć kalendarze i maintenance windows.</li>
+<li>Kalibrować estymaty na podstawie ukończonych ticketów.</li>
+</ol>
+<h2>Granice bezpieczeństwa</h2>
+<ul>
+<li>LLM nie generuje authority, URI, transportu ani credentials.</li>
+<li>Symulacja nie przyznaje capability.</li>
+<li>Sugestia aktora nie jest delegacją.</li>
+<li>Rekord Organization OS nie jest ticketem wykonawczym.</li>
+<li>Materializacja pozostaje zablokowana do czasu wdrożenia Intent Binding.</li>
+<li>Każdy podgląd ma <code>correlation_id</code> w audycie i jawny bilans efektów ubocznych.</li>
+</ul>
+</main>
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Plan faz / commitów: uri-twin Plesk (bez PR) — Subactor Docs</title>
+  <style>
+    :root { --bg:#0f1419; --fg:#e7ecf1; --muted:#9aa7b5; --accent:#3d9cf0; --line:#243041; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:"IBM Plex Sans","Segoe UI",sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #1a2a3d, var(--bg));
+      color: var(--fg); line-height:1.6; min-height:100vh; }
+    main { max-width: 52rem; margin:0 auto; padding:3rem 1.5rem 5rem; }
+    a { color: var(--accent); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    h1,h2,h3,h4 { letter-spacing:-0.01em; line-height:1.25; }
+    h1 { font-size:1.9rem; } h2 { font-size:1.4rem; margin-top:2.2rem; }
+    h3 { font-size:1.15rem; margin-top:1.8rem; }
+    code { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.88em;
+      background:#1a2331; border:1px solid var(--line); border-radius:4px; padding:0.1em 0.35em; }
+    pre { background:#0b1017; border:1px solid var(--line); border-radius:8px;
+      padding:1rem; overflow-x:auto; }
+    pre code { background:none; border:none; padding:0; }
+    table { border-collapse:collapse; width:100%; margin:1rem 0; display:block; overflow-x:auto; }
+    th,td { border:1px solid var(--line); padding:0.45rem 0.7rem; text-align:left;
+      font-size:0.92rem; }
+    th { background:#161f2c; }
+    blockquote { border-left:3px solid var(--accent); margin:1rem 0; padding:0.2rem 1rem;
+      color: var(--muted); }
+    hr { border:0; border-top:1px solid var(--line); margin:2rem 0; }
+    .docnav { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.8rem;
+      margin-bottom:2rem; color:var(--muted); }
+  </style>
+</head>
+<body>
+<main>
+  <nav class="docnav"><a href="../index.html">subactor/docs</a></nav>
+<hr />
+<p>{ &quot;schema&quot;: &quot;subactor.doc/v1&quot;, &quot;id&quot;: &quot;docs.plans.uri-twin-phase-commits-2026-07-25&quot;, &quot;version&quot;: 8, &quot;status&quot;: &quot;current&quot;, &quot;updated&quot;: &quot;2026-07-29&quot; }</p>
+<hr />
+<h1>Plan faz / commitów: uri-twin Plesk (bez PR)</h1>
+<p><strong>Cel:</strong> SSOT observe przez <code>plesk://…/query/…</code> + twin-fact; Control czyta fakty; mutacje i <code>human_boundary</code> bez zmian. <strong>ADR:</strong> <a href="../architecture/adr/012-uri-twin-observe-layer.html">012</a> <strong>Roadmapa:</strong> <a href="./uri-twin-plesk-implementation-roadmap-2026-07-25.html">uri-twin-plesk-implementation-roadmap</a></p>
+<p><strong>Status realizacji: complete.</strong> Przegląd 2026-07-29 potwierdził wszystkie kryteria faz 0–3 testami connectora, Control i publicznych pakietów twin. Audytowalny wynik: <a href="./uri-twin-phase-commits-2026-07-29.receipt.json">completion receipt</a>.</p>
+<p>Ship: commit na <code>main</code> w danym repo (nie otwieramy PR).</p>
+<hr />
+<h2>Faza 0 — done</h2>
+<table>
+<thead><tr><th>Commit / artefakt</th><th>Repo</th></tr></thead>
+<tbody>
+<tr><td>ADR-012 + knowledge uri-twin-scope</td><td><code>docs</code>, <code>platform</code></td></tr>
+<tr><td>Szkielet <code>@uri-twin/core</code> + <code>@uri-twin/plesk</code></td><td><code>~/github/uri-twin/*</code></td></tr>
+<tr><td>Prototyp HTTP <code>/plesk/docroot</code></td><td><code>connectors</code> bridge</td></tr>
+</tbody></table>
+<p><strong>Akceptacja:</strong> dokumenty + <code>npm test</code> w uri-twin; HTTP projekcja nie jest SSOT.</p>
+<hr />
+<h2>Faza 1 — URI SSOT <code>site/query/docroot</code> (ten cykl)</h2>
+<h3>Pliki</h3>
+<table>
+<thead><tr><th>Plik</th><th>Zmiana</th></tr></thead>
+<tbody>
+<tr><td><code>urirun-connectors/urirun-connector-plesk/urirun_connector_plesk/core.py</code></td><td>handler <code>site/query/docroot</code> → <code>subactor.twin-fact/v1</code></td></tr>
+<tr><td><code>…/connector.manifest.json</code></td><td>dodać route</td></tr>
+<tr><td><code>…/README.md</code></td><td>wiersz URI</td></tr>
+<tr><td><code>…/tests/test_plesk.py</code></td><td>rejestr trasy + unit z fake XML</td></tr>
+<tr><td><code>core/…/project-reality-check.mjs</code></td><td>findings z twin docroot (advisory vs last_error)</td></tr>
+<tr><td><code>core/…/routes/project-reconciliation.mjs</code></td><td>pobierz <code>/plesk/docroot</code> do reportu</td></tr>
+<tr><td><code>core/…/tests/project-reality-check.test.mjs</code></td><td>finding docroot</td></tr>
+<tr><td><code>docs/plans/uri-twin-plesk-implementation-roadmap-…</code></td><td>odhaczyć Faza 1 partial</td></tr>
+</tbody></table>
+<h3>Checklista akceptacji</h3>
+<ul>
+<li>[x] <code>plesk://host/site/query/docroot</code> w manifeście i w liście handlerów testu</li>
+<li>[x] Wynik ma <code>schema: subactor.twin-fact/v1</code>, <code>twin_type: plesk.site.docroot</code>, <code>snapshot_hash</code>, <code>uri</code> z <code>/query/</code></li>
+<li>[x] Brak danych → <code>ok</code> z <code>fact_quality: estimated|stale</code> <strong>albo</strong> fail kodem observe — <strong>bez</strong> mutacji, <strong>bez</strong> grantu</li>
+<li>[x] Reality-check report zawiera <code>sources.plesk_docroot_twin</code> i nie zastępuje <code>human_boundary</code></li>
+<li>[x] pytest zielony; control unit test zielony</li>
+<li>[x] Commit na <code>main</code> w <code>urirun-connector-plesk</code> + <code>core</code> (+ docs)</li>
+</ul>
+<hr />
+<h2>Faza 2 — pozostałe query v1 + Control SSOT</h2>
+<h3>Pliki</h3>
+<table>
+<thead><tr><th>URI / obszar</th><th>Stan</th></tr></thead>
+<tbody>
+<tr><td><code>plesk://host/subscription/query/snapshot</code></td><td><strong>done</strong> (connector + twin-fact)</td></tr>
+<tr><td><code>plesk://host/dns/query/authority</code></td><td><strong>done</strong> (twin-fact na istniejącym probe)</td></tr>
+<tr><td>reality-check findings</td><td><strong>done</strong> (advisory subscription/dns twins)</td></tr>
+<tr><td>publish recipe wymusza docroot fact</td><td><strong>done</strong> (site-publish + docs/www/logo step-catalog)</td></tr>
+<tr><td>reality-check via URI Process</td><td><strong>done</strong> (<code>?live=1</code> / <code>?via=uri</code>, bridge fallback)</td></tr>
+<tr><td>live E2E po deployu</td><td><strong>done</strong> (restart + smoke 2026-07-25)</td></tr>
+</tbody></table>
+<h3>Checklista</h3>
+<ul>
+<li>[x] Trzy URI z catalogu uri-twin-plesk w connectorze</li>
+<li>[x] Reality-check: twin findings; <code>human_boundary</code> nietknięty</li>
+<li>[x] Publish/readiness czyta URI Process (nie tylko bridge HTTP)</li>
+<li>[x] Żadne usunięcie kill switch / HITL</li>
+</ul>
+<hr />
+<h2>Faza 3 — deploy / KPI</h2>
+<ul>
+<li>[x] Runbook: <a href="../operations/uri-twin-plesk-deploy-runbook.html">uri-twin-plesk-deploy-runbook.md</a></li>
+<li>[x] Smoke: <code>subactor uri plesk://host/site/query/docroot</code> + <code>reality-check?via=uri</code> (docs.subactor.com)</li>
+<li>[x] Metryka: % reality-check z <code>authority=observed</code> vs rule fallback — live 2026-07-25: <strong>60% observed (3/5)</strong> na *.subactor.com; szczegóły w runbooku</li>
+</ul>
+<hr />
+<h2>Poza zakresem (świadomie)</h2>
+<ul>
+<li>Osobne repo <code>PLESK-DNS</code> / <code>PLESK-MODULES</code></li>
+<li>Odkręcanie HITL publish</li>
+<li>LLM inventujący URI</li>
+</ul>
+</main>
+</body>
+</html>

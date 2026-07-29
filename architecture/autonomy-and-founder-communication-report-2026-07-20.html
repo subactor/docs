@@ -35,6 +35,9 @@
 <body>
 <main>
   <nav class="docnav"><a href="../index.html">subactor/docs</a></nav>
+<hr />
+<p>{ &quot;schema&quot;: &quot;subactor.doc/v1&quot;, &quot;id&quot;: &quot;docs.architecture.autonomy-and-founder-communication-report-2026-07-20&quot;, &quot;version&quot;: 2, &quot;status&quot;: &quot;current&quot;, &quot;updated&quot;: &quot;2026-07-22&quot; }</p>
+<hr />
 <h1>Raport autonomii i kanałów komunikacji z Founderem</h1>
 <p><strong>Stan na:</strong> 2026-07-20, Europe/Warsaw <strong>Zakres:</strong> lokalny stos Subactor, autonomia bez self-evolution, komunikacja Founder ↔ system, delegowanie pracy <strong>Charakter raportu:</strong> wyniki testów kodu i działającego środowiska; test mock/lokalny nie jest dowodem gotowości produkcyjnej</p>
 <blockquote><strong>Aktualizacja naprawcza 2026-07-20 18:45 CEST:</strong> sekcje poniżej zachowują<br />wcześniejszy stan diagnostyczny. Poniższy blok jest aktualnym, nadrzędnym<br />wynikiem po realizacji ticketu <code>PLF-597</code>.</blockquote>
@@ -986,6 +989,38 @@ wynik: ticket writera B znika</code></pre>
 </ol>
 <p>publikacji i domknąć 3 zadania konfiguracji tożsamości poczty.</p>
 <p>Fail-closed pozostaje domyślną postawą na każdym etapie; kroki 1–3 wymagają świadomej decyzji o włączeniu mutacji i realnych credentiali.</p>
+<h2>19. Ciągłość rozmowy i bezpośrednie linki Foundera (2026-07-22)</h2>
+<p>Naprawiono regresję widoczną w prywatnym kanale autonomii: po poprawnej odpowiedzi o ticketach kolejne pytanie „podaj URL, abym mógł od razu wyklikać” traciło kontekst, a LLM otrzymywał <code>approved_facts</code> bez linków.</p>
+<p>Przyczyna składała się z dwóch niezależnych redukcji danych:</p>
+<ol>
+<li>portal przechowywał historię konwersacji, lecz relay przekazywał agentowi</li>
+</ol>
+<p>wyłącznie bieżącą wiadomość;</p>
+<ol>
+<li>Control miał bezpieczne linki utworzone przez <code>founderTicketLink</code>, lecz do</li>
+</ol>
+<p>LLM wysyłał tylko tekstowe streszczenie pozbawione tych URL-i.</p>
+<p>Obecna ścieżka:</p>
+<pre><code class="language-text">prywatna rozmowa
+  → authenticated outbound relay
+      → bieżąca wiadomość + maks. 8 wcześniejszych turnów z tego samego wątku
+          → LLM: NL + historia → read-only DOQL
+              → founder_work_status → aktualny Planfile
+                  → founderTicketLink (kanoniczny generator URL)
+                      → deterministyczny renderer wszystkich akcji Foundera</code></pre>
+<p>Historia jest ograniczona do ról <code>user</code>/<code>assistant</code>, maksymalnie 8 wpisów po 2000 znaków. Służy wyłącznie do rozwiązania odwołań językowych. Nie jest zatwierdzonym faktem o stanie organizacji i nie może przyznać uprawnień.</p>
+<p>Dla próśb o bezpośrednie linki Control wymusza read model <code>founder_work_status</code>, jeżeli propozycja LLM go pominęła. LLM nadal wykonuje konwersję NL → DOQL i otrzymuje aktualne fakty, ale końcowe adresy są renderowane deterministycznie z danych Planfile. Model nie może wymyślić URL-a ani usunąć istniejących linków odpowiedzią „nie mogę ich podać”.</p>
+<p>Test regresyjny odtwarza dokładnie sekwencję:</p>
+<pre><code class="language-text">Founder: które tickety mam obsłużyć?
+Subactor: PLF-617 i PLF-618 wymagają Foundera.
+Founder: podaj url, abym mógł od razu wyklikać</code></pre>
+<p>W teście model celowo błędnie zwraca <code>intent=conversation</code>, a generator odpowiedzi celowo zwraca „Nie mogę podać URL-i”. Control koryguje profil do <code>founder_work_status</code> i zwraca oba kanoniczne linki. Potwierdzone także: izolacja rozmów użytkowników, zachowanie maksymalnie ośmiu turnów, brak przecieku historii innego aktora i idempotentne <code>reply → ack</code>.</p>
+<p>Walidacja po zmianie:</p>
+<ul>
+<li>Core: 463 zaliczone, 7 pominiętych, 0 błędów;</li>
+<li>Agents/LLM Gateway: 18 zaliczonych, 0 błędów;</li>
+<li>Contractor Portal: 11 zaliczonych oraz osobny test relay context — zaliczony.</li>
+</ul>
 </main>
 </body>
 </html>

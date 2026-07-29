@@ -2,9 +2,9 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.plans.intent-contract-continuation-2026-07-22",
-  "version": 4,
+  "version": 5,
   "status": "current",
-  "updated": "2026-07-22"
+  "updated": "2026-07-29"
 }
 ---
 
@@ -97,6 +97,9 @@ renderer nie zmienia danych kanonicznych.
 
 ## P2 — integracja z Process Pack i Planfile
 
+Status: **w toku** — kontrakt bindingu istnieje, ale binder, wspólna bramka
+Planfile i dowód odrzucenia false-ready pozostają otwarte.
+
 Rezultat:
 
 - kontrakt `subactor.intent-binding/v1` wiążący immutable rewizje zależności;
@@ -112,6 +115,8 @@ związanego ze starszą wersją intencji.
 
 ## P3 — współautorstwo człowieka i maszyny
 
+Status: **planowane**.
+
 Rezultat:
 
 - formularz pokazuje oryginalne statements, proponowaną normalizację,
@@ -125,6 +130,8 @@ Kryterium zakończenia: audyt pozwala jednoznacznie odpowiedzieć kto co napisa�
 co zaproponował model, co poprawił człowiek i która wersja została wykonana.
 
 ## P4 — ProblemCase i równoległe RepairCandidate
+
+Status: **planowane**.
 
 Rezultat:
 
@@ -141,6 +148,9 @@ scalenia ich jako duplikatów i bez równoległej mutacji produkcji.
 
 ## P5 — doctor → repair → validator
 
+Status: **planowane w ramach tego kontraktu** — istniejące komponenty agentów
+nie zamykają jeszcze kryterium ProblemCase/RepairCandidate i receipt end-to-end.
+
 Rezultat:
 
 - Doctor zapisuje occurrence, dowody i hipotezę, ale nie deklaruje sam przyczyny
@@ -155,6 +165,8 @@ Kryterium zakończenia: kontrolowany test błędu przechodzi pełną pętlę do 
 a ponowienie nie tworzy drugiego efektu zewnętrznego.
 
 ## P6 — migracja i obserwacja
+
+Status: **planowane**.
 
 Rezultat:
 

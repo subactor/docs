@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ADR-008: wspólny lifecycle zasobów control plane — Subactor Docs</title>
+  <style>
+    :root { --bg:#0f1419; --fg:#e7ecf1; --muted:#9aa7b5; --accent:#3d9cf0; --line:#243041; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:"IBM Plex Sans","Segoe UI",sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #1a2a3d, var(--bg));
+      color: var(--fg); line-height:1.6; min-height:100vh; }
+    main { max-width: 52rem; margin:0 auto; padding:3rem 1.5rem 5rem; }
+    a { color: var(--accent); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    h1,h2,h3,h4 { letter-spacing:-0.01em; line-height:1.25; }
+    h1 { font-size:1.9rem; } h2 { font-size:1.4rem; margin-top:2.2rem; }
+    h3 { font-size:1.15rem; margin-top:1.8rem; }
+    code { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.88em;
+      background:#1a2331; border:1px solid var(--line); border-radius:4px; padding:0.1em 0.35em; }
+    pre { background:#0b1017; border:1px solid var(--line); border-radius:8px;
+      padding:1rem; overflow-x:auto; }
+    pre code { background:none; border:none; padding:0; }
+    table { border-collapse:collapse; width:100%; margin:1rem 0; display:block; overflow-x:auto; }
+    th,td { border:1px solid var(--line); padding:0.45rem 0.7rem; text-align:left;
+      font-size:0.92rem; }
+    th { background:#161f2c; }
+    blockquote { border-left:3px solid var(--accent); margin:1rem 0; padding:0.2rem 1rem;
+      color: var(--muted); }
+    hr { border:0; border-top:1px solid var(--line); margin:2rem 0; }
+    .docnav { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:0.8rem;
+      margin-bottom:2rem; color:var(--muted); }
+  </style>
+</head>
+<body>
+<main>
+  <nav class="docnav"><a href="../../index.html">subactor/docs</a></nav>
+<hr />
+<p>{ &quot;schema&quot;: &quot;subactor.doc/v1&quot;, &quot;id&quot;: &quot;docs.architecture.adr.008-resource-lifecycle-control-plane&quot;, &quot;version&quot;: 5, &quot;status&quot;: &quot;current&quot;, &quot;updated&quot;: &quot;2026-07-23&quot; }</p>
+<hr />
+<h1>ADR-008: wspólny lifecycle zasobów control plane</h1>
+<ul>
+<li><strong>Status:</strong> Accepted</li>
+<li><strong>Data:</strong> 2026-07-23</li>
+<li><strong>Kontrakt:</strong> <code>subactor.resource-lifecycle/v2</code></li>
+<li><strong>Implementacja:</strong> <code>orchestrator/src/resource-lifecycle.mjs</code></li>
+<li><strong>JSON Schema:</strong> <code>orchestrator/schemas/resource-lifecycle.schema.v2.json</code></li>
+</ul>
+<h2>Kontekst</h2>
+<p>Tickety, artefakty tekstowe, witryny, rekordy DNS i domeny mają dziś różne źródła prawdy oraz różne walidatory. Jest to poprawne na granicach domen, ale utrudnia Orchestratorowi odpowiedź na wspólne pytania:</p>
+<ul>
+<li>jaki zasób istnieje i jaka jest jego stabilna tożsamość;</li>
+<li>gdzie znajduje się desired state, a gdzie observed state;</li>
+<li>czy dowody potwierdzają stan oczekiwany;</li>
+<li>kto ma obserwować, uzgadniać i reagować;</li>
+<li>czy kolejne przejście lifecycle jest dozwolone.</li>
+</ul>
+<p>Samo skopiowanie wszystkich danych do jednej bazy stworzyłoby konkurencyjne źródła prawdy i ryzyko działania na nieaktualnej projekcji.</p>
+<h2>Decyzja</h2>
+<p>Orchestrator utrzymuje jeden wersjonowany <strong>kontrakt projekcji lifecycle</strong>, a nie jedną fizyczną bazę wszystkich faktów. Każdy obiekt <code>subactor.resource-lifecycle/v2</code> wiąże:</p>
+<ol>
+<li>stabilną tożsamość i kanoniczny URI zasobu;</li>
+<li>URI autorytetu desired state;</li>
+<li>URI autorytetu observed state;</li>
+<li>opcjonalny, ograniczony <code>mutation_uri</code>;</li>
+<li>wymagane checks i evidence;</li>
+<li>odpowiedzialności <code>owner</code>, <code>observer</code>, <code>reconciler</code>, <code>escalation</code>;</li>
+<li>wyliczony stan i jedno następne działanie.</li>
+</ol>
+<p>Stan lifecycle nie jest przyjmowany z odpowiedzi LLM. Jest deterministycznie wyliczany z projekcji desired/observed i receipts walidacji.</p>
+<h3>Autorytety per typ zasobu</h3>
+<table>
+<thead><tr><th>Typ</th><th>Tożsamość</th><th>Desired state</th><th>Observed state</th></tr></thead>
+<tbody>
+<tr><td><code>ticket</code></td><td><code>planfile://tickets/&lt;id&gt;</code></td><td>Planfile envelope i inputs</td><td>Planfile status, historia i receipts</td></tr>
+<tr><td><code>text_artifact</code></td><td><code>artifact://subactor/&lt;path&gt;/r&lt;revision&gt;</code></td><td>plik źródłowy w repozytorium</td><td>validation receipt Artifact Registry</td></tr>
+<tr><td><code>website</code></td><td><code>https://&lt;host&gt;/</code></td><td>Site Resources / release manifest</td><td>publiczny HTTP, TLS i release marker</td></tr>
+<tr><td><code>dns_record</code></td><td><code>dns://&lt;domain&gt;/&lt;type&gt;/&lt;name&gt;</code></td><td>deklaracja DNS w repozytorium</td><td>autorytatywny provider DNS / publiczny resolver</td></tr>
+<tr><td><code>domain</code></td><td><code>domain://&lt;fqdn&gt;</code></td><td>inventory domen i kontrakt publikacji</td><td>registrar, provider DNS, TLS i publiczny endpoint</td></tr>
+<tr><td><code>ephemeral_access</code></td><td><code>access://subactor/&lt;type&gt;/&lt;id&gt;</code></td><td>magazyn wydania dostępu</td><td>stan konsumpcji i termin wygaśnięcia</td></tr>
+</tbody></table>
+<p>Artifact Registry pozostaje deterministyczną projekcją plików tekstowych. Planfile pozostaje źródłem stanu ticketów. Provider DNS pozostaje źródłem obserwacji DNS. Vault pozostaje jedynym źródłem sekretów. Projekcja lifecycle przechowuje wyłącznie odwołania i fingerprinty — nigdy credentiale.</p>
+<h2>Czas życia i czasowe artefakty dostępu</h2>
+<p>Wersja v2 wymaga projekcji <code>temporal</code> dla każdego zasobu. Zasoby trwałe mają <code>mode=permanent</code> i <code>state=permanent</code>. Jednorazowe linki, granty oraz tokeny są typem <code>ephemeral_access</code>, mają <code>mode=expiring</code> i jeden ze stanów <code>active</code>, <code>consumed</code>, <code>expired</code>, <code>revoked</code> albo <code>superseded</code>.</p>
+<p>Obsługiwane podtypy to <code>founder_action</code>, <code>founder_form</code>, <code>founder_delegation</code>, <code>founder_vault</code>, <code>founder_access</code>, <code>apply_grant</code> i <code>api_token</code>. Jest to katalog typów lifecycle, a nie obietnica, że każdy z tych artefaktów ma być używany jako kanał komunikacji. Control tworzy okno przypomnienia tylko dla dostarczonych linków związanych z ticketem Foundera.</p>
+<p>Aktywny artefakt ustawia:</p>
+<pre><code class="language-text">issued_at &lt; now &lt; expires_at
+reminder_not_before = expires_at</code></pre>
+<p>Do wygaśnięcia kontroler nie może wysłać ponownie tej samej prośby. Jeżeli dostawa e-maila nie została potwierdzona, samo wcześniejsze wygenerowanie tokenu nie tworzy okna ciszy i transport może wykonać kontrolowany retry.</p>
+<p>Projekcja nigdy nie zawiera surowego tokenu, jego hasha ani pełnego URL-a z query lub fragmentem. Kanoniczny <code>access://</code> identyfikuje wyłącznie typ i rekord. Sekret pozostaje w swoim magazynie domenowym.</p>
+<h2>Stany i działania</h2>
+<p>Wspólne stany to <code>declared</code>, <code>ready</code>, <code>reconciling</code>, <code>verified</code>, <code>drifted</code>, <code>blocked</code>, <code>failed</code> i <code>retired</code>.</p>
+<table>
+<thead><tr><th>Stan</th><th>Następne działanie</th></tr></thead>
+<tbody>
+<tr><td><code>declared</code>, <code>ready</code>, <code>reconciling</code></td><td><code>observe</code> przez przypisanego obserwatora</td></tr>
+<tr><td><code>drifted</code></td><td><code>reconcile</code> przez właściciela zdolności</td></tr>
+<tr><td><code>blocked</code></td><td><code>notify</code> do wskazanego autorytetu lub człowieka</td></tr>
+<tr><td><code>failed</code></td><td>utworzenie/deduplikacja ticketu u adresata eskalacji</td></tr>
+<tr><td><code>verified</code>, <code>retired</code></td><td><code>none</code></td></tr>
+</tbody></table>
+<p><code>verified</code> wymaga wszystkich obowiązkowych checks w stanie <code>pass</code> oraz co najmniej jednego evidence URI. <code>blocked</code>, <code>failed</code> i <code>drifted</code> wymagają jawnych reason codes. Lista dozwolonych przejść jest częścią wersjonowanego kontraktu.</p>
+<h2>Zakres implementacji v2</h2>
+<p>Orchestrator udostępnia:</p>
+<ul>
+<li>walidator pojedynczego obiektu i przejścia;</li>
+<li>adaptery dla ticketu, artefaktu, WWW, rekordu DNS, domeny i czasowego</li>
+</ul>
+<p>dostępu;</p>
+<ul>
+<li>zbiorczy snapshot z licznikami, wykryciem duplikatów i ograniczoną listą</li>
+</ul>
+<p>następnych działań;</p>
+<ul>
+<li>fail-closed kontrolę credentiali w projekcji;</li>
+<li>routing następnego działania według odpowiedzialności przypisanej do typu.</li>
+<li>observation-only CLI <code>subactor-resource-lifecycle</code>, które przyjmuje ograniczony</li>
+</ul>
+<p>JSON przez stdin i emituje snapshot bez wykonywania mutacji.</p>
+<p>JSON Schema opisuje wire contract. Moduł Orchestratora jest implementacją reguł semantycznych, których sam JSON Schema nie wyraża: derivation stanu, przejścia, fingerprinty i zakaz sekretów.</p>
+<h2>Lifecycle Type Registry v1</h2>
+<p>Sam kontrakt projekcji nie dowodzi, że każdy trwały typ obiektu ma wersjonowanie, walidację i migrację. Źródłem prawdy dla takiego pokrycia jest <code>platform/config/lifecycle-types/registry.v1.json</code>, walidowany przez <code>platform/config/lifecycle-types/schema.v1.json</code> oraz <code>orchestrator/src/lifecycle-type-registry.mjs</code>.</p>
+<p>Każdy wpis deklaruje:</p>
+<ul>
+<li>typ i odpowiedzialnego właściciela;</li>
+<li>autorytety desired i observed state;</li>
+<li>kontrakt lifecycle, adapter oraz walidator przejść;</li>
+<li>bieżącą i obsługiwane wersje;</li>
+<li>walidator oraz schema receiptu;</li>
+<li>strategię i ścieżki migracji;</li>
+<li>retencję, stan adopcji i jawne luki;</li>
+<li>czy typ może zostać dopuszczony do autonomicznej mutacji.</li>
+</ul>
+<p>Rejestr działa fail-closed. Typ <code>partial</code> albo <code>planned</code> pozostaje widoczny w raporcie pokrycia, ale nie może uzyskać autonomicznego admission. Nieznana wersja jest odrzucana. Dla trwałego typu z wieloma obsługiwanymi wersjami musi istnieć wykonywalna ścieżka od każdej starszej wersji do bieżącej.</p>
+<p>Projekcje nie są przepisywane w miejscu. Strategia <code>reproject</code> ponownie odczytuje autorytatywne desired i observed state, buduje aktualny kontrakt, waliduje go i zapisuje receipt. Dane trwałe korzystają z jawnych procesów migracji, compatibility adaptera albo kontrolowanego zastąpienia.</p>
+<p>Każda zaakceptowana migracja musi emitować <code>subactor.lifecycle-migration-receipt/v1</code>, związany z <code>plan_hash</code>, procesem, aktorem, walidacją źródła i celu oraz URI dowodów. Samo pole <code>schema_version</code> lub udany zapis danych nie jest dowodem migracji.</p>
+<h3>Stan pokrycia</h3>
+<p>Typy <code>ticket</code>, <code>text_artifact</code>, <code>website</code>, <code>dns_record</code>, <code>domain</code> i <code>ephemeral_access</code> są <code>enforced</code>. Typy <code>intent</code>, <code>plan</code> i <code>organization_record</code> są <code>partial</code>. Instancje procesów, komunikacja, connectory, repozytoria, release'y i certyfikaty są jawnie skatalogowane jako <code>planned</code>. Kontroler może dzięki temu odróżnić brak obiektu od braku wdrożonego kontraktu lifecycle i nie tworzyć pozornego sukcesu.</p>
+<h2>Konsekwencje</h2>
+<ul>
+<li>Katalog lifecycle daje jeden widok kontrolny i wspólną walidację, ale nie</li>
+</ul>
+<p>zastępuje autorytetów domenowych.</p>
+<ul>
+<li>Mutacja pozostaje osobnym URI Process z AQL, exact plan hash, grantem i EQL.</li>
+</ul>
+<p><code>next_action</code> nie jest sam w sobie uprawnieniem do apply.</p>
+<ul>
+<li>Każdy adapter musi zachować URI dowodu i czas obserwacji; brak obserwacji nie</li>
+</ul>
+<p>może zostać zamieniony na <code>verified</code>.</p>
+<ul>
+<li>Kanał powiadomienia jest wykonywany przez odpowiedzialnego bota/connector.</li>
+</ul>
+<p>Kontrakt wskazuje adresata, lecz nie omija polityki komunikacji ani HITL.</p>
+<h2>Dalsza adopcja</h2>
+<ol>
+<li>Control ma publikować read-only snapshot z bieżących adapterów.</li>
+<li>Ticket reconciler, public status probe i DNS observer mają emitować ten sam</li>
+</ol>
+<p>kontrakt zamiast własnych, częściowo zgodnych statusów.</p>
+<ol>
+<li><code>next_action</code> ma być przekładane na wersjonowany URI Process i receipt, a nie</li>
+</ol>
+<p>bezpośrednią mutację.</p>
+<ol>
+<li>Status publiczny może konsumować bezpieczną projekcję WWW/domen, bez</li>
+</ol>
+<p>wewnętrznych reason codes, ścieżek repozytorium i danych autoryzacyjnych.</p>
+<ol>
+<li>Po migracji należy usunąć duplikujące klasyfikatory stanów w adapterach,</li>
+</ol>
+<p>zachowując walidatory domenowe jako źródła checks.</p>
+<ol>
+<li>Admission nowych typów trwałych ma sprawdzać Lifecycle Type Registry przed</li>
+</ol>
+<p>utworzeniem pierwszej instancji.</p>
+<ol>
+<li>Kolejne adaptery należy wdrażać w kolejności:</li>
+</ol>
+<p><code>organization_record</code>, <code>intent</code>, <code>plan</code>, <code>process_instance</code>, <code>communication</code>, <code>deployment_release</code>, <code>certificate</code>, <code>connector</code>, <code>repository</code>.</p>
+<h2>Dowody akceptacji</h2>
+<p>Testy Orchestratora obejmują wszystkie sześć adapterów, stan <code>verified</code>, drift DNS, błąd HTTP, blokadę ticketu, routing odpowiedzialności, zakaz credentiali, macierz przejść, aktywne i wygasłe tokeny oraz zbiorczy snapshot. Testy Control potwierdzają ponadto, że dostarczony link blokuje przypomnienie do <code>expires_at</code>, a niedostarczony link nie blokuje retry transportu.</p>
+</main>
+</body>
+</html>

@@ -35,6 +35,9 @@
 <body>
 <main>
   <nav class="docnav"><a href="../index.html">subactor/docs</a></nav>
+<hr />
+<p>{ &quot;schema&quot;: &quot;subactor.doc/v1&quot;, &quot;id&quot;: &quot;docs.platform.task.process.runtime&quot;, &quot;version&quot;: 1, &quot;status&quot;: &quot;current&quot;, &quot;updated&quot;: &quot;2026-07-16&quot; }</p>
+<hr />
 <h1>Integracja listy zadań (planfile) i runtime procesów (urirun)</h1>
 <p>Relcom może opcjonalnie oprzeć <strong>listę zadań</strong> o standard ticketów <a href="https://github.com/semcod/planfile"><code>planfile</code></a>, a **uruchamianie i monitorowanie procesów** o runtime URI <a href="https://github.com/if-uri/urirun"><code>urirun</code></a>, zamiast traktować takie operacje jako czyste zdarzenia audytowe.</p>
 <p>Integracja jest <em>best-effort</em> i wyłączona domyślnie. Bez zainstalowanych narzędzi Python cały system działa jak dotychczas — operacje degradują się przezroczyście do wyniku <code>mode: &quot;lab-audit&quot;</code>. Nie wprowadza to twardej zależności.</p>

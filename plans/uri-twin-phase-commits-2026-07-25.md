@@ -2,9 +2,9 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.plans.uri-twin-phase-commits-2026-07-25",
-  "version": 5,
+  "version": 8,
   "status": "current",
-  "updated": "2026-07-25"
+  "updated": "2026-07-29"
 }
 ---
 
@@ -14,6 +14,10 @@
 mutacje i `human_boundary` bez zmian.  
 **ADR:** [012](../architecture/adr/012-uri-twin-observe-layer.md)  
 **Roadmapa:** [uri-twin-plesk-implementation-roadmap](./uri-twin-plesk-implementation-roadmap-2026-07-25.md)
+
+**Status realizacji: complete.** Przegląd 2026-07-29 potwierdził wszystkie
+kryteria faz 0–3 testami connectora, Control i publicznych pakietów twin.
+Audytowalny wynik: [completion receipt](./uri-twin-phase-commits-2026-07-29.receipt.json).
 
 Ship: commit na `main` w danym repo (nie otwieramy PR).
 
@@ -48,12 +52,12 @@ Ship: commit na `main` w danym repo (nie otwieramy PR).
 
 ### Checklista akceptacji
 
-- [ ] `plesk://host/site/query/docroot` w manifeście i w liście handlerów testu
-- [ ] Wynik ma `schema: subactor.twin-fact/v1`, `twin_type: plesk.site.docroot`, `snapshot_hash`, `uri` z `/query/`
-- [ ] Brak danych → `ok` z `fact_quality: estimated|stale` **albo** fail kodem observe — **bez** mutacji, **bez** grantu
-- [ ] Reality-check report zawiera `sources.plesk_docroot_twin` i nie zastępuje `human_boundary`
-- [ ] pytest zielony; control unit test zielony
-- [ ] Commit na `main` w `urirun-connector-plesk` + `core` (+ docs)
+- [x] `plesk://host/site/query/docroot` w manifeście i w liście handlerów testu
+- [x] Wynik ma `schema: subactor.twin-fact/v1`, `twin_type: plesk.site.docroot`, `snapshot_hash`, `uri` z `/query/`
+- [x] Brak danych → `ok` z `fact_quality: estimated|stale` **albo** fail kodem observe — **bez** mutacji, **bez** grantu
+- [x] Reality-check report zawiera `sources.plesk_docroot_twin` i nie zastępuje `human_boundary`
+- [x] pytest zielony; control unit test zielony
+- [x] Commit na `main` w `urirun-connector-plesk` + `core` (+ docs)
 
 ---
 
