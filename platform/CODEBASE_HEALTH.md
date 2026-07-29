@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.platform.codebase.health",
-  "version": 2,
+  "version": 3,
   "status": "current",
   "updated": "2026-07-29"
 }
@@ -70,8 +70,9 @@ Groźniejszy od LOC, bo dotyczy bramki deployu i źródła prawdy uprawnień.
 | `platform/components/autonomy-lab` | **naprawione** — był osobnym, nieaktualnym klonem (`7149555` vs lock `c120264`), `live-observer.mjs` pusty zamiast 279 L; zamieniony na symlink |
 | Lock vs rzeczywistość | `connectors`, `core`, `observability`, `runtime` rozjechane; `dependencies:verify` czerwone |
 | `core`, `runtime` | HEAD **niewypchnięty** — do czasu pusha locka nie wolno przypiąć |
-| `contractor-portal/vendor/contracts/` | zwendorowana kopia repo `contracts/`, już rozjechana (brak 8 katalogów aktorów, m.in. `safety-operator`, `security`, `access`); AQL jest źródłem prawdy dla uprawnień |
-| `projekty/contracts-subactor-com/` | zapomniany fork `contractor-portal/`, starszy o poprawki a11y i `chat_linkify_http_urls`; wewnątrz `app/index.php` = `app/public/index.php` bajt w bajt |
+| `contractor-portal/vendor/contracts/` | **naprawione 2026-07-29** — nie kopia, lecz submoduł montowany read-only do `/contracts` w workerze. Pin stał na `6484a35` (07-18), 23 commity za kanonem; przypięty generator rzucał `human_contract_delegator_actor_mismatch` dla umów delegowanych przez organizację, więc umowy sukcesji nie dawały się wygenerować. Podbity do `a55664e` |
+| Weryfikacja pinów poza `platform/` | **brak** — `contractor-portal` używa submodułu, mimo że `platform` submoduły zakazuje; nic nie sprawdzało tego pinu przez 11 dni |
+| `projekty/*` | **nie forki** — 8 osobnych repo będących źródłem deployu stron publicznych (`platform/config/public-pages.json` → `local_source`). `projekty/contracts-subactor-com/app` to artefakt deployowy `contracts.subactor.com`, a `contractor-portal/` repo rozwojowe. Artefakt jest jednak **starszy** od źródła: brak `chat_linkify_http_urls()` i atrybutów a11y (`role="log"`, `aria-live`, `tabindex`) |
 | `TODO.md` (785 pozycji, prefact) | nieużyteczny jako backlog: mirrory i `vendor/` liczone 2–3×, treść kosmetyczna; realny dług się tam nie pojawia |
 
 ## Cele ewolucji (code2llm)
@@ -97,7 +98,9 @@ Groźniejszy od LOC, bo dotyczy bramki deployu i źródła prawdy uprawnień.
 | Dokończenie `plesk-*` w bridge, dedup `fetchJson` | planned |
 | Modularizacja `app.js` (start: domena delegowania) | planned |
 | Testy charakteryzujące `delegation-coverage`, potem naprawa `**` | planned |
-| Usunięcie `vendor/contracts` i forka `projekty/contracts-subactor-com` | planned |
+| Podbicie pinu submodułu `contractor-portal/vendor/contracts` | **done** (2026-07-29) |
+| Weryfikator pinu dla submodułu portalu (odpowiednik `dependencies:verify`) | planned |
+| Wyrównanie artefaktu `projekty/contracts-subactor-com/app` do źródła | planned |
 
 Testy platformy `test:meta`: 143/143 zielone (2026-07-29).
 
