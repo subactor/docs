@@ -2,9 +2,9 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.platform.codebase.health",
-  "version": 1,
+  "version": 2,
   "status": "current",
-  "updated": "2026-07-17"
+  "updated": "2026-07-29"
 }
 ---
 
@@ -18,12 +18,17 @@
 | Ścieżka | Rola |
 |---------|------|
 | `core/`, `agents/`, `connectors/`, `runtime/`, `contracts/`, … | Kanoniczne repozytoria komponentów (osobne `.git`) |
-| `platform/components/<name>/` | **Submoduły** montowane do assembly deploy (`gitdir: …/modules/components/…`) |
+| `platform/components/<name>/` | **Symlinki** do kanonicznych repo (`../../<name>`); `platform/.gitignore` ignoruje `/components/` |
+| `platform/dependencies.lock.json` | Przypięcie każdego komponentu do commita — **jedyne** źródło wersji dla deployu |
 | `platform/` | Docker Compose, config, skrypty, dokumentacja operacyjna |
 
-**Zasada edycji:** zmiany logiki w kanonicznym komponencie **i** w odpowiadającym submodule `platform/components/*` (workspace trzyma oba drzewa; testy platformy importują z `components/`).
+**Nie ma submodułów.** `verify-dependencies-lock.mjs` aktywnie ich zakazuje (`.gitmodules is forbidden`, gitlinks odrzucane). Assembly to `external-git-checkouts`: `dependencies:sync` odtwarza drzewo z locka, a dla symlinkowanego rodzeństwa tylko asertuje zgodność HEAD.
 
-Skan code2llm widzi obie kopie — metryki CC/duplikacji są **sztucznie podwojone**. Przy triażu ticketów planfile bierz ścieżki bez prefiksu `platform/components/`.
+**Zasada edycji:** komponent edytuje się **raz**, w kanonicznym repo — `platform/components/*` to ten sam i-node. Osobna kopia w `components/` jest defektem (patrz „Dług strukturalny").
+
+**Zasada wersjonowania:** po wypchnięciu komponentu przypnij nową wersję przez `npm run dependencies:pin`. Lock nigdy nie może wskazywać commita spoza `origin/main` — `dependencies:sync` pobiera commit z remote, więc lokalny pin daje workspace nieodtwarzalny dla innych.
+
+Skan code2llm podąża za symlinkami i widzi drzewo komponentu dwa razy — metryki CC/duplikacji są **sztucznie podwojone**. Przy triażu ticketów planfile bierz ścieżki bez prefiksu `platform/components/`.
 
 ## Metryki (indeks 2026-07-17)
 
@@ -40,16 +45,34 @@ Skan code2llm widzi obie kopie — metryki CC/duplikacji są **sztucznie podwojo
 
 ## Hotspoty (kolejność refaktoru)
 
-| Priorytet | Plik | Problem |
-|----------:|------|---------|
-| P0 | `core/.../control/src/server.mjs` | ~1038 L, handler `server` CC≈280, fan-out≈91 |
-| P0 | `connectors/.../bridge/src/server.mjs` | ~1313 L, `execute` CC≈72 |
-| P0 | `core/.../control/public/app.js` | ~2485 L monolit UI |
-| P1 | `core/.../control/src/delegation-manager.mjs` | `delegationDecision` CC≈57, `normalize…` CC≈32 |
-| P1 | `org-core/.../server.mjs` | CC≈46 |
-| P1 | `agents/.../browser-agent/src/server.mjs` | CC≈64 |
-| P2 | `contractor-portal/.../index.php` | ~1124 L |
-| P2 | `project-importer` blueprint / scenario-editor | CC 27–38 |
+Pomiar LOC z 2026-07-29; wartości CC pochodzą z indeksu 2026-07-17 i **nie zostały
+przemierzone** — traktuj je jako historyczne.
+
+| Priorytet | Plik | LOC 07-17 | LOC 07-29 | Problem |
+|----------:|------|----------:|----------:|---------|
+| P0 | `core/.../control/src/server.mjs` | ~954 | **3069** | już nie router (handler ~220 L); shared kernel: 139 stałych env, 82 importy, 117 funkcji, `routeDeps()` = worek 130 kluczy, 6 schedulerów `setInterval`. Jedyny moduł control **bez testu** |
+| P0 | `core/.../control/public/app.js` | ~2485 | **5499** | 335 funkcji top-level, 3 instrukcje import/export — monolit ES bez podziału; cache-busting ręczny (`?v=…`) |
+| P1 | `connectors/.../bridge/src/server.mjs` | ~1313 | **2052** | wydzielenie zatrzymane w połowie: `plesk-*.mjs` istnieją, ale `pleskFetch`/`pleskCreate`/`pleskSiteSync`/`pleskPublishSite` dalej w `server.mjs`; `fetchJson` (165 L) prawdopodobnie duplikuje `runtime/service-client` |
+| P1 | `core/.../control/src/delegation-coverage.mjs` | — | 141 | `actorCoversRequirements` bez **żadnego** testu; znany defekt: wildcard `**` nie liczy się jako pokrycie (SYSTEM_STATE_2026-07-24) |
+| P2 | `contractor-portal/.../index.php` | ~1124 | 1219 | — |
+
+Kierunek jest przeciwny do celu: trzy główne hotspoty urosły 1,6–2,2× w 12 dni,
+mimo że zaplanowany refaktor został wykonany. Rozbicie na moduły działa
+(control: 110 modułów `src/` + 29 `routes/`, 111 plików testowych), ale nie
+nadąża za tempem dokładania funkcji.
+
+## Dług strukturalny
+
+Groźniejszy od LOC, bo dotyczy bramki deployu i źródła prawdy uprawnień.
+
+| Pozycja | Stan 2026-07-29 |
+|---|---|
+| `platform/components/autonomy-lab` | **naprawione** — był osobnym, nieaktualnym klonem (`7149555` vs lock `c120264`), `live-observer.mjs` pusty zamiast 279 L; zamieniony na symlink |
+| Lock vs rzeczywistość | `connectors`, `core`, `observability`, `runtime` rozjechane; `dependencies:verify` czerwone |
+| `core`, `runtime` | HEAD **niewypchnięty** — do czasu pusha locka nie wolno przypiąć |
+| `contractor-portal/vendor/contracts/` | zwendorowana kopia repo `contracts/`, już rozjechana (brak 8 katalogów aktorów, m.in. `safety-operator`, `security`, `access`); AQL jest źródłem prawdy dla uprawnień |
+| `projekty/contracts-subactor-com/` | zapomniany fork `contractor-portal/`, starszy o poprawki a11y i `chat_linkify_http_urls`; wewnątrz `app/index.php` = `app/public/index.php` bajt w bajt |
+| `TODO.md` (785 pozycji, prefact) | nieużyteczny jako backlog: mirrory i `vendor/` liczone 2–3×, treść kosmetyczna; realny dług się tam nie pojawia |
 
 ## Cele ewolucji (code2llm)
 
@@ -58,18 +81,25 @@ Skan code2llm widzi obie kopie — metryki CC/duplikacji są **sztucznie podwojo
 - god-modules: 27 → 0  
 - high-CC (≥15): 226 → ≤113  
 
-## Faza w toku (2026-07-17)
+## Faza w toku (2026-07-29)
 
 | Krok | Status |
 |------|--------|
 | Dokumentacja health + plan | **done** |
-| Split `delegation-manager` → config / coverage / decision | **done** |
-| Extract `access-registry`, `integration-records`, `delegation-summary` z control server | **done** (`server.mjs` ~1038 → ~954 L) |
-| Routing HTTP control server (handlery per domena) | **next** |
-| Split bridge `execute` | planned |
-| Modularizacja `app.js` | planned |
+| Split `delegation-manager` → config / coverage / decision | **done** (1038 → 360 L) |
+| Extract `access-registry`, `integration-records`, `delegation-summary` | **done** |
+| Routing HTTP control server (handlery per domena) | **done** — `src/routes/`, 29 modułów, 5767 L, `dispatch.mjs` |
+| `platform/components/autonomy-lab` → symlink | **done** (2026-07-29) |
+| `dependencies:pin` — odświeżanie locka z guardami | **done** (2026-07-29) |
+| Odświeżenie locka dla 4 rozjechanych komponentów | **blocked** — wymaga pusha `core` i `runtime` |
+| Rozbicie `routeDeps` (130 kluczy) na deps per-domena | **next** |
+| Wydzielenie 6 schedulerów z `server.mjs` do `jobs/` | next |
+| Dokończenie `plesk-*` w bridge, dedup `fetchJson` | planned |
+| Modularizacja `app.js` (start: domena delegowania) | planned |
+| Testy charakteryzujące `delegation-coverage`, potem naprawa `**` | planned |
+| Usunięcie `vendor/contracts` i forka `projekty/contracts-subactor-com` | planned |
 
-Testy: `delegation-manager`, `scenario-editor`, `panel-contract`, `panel-router` — zielone (platform).
+Testy platformy `test:meta`: 143/143 zielone (2026-07-29).
 
 ## Jak odświeżyć indeks
 
