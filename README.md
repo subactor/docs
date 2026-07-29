@@ -2,9 +2,9 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.readme",
-  "version": 4,
+  "version": 5,
   "status": "current",
-  "updated": "2026-07-22"
+  "updated": "2026-07-29"
 }
 ---
 
@@ -73,3 +73,6 @@ Wygenerowane przez `code2llm` w `project/`:
 - `context.md` — narracja dla LLM  
 
 Zasady skanowania i triażu mirrorów: [CODEBASE_HEALTH.md](platform/CODEBASE_HEALTH.md).
+
+Aktualne podsumowanie refaktoryzacji i kolejność kolejnych splitów:
+[plans/refactoring-status-and-roadmap-2026-07-29.md](plans/refactoring-status-and-roadmap-2026-07-29.md).
