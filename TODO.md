@@ -2,14 +2,16 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.todo",
-  "version": 1,
+  "version": 2,
   "status": "current",
-  "updated": "2026-07-19"
+  "updated": "2026-07-30"
 }
 ---
 
 # TODO
 
+- [x] Route Founder natural language through one `require-llm` structured DOQL extractor; fail closed with `llm_interpretation_unavailable` and no semantic fallback.
+- [ ] Compile Founder `operation` proposals into a versioned DSL with canonical-hash acceptance before any execution path becomes reachable.
 - [ ] Correct DNS/TLS for `identity.subactor.com` and `chat.subactor.com`.
 - [ ] Confirm Plesk add-on domain quota through an authoritative panel/API path.
 - [ ] Configure a trusted HTTPS Plesk endpoint; live `auth/query/status` is fail-closed with `plesk_https_required`.

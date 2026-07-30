@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.plans.project-continuation-2026-07-30",
-  "version": 3,
+  "version": 4,
   "status": "current",
   "updated": "2026-07-29"
 }
@@ -98,26 +98,71 @@ Zmiany Founder CLI i część zmian Control nadal znajdują się w brudnych,
 współdzielonych worktree. Są wdrożone do bieżącego środowiska, ale nie stanowią
 jeszcze odseparowanego, audytowalnego wydania.
 
+## Wynik 30 lipca — slice 1: Founder NL w trybie `require-llm`
+
+Pierwszy zakres P0 został wdrożony i zweryfikowany bez otwierania bramek
+mutacji:
+
+- `subactor founder` deklaruje `interpretation_mode=require-llm`;
+- Control zawsze wysyła NL powierzchni `founder_autonomy` do jednego extractora
+  `/conversation/founder/query` i nie poprawia jego semantyki regexami;
+- usunięto lokalne klasyfikatory pytań o ticket, kolejkę, formularze, linki i
+  sesję autonomii;
+- brak LLM albo niepoprawny structured output zwraca HTTP 503,
+  `llm_interpretation_unavailable`, `executed=false` i `query_dsl=null`;
+- profil DOQL jest ponownie walidowany w Control, łącznie z odrzucaniem
+  nieznanych pól na poziomie dokumentu i pojedynczego read modelu;
+- NL sklasyfikowane przez LLM jako `operation` nie uruchamia lease ani innej
+  mutacji. Wykonanie wymaga osobnego, zaakceptowanego DSL i grantu;
+- LLM Gateway zwraca do audytu `response_id` obok modelu, providera i trybu
+  structured output.
+
+Testy po zmianie:
+
+| Zakres | Wynik |
+| --- | ---: |
+| Founder CLI | 11/11 |
+| Control: Founder + formularze + reconciliation | 114/114 |
+| `@subactor/planfile-orchestration` | 33/33 |
+| Runtime | 183/183 |
+
+Po rebuildzie `hr-control` i `llm-gateway` były zdrowe, a hashe krytycznych
+modułów host/kontener były identyczne. Control zakończył sesję z
+`AUTONOMOUS_QUEUE_CONSUMERS_ENABLED=0`, `AUTONOMY_MUTATIONS_ENABLED=0` i
+`PLESK_SYNC_APPLY=0`.
+
+Dwa testy live przeszły przez ten sam extractor i różniły się wyłącznie
+wygenerowanym DOQL:
+
+- `Pokaż stan autonomii` → `organization_status`, odpowiedź query
+  `gen-1785393356-3HjLforqfMtLhRNSU2jZ`;
+- `Pokaż aktywne tickety automatyczne...` → `founder_work_status`, odpowiedź
+  query `gen-1785393388-RhS7h9lwH2Pqbf8cDlJs`; odczyt: 0 gotowych, 2
+  wykonywane, 18 oczekujących i 5 działań Foundera.
+
+Response IDs są dowodem konkretnego wywołania, nie runtime dependency ani
+substytutem receiptu wykonania.
+
 ## Kolejność realizacji na 30 lipca
 
 ### P0. Ustabilizować dzisiejszy baseline
 
 - [ ] Zapisać osobno zakres zmian w `platform` i `core`; rozpoznać autorstwo
   zmian równoległych i nie mieszać ich w jednym commicie.
-- [ ] Usunąć heurystyczną klasyfikację NL w `subactor founder` i Control.
+- [x] Usunąć heurystyczną klasyfikację NL w `subactor founder` i Control.
   Pytania `Pokaż stan autonomii` oraz `Pokaż aktywne tickety automatyczne` mają
   przechodzić przez ten sam LLM structured extractor, a różnić się wyłącznie
   wygenerowanym dokumentem DSL.
-- [ ] Ustawić dla NL tryb `require-llm`. Timeout, brak konfiguracji lub błędny
+- [x] Ustawić dla NL tryb `require-llm`. Timeout, brak konfiguracji lub błędny
   structured output ma zwracać `llm_interpretation_unavailable`, bez fallbacku
   i bez wykonania domyślnej operacji.
-- [ ] Pozostawić jawne komendy API/CLI do diagnostyki bez LLM, ale nie nazywać
+- [x] Pozostawić jawne komendy API/CLI do diagnostyki bez LLM, ale nie nazywać
   ich interpretacją NL ani decyzją autonomiczną.
-- [ ] Ponownie uruchomić pełne zestawy testów Founder CLI, Control, runtime i
+- [x] Ponownie uruchomić pełne zestawy testów Founder CLI, Control, runtime i
   planfile orchestration z aktualnego worktree.
-- [ ] Przebudować wyłącznie wymagane usługi i porównać hash krytycznych modułów
+- [x] Przebudować wyłącznie wymagane usługi i porównać hash krytycznych modułów
   host/kontener.
-- [ ] Po testach przywrócić i potwierdzić tryb bezpieczny:
+- [x] Po testach przywrócić i potwierdzić tryb bezpieczny:
   `AUTONOMOUS_QUEUE_CONSUMERS_ENABLED=0`, `AUTONOMY_MUTATIONS_ENABLED=0` oraz
   `PLESK_SYNC_APPLY=0`.
 - [ ] Przygotować małe, tematyczne commity. Nie wykonywać zbiorczego commita
