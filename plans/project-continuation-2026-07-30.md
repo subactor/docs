@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.plans.project-continuation-2026-07-30",
-  "version": 4,
+  "version": 5,
   "status": "current",
   "updated": "2026-07-29"
 }
@@ -143,6 +143,18 @@ wygenerowanym DOQL:
 Response IDs są dowodem konkretnego wywołania, nie runtime dependency ani
 substytutem receiptu wykonania.
 
+Zakres rozdzielono na małe commity repozytoriów:
+
+| Repo | Commit | Zakres |
+| --- | --- | --- |
+| `docs` | `ccc589a` | zachowanie handoffu v3 |
+| `docs` | `cd32d05` | wynik P0 v4 i aktualizacja TODO |
+| `core` | `421f8aa` | `require-llm`, strict DOQL i brak NL → lease |
+| `platform` | `36045d3` | powierzchnia Founder CLI |
+| `agents` | `7d71a7a` | provenance `response_id` z LLM Gateway |
+
+Nie wykonano zbiorczego commita pozostałych zmian we współdzielonych worktree.
+
 ## Kolejność realizacji na 30 lipca
 
 ### P0. Ustabilizować dzisiejszy baseline
@@ -165,7 +177,7 @@ substytutem receiptu wykonania.
 - [x] Po testach przywrócić i potwierdzić tryb bezpieczny:
   `AUTONOMOUS_QUEUE_CONSUMERS_ENABLED=0`, `AUTONOMY_MUTATIONS_ENABLED=0` oraz
   `PLESK_SYNC_APPLY=0`.
-- [ ] Przygotować małe, tematyczne commity. Nie wykonywać zbiorczego commita
+- [x] Przygotować małe, tematyczne commity. Nie wykonywać zbiorczego commita
   całego współdzielonego worktree.
 
 Warunek ukończenia: bieżąca funkcja zarządzania przez NL jest odtwarzalna po
