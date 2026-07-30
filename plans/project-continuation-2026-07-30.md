@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.plans.project-continuation-2026-07-30",
-  "version": 8,
+  "version": 9,
   "status": "current",
   "updated": "2026-07-30"
 }
@@ -261,9 +261,15 @@ polityki.
 - [x] Dry-run publikacji: `plan_hash=22d7b76de7cb32d8ee790080c639c59d5a22a13f0044bed7ba361eee7349cd87`, 6 plików / 6002 B.
 - [x] Apply po signed `apply_grant` + `SUBACTOR_PLAN_HASH`: `executed=true`, `files_uploaded=6`.
 - [x] Niezależny read-back HTTPS: `/`, `/founder/`, `/founder/action/` = 200 i sha256 = lokalne źródło.
-- [ ] Jeśli wymagany jest **publiczny** Control (bez loopback na maszynie Foundera):
-  osobna decyzja architektury (osiągalny HTTPS upstream + auth boundary) —
-  poza obecnym `static_loopback_bridge`.
+- [x] Przygotowany **publiczny** Control origin (Caddy Basic Auth → hr-control):
+  - lokalnie: `http://127.0.0.1:18081/founder` → **401** bez auth, **200** z Basic Auth;
+  - `/founder/action` → **200** bez Basic Auth;
+  - compose: `docker-compose.ingress.yml` + `docker-compose.cloudflare-tunnel.yml`;
+  - hasło: `platform/.secrets/founder-ingress-basic-auth-password.txt`;
+  - ticket na token tunelu: **PLF-2212**.
+- [ ] Publiczny cutover `founder.subactor.com`: zapisać Cloudflare Tunnel token
+  (`platform/.secrets/cloudflare-tunnel-token` lub sejf `managed-outbound-tunnel`),
+  `up -d cloudflared`, potem DNS/CF hostname i weryfikacja 401/200 na publicznym HTTPS.
 
 Warunek ukończenia: projekt jest `converged`, a status wynika z HTTP, auth,
 treści i route read-backu, nie tylko z udanego wywołania Plesk.
