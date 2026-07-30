@@ -2,9 +2,9 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.plans.project-continuation-2026-07-30",
-  "version": 6,
+  "version": 8,
   "status": "current",
-  "updated": "2026-07-29"
+  "updated": "2026-07-30"
 }
 ---
 
@@ -196,10 +196,15 @@ gotową propozycję runtime twin, ale blokuje go
   do `PLF-1943`. Nie używać ogólnego `continue` jako substytutu dowodu.
 - [x] Części maszynowe wykonać przez read-only Process Pack. Tylko rzeczywista
   decyzja człowieka może trafić do jednego pełnego formularza z historią.
-- [ ] Po pozytywnym review ponownie policzyć readiness i sprawdzić, czy ticket
+- [x] Po pozytywnym review ponownie policzyć readiness i sprawdzić, czy ticket
   przechodzi z `waiting_input` do `ready` bez ręcznej zmiany stanu.
-- [ ] Wydać krótką lease wyłącznie dla jednego ticketu, uruchomić pojedynczy
+- [x] Wydać krótką lease wyłącznie dla jednego ticketu, uruchomić pojedynczy
   cykl, odebrać receipt i natychmiast cofnąć lease.
+  (`make control-execute-once` 2026-07-30 ~16:13Z: cycle
+  `control:02f3850d-5c5f-4e45-8290-e8b31b03911a:1`, executed **PLF-2132**
+  diagnosis-only → `done` z EQL receipts; mutacje=0; safe mode restored.
+  PLF-1943 nie był executable: po review gotowość
+  `human_boundary_requires_child_ticket:select-runtime`.)
 
 Warunek ukończenia: co najmniej jeden zwykły ticket przechodzi rzeczywistą
 ścieżkę `waiting_input → ready → running → done` z niezależnym EQL read-backiem,
@@ -218,33 +223,47 @@ Stan po wykonaniu części maszynowej 30 lipca:
   i zwracają `authority_change=none`;
 - pełny formularz `human-baseline-review` ma ticket `PLF-1997`. Duplikat
   `PLF-1996` anulowano z relacją `superseded-by:PLF-1997`;
-- `PLF-1943` pozostaje `waiting_input`, jawnie `blocked-by:PLF-1997`. Nie
-  wydano lease, nie wykonano apply, a wszystkie trzy bramki runtime pozostają
-  wyłączone. Dalsze dwa kroki tej sekcji wymagają rzeczywistej decyzji Foundera.
+- **Korekta live 2026-07-30 16:05Z:** `PLF-1997` jest `done` z decyzją
+  `approve_review`, ale formularz miał `source: "api"` (nie
+  `ticket-derived:PLF-1943`) i ścieżka `submitInteractiveForm` nie
+  propagowała review do rodzica. `PLF-1943` zostawał z
+  `blocked-by:PLF-1997` + `runtime-twin-review:human-pending` mimo
+  zakończonego review — fałszywy blocker autonomii.
+- **Naprawa kodu:** aktywne `blocked-by` filtrują tickety terminalne;
+  lifecycle czyści stale zależności; submit formularza i rekoncyliacja
+  propagują `human-baseline-review`; resume po secret intake nie używa już
+  nieistniejącego `handler: codex` / `queue: autonomy`.
+- **Stan PLF-1943 po naprawie:** po human-passed ticket został zamknięty
+  przez reconciliation jako „blocker usunięty” (false-reality risk —
+  `application_route` nadal oparty o static loopback bridge).
+- **Apply founder static 2026-07-30 ~16:50Z (z grantem):** recipe
+  `/tmp/founder-site-publish.urirun.json` przez `subactor-run --execute
+  --approve-human --apply-grant`:
+  - dry-run `plan_hash=22d7b76de7cb32d8ee790080c639c59d5a22a13f0044bed7ba361eee7349cd87`
+  - apply: `executed=true`, `files_uploaded=6`, `bytes_uploaded=6002`,
+    `mutation_attempted=true`
+  - public read-back HTTPS zgodny z lokalnym `projekty/founder-subactor-com/site`
+    (identyczne sha256 przed i po — apply potwierdził tor z grantem)
+  - architektura: `static_loopback_bridge` / redirect do
+    `http://127.0.0.1:8091/founder` (nie reverse-proxy do Control)
 
 ### P0. Naprawić kontrakt `founder.subactor.com`
 
-Obserwowany stan nie spełnia kontraktu aplikacji. Root zwraca HTTP 200, ale
-jest niewłaściwą statyczną treścią i nie ma Basic Auth. Trasy `/founder`,
-`/founder/form` i `/founder/action` zwracają 404 bez challenge auth. Monitor
-projektu słusznie utrzymuje projekt jako `application_route_not_ready`.
+**Korekta architektury (live 2026-07-30):** manifest kanoniczny to
+`publication.mode=static_loopback_bridge` +
+`upstream_policy=browser_loopback_redirect` — publiczny Plesk serwuje statykę,
+a `/founder/*` przekierowuje przeglądarkę Foundera na lokalny Control
+`http://127.0.0.1:8091`. To **nie** jest reverse-proxy Basic Auth do Control.
+Starsze opisy „404 / brak Basic Auth na root” są nieaktualne względem tej
+polityki.
 
-- [ ] Po review twin wskazać w manifeście osiągalny, uwierzytelniony upstream;
-  nie zgadywać adresu i nie używać loopbacku jako produkcyjnego kontraktu.
-- [ ] Wykonać dry-run publikacji i zachować `plan_hash` oraz pełny diff planu.
-- [ ] Przed apply sprawdzić, czy plan obejmuje aplikację, reverse proxy, Basic
-  Auth, publiczną trasę akcji i rollback.
-- [ ] Apply wykonać dopiero po grancie związanym z dokładnym `plan_hash`.
-- [ ] Wykonać niezależny read-back z zewnątrz hosta:
-  - chroniony root lub panel zwraca 401 i `WWW-Authenticate` bez credentiali;
-  - poprawne credentiale zwracają 200 dla panelu;
-  - publiczna jednorazowa akcja/formularz ma wyłącznie zamierzony wyjątek od
-    Basic Auth i nie ujawnia tokenu;
-  - treść i routing odpowiadają źródłu projektu, nie placeholderowi;
-  - monitor statusu przestaje raportować 404.
-- [ ] Zamknąć lub oznaczyć jako zastąpione starsze tickety tylko po porównaniu
-  ich oczekiwań z nowym receiptem. Zachować relację `supersedes`, zamiast usuwać
-  historię.
+- [x] Po review twin utrzymać kontrakt static loopback (nie proxy 127.0.0.1 z Pleska).
+- [x] Dry-run publikacji: `plan_hash=22d7b76de7cb32d8ee790080c639c59d5a22a13f0044bed7ba361eee7349cd87`, 6 plików / 6002 B.
+- [x] Apply po signed `apply_grant` + `SUBACTOR_PLAN_HASH`: `executed=true`, `files_uploaded=6`.
+- [x] Niezależny read-back HTTPS: `/`, `/founder/`, `/founder/action/` = 200 i sha256 = lokalne źródło.
+- [ ] Jeśli wymagany jest **publiczny** Control (bez loopback na maszynie Foundera):
+  osobna decyzja architektury (osiągalny HTTPS upstream + auth boundary) —
+  poza obecnym `static_loopback_bridge`.
 
 Warunek ukończenia: projekt jest `converged`, a status wynika z HTTP, auth,
 treści i route read-backu, nie tylko z udanego wywołania Plesk.

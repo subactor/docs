@@ -2,30 +2,35 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.architecture.autonomy-architecture-blockers",
-  "version": 2,
+  "version": 4,
   "status": "current",
-  "updated": "2026-07-25"
+  "updated": "2026-07-30"
 }
 ---
 
 # Błędy architektury, które utrudniają autonomię
 
-**Status:** inventarz wewnętrzny v2 (2026-07-25)  
-**SSOT:** [`knowledge://subactor/architecture.autonomy-architecture-blockers/v2`](../../platform/config/knowledge/entries/architecture.autonomy-architecture-blockers.v2.md)  
+**Status:** inventarz wewnętrzny v3 (2026-07-30)
+
+**SSOT:** [`knowledge://subactor/architecture.autonomy-architecture-blockers/v3`](../../platform/config/knowledge/entries/architecture.autonomy-architecture-blockers.v3.md)
 **Definicja autonomii:** [`knowledge://subactor/architecture.autonomy-definition/v1`](../../platform/config/knowledge/entries/architecture.autonomy-definition.v1.md)
 
 Autonomię hamuje nie „brak LLM”, lecz architektura, w której system nie domyka
 obserwacja → decyzja w POLICY → wykonanie → verify — albo budzi Foundera na
 fałszywym obrazie rzeczywistości.
 
+**Live 2026-07-30:** 15/15 healthy, `autonomy_ready=false`, consumers/mutations
+off (celowe). Naprawiono: stale `blocked-by` po done form, brak propagacji
+`human-baseline-review`, false connection `handler:codex`.
+
 ## Klastry (priorytet)
 
 | Klaster | Przykłady | Dotkliwość | Stan |
 | --- | --- | --- | --- |
 | **A. Prawda świata** | Plesk vs Pages; TLS bez DNS; false-reality PLF-884; równoległe remediacje; stale tunnel envelope | wysoka | otwarte / częściowo |
-| **B. Kolejka / HITL** | bounce ready→waiting_input; ops human_boundary; duplikaty producenta; 50 waiting_input; exact_route→Founder | wysoka | otwarte / częściowo |
-| **C. SSOT wykonania** | dual-run + Planfile; CLI `done` bez receiptów; Planfile timeout; stale step-catalog | wysoka–średnia | częściowo (PR10) |
-| **D. Analyze/Repair** | diagnose≠repair pack; DOQL stub; planner bez tras; KPI notify≠execute | wysoka–średnia | otwarte |
+| **B. Kolejka / HITL** | bounce ready→waiting_input; ops human_boundary; duplikaty producenta; 22 waiting_input; exact_route→Founder; ~~stale blocked-by after done form~~ | wysoka | częściowo (v3) |
+| **C. SSOT wykonania** | dual-run + Planfile; CLI `done` bez receiptów; Planfile timeout; stale step-catalog; ~~codex/autonomy false resume~~ | wysoka–średnia | częściowo (PR10 + v3) |
+| **D. Analyze/Repair** | diagnose≠repair pack; DOQL stub; planner bez tras; KPI notify≠execute; brak coding-agent consumer | wysoka–średnia | otwarte |
 | **E. Governance/kanały** | mutations=0 (celowe); child grant; `.env` SSOT; Founder 404; e-mail loop | średnia | celowe / otwarte |
 
 ## Co naprawiać najpierw
