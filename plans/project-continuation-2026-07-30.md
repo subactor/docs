@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.plans.project-continuation-2026-07-30",
-  "version": 5,
+  "version": 6,
   "status": "current",
   "updated": "2026-07-29"
 }
@@ -189,12 +189,12 @@ Pierwszym kandydatem jest `PLF-1943` dla `founder.subactor.com`. Ticket ma
 gotową propozycję runtime twin, ale blokuje go
 `runtime_twin_review_required:plesk-3953c8b62b726813b948`.
 
-- [ ] Zmaterializować wymagane etapy review jako jawne subtickety albo exact URI:
+- [x] Zmaterializować wymagane etapy review jako jawne subtickety albo exact URI:
   `human-baseline-review`, `connector-manifest-route-conformance` i
   `signed-baseline-attestation`.
-- [ ] Każdemu review przypisać wykonawcę, input, spodziewany receipt i relację
+- [x] Każdemu review przypisać wykonawcę, input, spodziewany receipt i relację
   do `PLF-1943`. Nie używać ogólnego `continue` jako substytutu dowodu.
-- [ ] Części maszynowe wykonać przez read-only Process Pack. Tylko rzeczywista
+- [x] Części maszynowe wykonać przez read-only Process Pack. Tylko rzeczywista
   decyzja człowieka może trafić do jednego pełnego formularza z historią.
 - [ ] Po pozytywnym review ponownie policzyć readiness i sprawdzić, czy ticket
   przechodzi z `waiting_input` do `ready` bez ręcznej zmiany stanu.
@@ -204,6 +204,23 @@ gotową propozycję runtime twin, ale blokuje go
 Warunek ukończenia: co najmniej jeden zwykły ticket przechodzi rzeczywistą
 ścieżkę `waiting_input → ready → running → done` z niezależnym EQL read-backiem,
 bez ręcznego oznaczenia sukcesu i bez rozszerzenia authority.
+
+Stan po wykonaniu części maszynowej 30 lipca:
+
+- `runtime.twin.machine-review` v3 używa wyłącznie natywnych query
+  `twin://plesk/map/query/conformance` i
+  `twin://plesk/map/query/attestation`; symboliczny wariant `proc://` został
+  zastąpiony i jego ticket `PLF-1995` anulowano relacją `superseded-by`;
+- `PLF-2005` przeszedł `ready → running → done`; dokładne receipts znajdują się
+  w `PLF-2006` i `PLF-2007`. Oba są związane z proposal ID
+  `plesk-3953c8b62b726813b948`, digestem
+  `sha256:c15ebc5af3acbe865d99f68bd021fc16d8328f3ddddcdcf20526c85b4dd8c5dc`
+  i zwracają `authority_change=none`;
+- pełny formularz `human-baseline-review` ma ticket `PLF-1997`. Duplikat
+  `PLF-1996` anulowano z relacją `superseded-by:PLF-1997`;
+- `PLF-1943` pozostaje `waiting_input`, jawnie `blocked-by:PLF-1997`. Nie
+  wydano lease, nie wykonano apply, a wszystkie trzy bramki runtime pozostają
+  wyłączone. Dalsze dwa kroki tej sekcji wymagają rzeczywistej decyzji Foundera.
 
 ### P0. Naprawić kontrakt `founder.subactor.com`
 
