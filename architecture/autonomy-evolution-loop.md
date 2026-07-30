@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.architecture.autonomy-evolution-loop",
-  "version": 4,
+  "version": 5,
   "status": "current",
   "updated": "2026-07-23"
 }
@@ -97,6 +97,102 @@ Każdy eksperyment ma:
 - automatyczny stop;
 - preimage i rollback;
 - termin przeglądu wiedzy.
+
+## Audyt live 2026-07-30
+
+System ma prawie wszystkie elementy pętli, ale nie ma jeszcze jednego kontraktu,
+który łączy wynik diagnostyki z wykonawcą napraw. Dlatego człowiek nadal wykonuje
+pracę integratora: rozpoznaje finding, wybiera repozytorium, formułuje zmianę,
+uruchamia test rzeczywisty i ocenia, czy wynik można promować.
+
+| Warstwa | Co działa | Gdzie pętla się urywa |
+|---|---|---|
+| Monitor | Control, kontrolery, receipts, live probes i timer `autonom` | `autonom` zapisuje lokalne propozycje z `acts:false`; błąd timera nie staje się automatycznie ProblemCase |
+| Analyze | DOQL/DQL i `/api/autonomy/control` rozróżniają human boundary, intentional gate, lifecycle stall i structural gap | klasyfikacja nie zawiera jeszcze wykonywalnego kontraktu naprawy |
+| Plan | katalog remediacji, Strategy DSL, dry-run i plan hash | planner jest symulacyjny, a `autonomy.repair.canary-pilot` pozostaje w `shadow` |
+| Execute | URI Process, kolejki botów oraz hostowy `coding-agent` | stare tickety `developer_implementation_required` nie są kompilowane do `subactor.coding-agent-task/v1` |
+| Verify | AQL/OQL/URI/EQL, testy repozytorium i receipts | wykonawca kodu wystawia własne EQL; brakuje niezależnego runtime exercise i walidatora promocji |
+| Learn | Knowledge jest append-only, artefakty mają hash i wersję | wynik naprawy nie aktualizuje automatycznie twina, katalogu strategii i poziomu capability |
+
+Live Control raportował sześć luk strukturalnych: trzy źródłowe tickety
+`PLF-682/683/684` i trzy tickety implementacyjne `PLF-1103/1171/1172`.
+Wszystkie wskazują dokładne URI blueprintów, których connector runtime nie
+serwuje. System zna więc problem i zamierzonego wykonawcę, ale nie potrafi
+przekształcić starszego manifestu remediacji w kontrakt przyjmowany przez
+hostowego konsumenta.
+
+Sam konsument jest operacyjny. Timer `subactor-coding-agent.timer` odpytuje
+Planfile co minutę, a `PLF-2186` przeszedł pełną ścieżkę: zwalidowany Process
+Envelope, izolowany worktree z `origin/main`, `codex exec` w sandboxie, testy
+repozytorium oraz completion receipt. To dowodzi, że brakującą warstwą nie jest
+„uruchom LLM”, lecz deterministyczny **compiler diagnoza -> zadanie naprawcze**.
+
+Audyt wykrył też dryf w samym obserwatorze. Sonda postawy była przypięta do
+historycznego `PLF-2051`, mimo że aktywną, zweryfikowaną decyzją było
+`PLF-2295 = production_apply`. Po zmianie sonda wybiera najnowszy ticket z
+etykietą `autonomy-decision:v1`, zgodnie z twinem Control. Cykl zmienił wynik
+z trzech naruszeń na jedno rzeczywiste naruszenie pinów komponentów.
+
+## Docelowy compiler ewolucji
+
+```text
+Finding + snapshot hash
+  -> deduplikowany ProblemCase
+  -> klasyfikacja: known repair | code change | twin | connector | process pack
+  -> Improvement Candidate + capability snapshot hash
+  -> todo2code Intent Evidence / code-change plan
+  -> Process Envelope AQL + OQL + exact URI + EQL
+  -> izolacja -> dry-run -> canary -> runtime exercise
+  -> niezależny Validator
+  -> promote albo rollback
+  -> nowa wersja Knowledge, twina i katalogu strategii
+```
+
+`todo2code` pasuje do etapów ugruntowania i planowania. Łączy task, Git, AST,
+TODO i dokumentację w graf dowodów, wykrywa Intent vs Reality oraz tworzy
+hash-bound code-change plan. Nie powinien przejmować AQL, uruchamiać efektów ani
+sam promować zmiany. Jego wynik jest wejściem do Process Envelope, a nie zgodą.
+
+### Typy kandydatów
+
+1. **Known repair** — istniejący, podpisany Process Pack; bez LLM, jeśli
+   fingerprint i preconditions pasują dokładnie.
+2. **Code change** — plan `todo2code`, allowlista repozytoriów, izolowany
+   worktree, testy kodu i obowiązkowy runtime exercise.
+3. **Digital Twin** — discovery tworzy tylko kandydata; conformance, shadow,
+   canary i podpis promocji tworzą nową wersję twina.
+4. **Connector** — kontrakt tras, scaffold, testy, build obrazu, doctor,
+   izolowany registry, canary, signed release i rollback do last-known-good.
+5. **Process Pack** — luka procesu staje się kandydatem DSL; schema i artifact
+   registry, symulacja, canary, niezależny EQL i dopiero aktywacja.
+
+Automatyczna ścieżka nie może zwiększać własnej authority. Nowa trasa, twin lub
+pack zaczyna co najwyżej na poziomie `observe` albo `simulate`. Przejście do
+`bounded_execute` jest dozwolone tylko w istniejącym profilu ryzyka Foundera;
+nowy scope, sekret, nieodwracalny efekt lub zmiana Constitution wymaga osobnej
+decyzji człowieka związanej z dokładnym hashem kandydata.
+
+## Priorytet wdrożenia
+
+1. Emitować wyniki `autonom` jako typowane, deduplikowane ProblemCase w
+   Planfile; dodać `OnFailure`/outbox, aby czerwony timer nie kończył się tylko
+   statusem systemd.
+2. Dodać compiler `developer_implementation_required ->
+   subactor.coding-agent-task/v1`. Musi wybrać repozytorium z katalogu, zbudować
+   ugruntowany prompt i zachować jawne flagi commit/push; nie może wykonywać
+   dowolnego tekstu z historycznego ticketu.
+3. Oddzielić wykonawcę od walidatora. Zielone testy kodu nie wystarczają:
+   validator uruchamia nowy connector/twin/pack, wykonuje doctor i jeden
+   prawdziwy proces bez skutku albo na canary oraz sprawdza EQL.
+4. Dostarczyć trzy lifecycle packi: `twin.develop-promote`,
+   `connector.develop-release` i `process-pack.develop-promote`, każdy z
+   last-known-good oraz rollbackiem.
+5. Po serii zielonych canary promować `autonomy.repair.canary-pilot` z `shadow`
+   do `bounded_execute` wyłącznie dla fingerprintów i budżetów objętych decyzją
+   Foundera.
+6. Po każdej promocji zapisać nową, append-only wersję Knowledge oraz zmierzyć:
+   czas do zweryfikowanej naprawy, odsetek napraw automatycznych, rollback rate,
+   wiek twina, liczbę luk strukturalnych i uwagę człowieka na poprawny rezultat.
 
 ## Pierwszy backlog
 
