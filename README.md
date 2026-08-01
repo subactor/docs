@@ -2,9 +2,9 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.readme",
-  "version": 5,
+  "version": 6,
   "status": "current",
-  "updated": "2026-07-29"
+  "updated": "2026-07-30"
 }
 ---
 
@@ -34,6 +34,10 @@ blokery opisuje przegląd operacyjny powyżej.
 
 | Dokument | Opis |
 |----------|------|
+| [architecture/system-overview.md](architecture/system-overview.md) | **Start tutaj:** całościowy opis systemu, MAPE-K, kolejność docs, API kontroli autonomii |
+| [architecture/autonomy-execution-pipeline.md](architecture/autonomy-execution-pipeline.md) | Tor mutacji NL → DSL → Task → URI → Twin → dry-run → plan_hash → apply → EQL |
+| [architecture/autonomy-loop-and-twin.md](architecture/autonomy-loop-and-twin.md) | Live pętla i gdzie się rwie (research / capability surface) |
+| [architecture/autonomy-posture-authority.md](architecture/autonomy-posture-authority.md) | Decyzja Foundera vs bramki env (`/api/autonomy/posture`) |
 | [architecture/intent-contract-and-human-machine-source-of-truth-2026-07-22.md](architecture/intent-contract-and-human-machine-source-of-truth-2026-07-22.md) | Decyzja: wspólna intencja człowieka i maszyny jako wersjonowany Intent Contract nad istniejącymi DSL |
 | [plans/intent-contract-continuation-2026-07-22.md](plans/intent-contract-continuation-2026-07-22.md) | Plan wdrożenia Intent Contract, source-level lifecycle, równoległych napraw i pętli Doctor/Repair/Validator |
 | [architecture/versioned-knowledge-strategy-and-error-runtime-2026-07-22.md](architecture/versioned-knowledge-strategy-and-error-runtime-2026-07-22.md) | Wersjonowana baza wiedzy i registry tekstów, Strategy DSL, Plesk/Cloudflare DNS oraz rzeczywisty stan pętli reakcji ERROR |

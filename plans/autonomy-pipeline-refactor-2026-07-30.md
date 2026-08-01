@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.plans.autonomy-pipeline-refactor-2026-07-30",
-  "version": 1,
+  "version": 2,
   "status": "current",
   "updated": "2026-07-30"
 }
@@ -47,18 +47,23 @@ oraz domknąć testami to, co wcześniej dawało `bridge_422` (złe nazwy pól).
 - [x] replace: `site_id` + `host` + record; authority: `zone`
 - [x] subscription observe: tylko `subscription`
 - [x] testy zielone w `core/services/control` dla nowych i dotkniętych plików
-- [ ] (opcjonalnie live) dry-run DNS replace `changed=false` read-only — bez apply
+- [x] live dry-run DNS replace `changed=false` (2026-07-30, plan_hash
+  `20c7129d…528240`) — bez apply
 
-## Slice P1 (następne)
+## Slice P1 (w toku / domknięte częściowo 2026-07-30)
 
-1. Wpiąć `researchPayload` / `researchBlocker` **przed** create remediation ticket
-   (fail-closed przy unknown params; nie eskaluj 422, które da się przewidzieć).
-2. Strategy catalog: usunąć `domain` z inputów subscription steps u źródła
-   (dziś sanitizacja w `project-remediation` po `buildCapabilityPlan`).
+1. [x] `researchRemediationProcesses` + `assertRemediationPayloadsAcceptable`
+   **przed** create remediation ticket (fail-closed na `payload_invalid`).
+   Wykryto i naprawiono live bug: `auth/query/status` z `vault_entry_id`
+   → `runtime_vault_entry_id`.
+2. [x] Strategy catalog v5: usunięte `domain` z inputów subscription steps.
 3. Snapshot refresh job: automatyczny zrzut bindings z zainstalowanego connectora.
 4. Coverage KPI: tickety DNS bez `dns/query/authority` w planie = `legacy_path`.
-5. Smoke script read-only: doctor + authority(zone) + records(site_id) +
-   subscription(snapshot) + DNS replace dry-run.
+5. [x] Live smoke read-only (urirun-node, PLF-2257…2263):
+   doctor ready; authority zone=`subactor.com` provider=cloudflare consistent;
+   subscription twin_fact fresh; records site_id=185 A→217.160.250.222;
+   replace dry-run `changed=false`; subdomain-ensure `existed=true`;
+   propagation consensus=true.
 
 ## Slice P2
 

@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.plans.founder-plesk-native-public-control-2026-07-30",
-  "version": 2,
+  "version": 3,
   "status": "current",
   "updated": "2026-07-30"
 }
@@ -86,14 +86,18 @@ Plesk-native warianty (z twin, bez Zero Trust jako domyślności):
 - [ ] DNS dry-run replace (expect `changed=false`) jako stały smoke w control
 - [ ] Reality-check: nie oznaczać `converged` jako „Control panel ready”
 
-### P1 — Publiczny panel (tylko jeśli Founder wymaga B)
+### P1 — Publiczny panel / origin Control (tor 4) — w toku
 
-1. Twin: wybrać capability `plesk.application.runtime` / reverse-proxy z
-   `required_capabilities` (root SSH CLI).
-2. Wystawić **publiczny** origin HTTPS z 401 (nie loopback).
-3. `plesk://host/site/command/reverse-proxy-ensure` dry-run → plan_hash.
-4. Apply dopiero z grantem + `PLESK_REVERSE_PROXY_APPLY=1`.
-5. EQL: unauth 401, auth 200, action 200, TLS SAN.
+Szczegóły: [founder-public-control-origin-2026-07-30.md](./founder-public-control-origin-2026-07-30.md)
+
+1. [x] Ingress Caddy: `/founder/form*` + `/api/founder/form/*` **bez** Basic Auth
+   (token = credential), reszta panelu z Basic Auth.
+2. [x] Preflight odrzuca statyczną trampolinę (`static_loopback_trampoline`).
+3. [x] Script `platform/scripts/founder-public-control-up.sh` (+ opcjonalny tunnel).
+4. [ ] Wypełnić `platform/.secrets/cloudflare-tunnel-token` (dziś plik pusty).
+5. [ ] DNS/tunnel: `founder.subactor.com` → ingress (nie tylko static httpdocs).
+6. [ ] `control-origin.js` → `mode: "public"` + deploy site.
+7. EQL: unauth `/` → 401; `/founder/form` → 200 Control HTML; submit tokenem.
 
 ### P1 — Autonomia pętli
 

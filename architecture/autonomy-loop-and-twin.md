@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.architecture.autonomy-loop-and-twin",
-  "version": 1,
+  "version": 2,
   "status": "current",
   "updated": "2026-07-30"
 }
@@ -12,6 +12,10 @@
 
 Dokument opisuje zmierzony stan na 2026-07-30, nie stan docelowy. Każda liczba
 pochodzi z obserwacji produkcyjnej instancji, nie z deklaracji w kodzie.
+
+Kanoniczny **docelowy** tor NL→DSL→Task→URI→Twin→dry-run→apply→EQL:
+[autonomy-execution-pipeline.md](./autonomy-execution-pipeline.md).
+Plan domknięcia luk payloadów: [../plans/autonomy-pipeline-refactor-2026-07-30.md](../plans/autonomy-pipeline-refactor-2026-07-30.md).
 
 ## 1. Co pętla robi dzisiaj
 
