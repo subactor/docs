@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.architecture.intent-integrity-audit-2026-08-04",
-  "version": 3,
+  "version": 5,
   "status": "current",
   "updated": "2026-08-04"
 }
@@ -47,6 +47,24 @@ Po naprawie dokumentacji wykonano zawężony przebieg dla repozytorium Core:
 System ma traktować te diagnostyki jako materiał do przeglądu. Nie są Intent
 Bindingiem, authority ani automatyczną przesłanką do wykonania zmiany.
 
+Po dodaniu autora fundamentu wykonano kolejny offline run na aktualnym
+filesystemie Core:
+
+- run: `20260804T104053Z-def367fd`;
+- fingerprint:
+  `sha256:b91d03bc31027a3117507b6cc0fc9f8b9d1cc42708214fbd2f523a6e3304d846`;
+- wynik: `succeeded`, 0 diagnostyk `blocking`, 23 `review_required`,
+  1 122 `warning` i 584 `info`;
+- LLM był całkowicie wyłączony, a artefakty runu zapisano poza repozytorium.
+
+Wzrost warningów wynika z tego, że analizator Core nie widzi osobnego
+repozytorium Docs: nowe symbole AST są oznaczone jako
+`IMPLEMENTED_NOT_PLANNED`, `IMPLEMENTED_NOT_DOCUMENTED` lub `UNLINKED_RECORD`,
+choć dokument zarządzany istnieje w `docs/architecture`. To ujawnia rzeczywistą
+lukę integracyjną todo2code dla wielorepozytoryjnego workspace, a nie dowód
+braku implementacji. Dodano jawny wpis Core CHANGELOG, lecz pełne połączenie
+cross-repo powinno pozostać osobnym ticketem zamiast być pozornie zamykane.
+
 ## Rozbieżności i decyzje
 
 ### 1. Formularz dziennego kierunku był opisany, ale niezaimplementowany — naprawione
@@ -73,7 +91,7 @@ cały dokument pod kątem sekretów, a odczyt i zapis potwierdzają containment 
 `realpath`. Wklejony token oraz katalog daty będący symlinkiem poza workspace są
 odrzucane przed utworzeniem pliku.
 
-### 4. Fundament wizja → misja → strategia nie został jeszcze napisany — otwarte
+### 4. Fundament wizja → misja → strategia nie został jeszcze napisany — author naprawiony, treść nadal otwarta
 
 Konstytucja `CONST-SUBACTOR` jest aktywna i ratyfikowana. Brakuje natomiast
 zarządzanego `organization-intent-foundation.v1.json`. To świadomy brak decyzji
@@ -86,6 +104,19 @@ zablokowany dla autorytatywnej intencji i pokazuje kandydatury:
 
 Formularz dziennego kierunku poprawnie odmawia preview do czasu istnienia
 fundamentu oraz strategii obejmującej wybrany projekt.
+
+Usunięto techniczną przeszkodę: Project Composer udostępnia teraz bezskutkowy
+preview/diff i osobny exact-hash save całego fundamentu. Autor wylicza treściowe
+hashe każdego poziomu, wiąże pochodzenie z Konstytucją i poprzednią rewizją,
+skanuje sekrety, zapisuje atomowo i przebudowuje registry. Brakującą treść może
+nadal podać i ratyfikować wyłącznie Founder.
+
+### 4a. Loader fundamentu czytał tylko `v1`, a hashe były syntaktyczne — naprawione
+
+Runtime wybiera teraz najwyższą wersję `organization-intent-foundation.vN.json`
+i sprawdza zgodność numeru dokumentu z nazwą pliku. `content_hash` wizji, misji
+i strategii oraz `foundation_hash` są deterministycznie przeliczane. Zmiana
+treści po ratyfikacji powoduje fail-closed zamiast cichego użycia artefaktu.
 
 ### 5. Anulowanie ticketu nie zmienia desired state projektu — zachowanie poprawne, lecz wymagające jasnego komunikatu
 
@@ -106,9 +137,52 @@ przypisałoby temu ID rekordy z innych repozytoriów. Snapshot projektowy należ
 generować po zawężeniu root/patterns i dopiero wtedy publikować do
 `platform/config/project-intent-evidence/<project-id>.v1.json`.
 
+### 7. Snapshot connectora odrzucał poprawny binding deploymentu — naprawione
+
+Live connector Plesk przyjmuje i ponownie waliduje `source_ref` oraz
+`deployment_binding_ref`, `deployment_binding_hash` i
+`deployment_binding_version`. Wersjonowany snapshot action surface nie zawierał
+jednak tych czterech parametrów, więc pre-dispatch research odrzucał poprawny
+dry-run jako `remediation_payload_invalid`. To była bezpośrednia techniczna
+przyczyna kolejnych nieudanych cykli reconciliation po zgodzie Foundera.
+
+Nie usunięto pól ochronnych z payloadu. Dodano deterministyczny refresher
+snapshotu z live `urirun.bindings.v2`, uzupełniono 41 tras i test driftu.
+Snapshot obejmuje teraz również `site/command/twin-sync` oraz
+`site/query/twin-current`. Artifact Registry traktuje rejestry deployment
+binding i twin jako rewizjonowane rejestry kontraktu v1, ponieważ ich pole
+`version: 1` jest wersją schematu, a nie numerem edycji treści.
+
+### 8. Testowy deployment docs w Digital Twin — zweryfikowane
+
+Dodano przenośny profil `deployment-twin:docs-subactor-com`, zakotwiczony w
+produkcyjnym bindingu `deployment:docs-subactor-com:production`, ale kierujący
+wyłącznie do `docs-subactor-com.twin.test`. Profil wymusza brak sieci, zakaz
+produkcyjnych credentiali i zapis tylko do izolowanego runtime root.
+
+Live przebieg connectora:
+
+- dry-run: 138 plików, `executed=false`, `mutation_attempted=false`, plan hash
+  `9d7de3ec6547d197849fae6312328e15bef34a8bad39f9deaa0242eb4bbe303b`;
+- apply w twin: release `rel_twin_9d7de3ec6547d197`, `verified=true`, transport
+  `local-release-fs`, `source_matches_release=true`;
+- entrypoint SHA-256:
+  `0518fc22148b4ad4c5247b64dcd935efc122b7eb17b5c1e024fc860d57cedaf8`;
+- niezależny `twin-current` potwierdził ten sam release i zgodność źródła.
+
+Żadne wywołanie nie dotknęło Pleska ani `docs.subactor.com`.
+
+Po tej naprawie ręczny reconciliation przeszedł bez błędu payloadu. Projekt
+pozostaje `blocked` wyłącznie przez `mutation_gate_disabled`; rodzic to
+`PLF-2868`, a bieżąca, jawna granica decyzyjna Foundera to `PLF-2872`.
+Anulowanie starszego ticketu nie zmieniło desired state manifestu.
+
 ## Inwarianty po naprawie
 
 - dzienny kierunek wynika wyłącznie z ratyfikowanego fundamentu i strategii;
+- fundament jest append-only i może być napisany tylko przez jawny formularz
+  Foundera z preview/diff przed zapisem;
+- każdy poziom fundamentu i cały dokument mają weryfikowany hash treści;
 - preview nie zapisuje pliku, nie tworzy ticketu i nie uruchamia deploymentu;
 - save jest związany z dokładnym planem, treścią, target path i poprzednim hashem;
 - preview odrzuca dane wrażliwe, a writer odrzuca symlink escape;
@@ -117,10 +191,15 @@ generować po zawężeniu root/patterns i dopiero wtedy publikować do
   wycofywany;
 - kierunek dnia nie nadaje authority, grantu ani prawa do wykonania URI;
 - anulowanie ticketu zachowuje audyt i nie zmienia manifestu projektu.
+- snapshot connectora musi pochodzić z live bindings i obejmować każdy parametr
+  bezpieczeństwa emitowany przez builder payloadu;
+- twin deploy nie ma sieci ani credentiali produkcyjnych i nie jest dowodem
+  wykonania publikacji publicznej.
 
 ## Pozostała decyzja Foundera
 
-Następnym krokiem organizacyjnym nie jest deployment. Founder powinien najpierw
-spisać wizję, następnie misję, a następnie co najmniej jedną strategię obejmującą
-projekty. Dopiero ten artefakt odblokuje dzienne priorytety jako pochodne trwałej
-intencji organizacji.
+Następnym krokiem organizacyjnym nie jest deployment. Founder powinien użyć
+formularza fundamentu, spisać wizję, następnie misję, a następnie co najmniej
+jedną strategię obejmującą projekty, obejrzeć dokładny diff i dopiero osobno
+zatwierdzić zapis. Ten artefakt odblokuje dzienne priorytety jako pochodne
+trwałej intencji organizacji.

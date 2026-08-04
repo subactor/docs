@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.architecture.project-change-analysis-2026-08-04",
-  "version": 5,
+  "version": 6,
   "status": "current",
   "updated": "2026-08-04"
 }
@@ -43,6 +43,30 @@ a strategia musi obejmować analizowany `project_id` albo zakres `*`. Sam fakt
 pochodzenia nadal nie jest akceptacją Intent Contract, Intent Bindingiem ani
 grantem wykonawczym.
 
+### Bezpieczne spisanie fundamentu przez Foundera
+
+Project Composer zawiera formularz „Spisz fundament intencji organizacji”.
+System nie wypełnia wizji, misji ani strategii za Foundera. Formularz rozdziela
+dwie granice:
+
+1. `POST /api/projects/intent-foundation/preview` sprawdza aktywną Konstytucję,
+   buduje następny dokument `organization-intent-foundation.vN.json`, wylicza
+   hashe wizji, misji, strategii oraz całej fundacji i pokazuje semantyczny diff;
+2. `POST /api/projects/intent-foundation/save` wymaga scope `routing:manage`,
+   dokładnie tego samego `plan_hash`, niezmienionej poprzedniej rewizji i jej
+   hasha, po czym tworzy nowy plik oraz przebudowuje Artifact Registry.
+
+Preview ma zero skutków ubocznych. Save nie nadpisuje istniejącej wersji, nie
+tworzy ticketów i nie uruchamia deploymentu. Każda kolejna ratyfikacja trafia do
+nowego pliku `vN`; loader wybiera najwyższą wersję i odrzuca ją fail-closed, gdy
+numer w dokumencie nie zgadza się z nazwą pliku.
+
+Hashe `vision.content_hash`, `mission.content_hash`, każdy
+`strategy.content_hash` i `foundation_hash` są przeliczane przy podglądzie,
+zapisie oraz odczycie. Poprawny format SHA-256 nie wystarcza, jeśli treść została
+zmieniona. Preview i save skanują również dane wrażliwe, a loader i writer nie
+akceptują rewizji będącej symlinkiem.
+
 ## Dzienny kierunek Foundera
 
 Founder może opublikować opcjonalną, projektową dyrektywę na konkretny dzień:
@@ -75,6 +99,10 @@ jest rozdzielony na dwa jawne kroki:
    razem z tym samym `plan_hash`, ponownie sprawdza `direction_hash`, bieżącą
    rewizję i fundament, po czym atomowo tworzy nowy plik oraz przebudowuje
    rejestr artefaktów.
+
+Save ponownie wykonuje skan sekretów i sprawdza, czy provenance dokumentu
+wskazuje dokładnie bieżącą poprzednią rewizję. Loader oraz writer odrzucają
+plik rewizji będący symlinkiem.
 
 Zapis wymaga scope `routing:manage` i włączonego Artifact Workspace. Preview
 wymaga tylko `projects:read` i działa również w trybie read-only. Nie ma operacji
@@ -188,6 +216,9 @@ Testy regresji obejmują:
 - pokrycie diagnostyki przez istniejącą kandydaturę;
 - blokadę i ticket Foundera przy braku Konstytucji;
 - sekwencyjne tickety Foundera przy braku wizji, misji i strategii;
+- bezskutkowy preview fundamentu oraz zapis związany z dokładnym `plan_hash`;
+- automatyczny wybór najwyższej poprawnej rewizji fundamentu;
+- konflikt równoległej rewizji, tampering treści, sekret i symlink fundamentu;
 - odrzucenie fundacji z odwróconą kolejnością ratyfikacji;
 - blokadę projektu nieobjętego żadną ratyfikowaną strategią;
 - wybór najnowszej rewizji dyrektywy dla bieżącego dnia w Europe/Warsaw;
