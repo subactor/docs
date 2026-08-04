@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.architecture.project-change-analysis-2026-08-04",
-  "version": 7,
+  "version": 11,
   "status": "current",
   "updated": "2026-08-04"
 }
@@ -171,6 +171,50 @@ przenoszony między executorami razem z Platformą bez lokalnego `.env`.
 Pełne grafy, raw excerpts i sekrety pozostają poza snapshotem. Snapshot jest
 dowodem intencji, nie grantem, AQL ani decyzją Foundera.
 
+## Bramka zgodności przed push i Pull Request
+
+Platforma udostępnia jeden evaluator todo2code używany przez trzy wejścia:
+
+- `npm run intent:check -- --repo <repo>` do ręcznego sprawdzenia zmiany;
+- wersjonowany hook `platform/githooks/pre-push`, instalowany poleceniem
+  `npm run intent:hooks:install`;
+- kompozytową akcję `platform/actions/intent-conformance`, uruchamianą dla
+  zdarzenia `pull_request` na dokładnym `base SHA` i `head SHA`.
+
+Każdy przebieg porównuje tylko jedno repozytorium z jego własnym refem bazowym.
+Obowiązkowa warstwa deterministyczna działa bez sieci i bez sekretów. Odrzuca
+nieznany kontrakt todo2code, nowe diagnostyki `blocking` lub
+`review_required` oraz materialny spadek implementation albo documented-code
+coverage wynoszący co najmniej 1 punkt procentowy. Mniejszy spadek i nowy gap
+są jawnie raportowane do review, ale same nie tworzą ticketu, nie zmieniają
+authority i nie blokują historycznego długu bez dokładnej regresji.
+
+Coverage jest miarą powiązania kodu z deklaracjami, dlatego materialny spadek
+blokuje tylko wtedy, gdy diff zawiera plik źródłowy. Dla zmiany wyłącznie
+konfiguracyjnej, dokumentacyjnej albo workflow ten sam spadek pozostaje jawnym
+findingiem review. Nowe `blocking` i `review_required` blokują niezależnie od
+rodzaju zmienionych plików.
+
+Warstwa semantyczna działa tylko dla rzeczywistego diffu. Używa wyłącznie
+`z-ai/glm-5.2` przez OpenRouter i trybu schema-bound todo2code. W trybie `auto`
+brak sekretu powoduje jawne `skipped: credential_unavailable`, a kontrola
+deterministyczna nadal obowiązuje. Tryb `required` fail-closed odrzuca zmianę,
+jeżeli credentialu nie ma. Klucz jest wstrzykiwany z sejfu CI; model, pin
+todo2code i reguły bramki są przenośnym kodem repozytorium, a nie lokalnym
+`.env`.
+
+Raport `subactor.intent-conformance-report/v1` wiąże projekt, bazę, commit,
+listę zmienionych plików, trend, diagnostyczne delty, model oraz dokładny pin
+todo2code. Jest dowodem kontroli jakości. Nie jest zgodą na merge, grantem ani
+ratyfikacją intencji.
+
+Ręczne polecenie analizuje bieżący filesystem razem z plikami
+niecommitowanymi. Hook `pre-push` i workflow PR używają `--committed`: tworzą
+krótkotrwały, izolowany worktree dokładnego `HEAD`, porównują go z bazą i po
+zbudowaniu raportu usuwają worktree. Dzięki temu obce zmiany robocze nie
+wchodzą do dowodu dotyczącego wysyłanego commitu, a CI i pre-push mają ten sam
+zakres commit-bound.
+
 ## Zachowanie przy brakach
 
 Jeżeli snapshot todo2code nie jest opublikowany, analiza ma stan wymagający
@@ -245,6 +289,10 @@ Testy regresji obejmują:
 - rekomendację publikacji evidence przy jego braku;
 - odrzucenie traversal i niezgodnego `project_id`;
 - zachowanie bilansu efektów ubocznych równego zero.
+- odrzucenie nowego `blocking`, `review_required` i materialnego spadku pokrycia przez
+  wspólny evaluator;
+- jawne rozróżnienie semantycznego `passed`, `failed` i `skipped`;
+- użycie GLM 5.2 bez przechowywania credentialu w repozytorium.
 
 Pełny audyt spójności, wraz z wynikami todo2code i stanem ticketów
 reconciliation, znajduje się w

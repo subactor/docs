@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.architecture.intent-integrity-audit-2026-08-04",
-  "version": 6,
+  "version": 10,
   "status": "current",
   "updated": "2026-08-04"
 }
@@ -192,6 +192,40 @@ pozostaje `blocked` wyłącznie przez `mutation_gate_disabled`; rodzic to
 `PLF-2868`, a bieżąca, jawna granica decyzyjna Foundera to `PLF-2872`.
 Anulowanie starszego ticketu nie zmieniło desired state manifestu.
 
+### 9. Brak wspólnej kontroli przed PR — naprawione
+
+Powstał jeden evaluator `subactor.intent-conformance-report/v1`, używany
+lokalnie, przez hook `pre-push` i przez workflow Pull Request. todo2code jest
+przypięty do commitu
+`6116961d8c9674b24c1161903e43f3a7dbb2147b`. Warstwa deterministyczna jest
+obowiązkowa; semantyczna działa wyłącznie dla realnego diffu i używa
+`z-ai/glm-5.2`.
+
+Przebieg `2026-08-04T20:49:57.387Z` sprawdził osobno 12 aktywnych repozytoriów
+z `projekty/*`. Wszystkie zakończyły się `passed`; każdy miał trend
+`unchanged`, `blocking Δ=0` i `review_required Δ=0`. Repozytorium
+`www-subactor-com` pominięto zgodnie z manifestem `status=retired`. Ponieważ
+nie było lokalnych diffów, analiza semantyczna poprawnie zwróciła
+`skipped: no_changes` i nie wygenerowała kosztu API.
+
+Próbny przebieg na zmienianej Platformie potwierdził, że bramka widzi diff i
+generuje raport. Credential OpenRouter nie był dostępny w procesie testowym,
+więc stan semantyczny był jawnie `skipped: credential_unavailable`; nie użyto
+modelu zastępczego. Na CI credential pochodzi wyłącznie z GitHub Actions
+Secrets. Raport nie przechowuje klucza, promptu ani odpowiedzi modelu.
+
+Pierwszy rollout wykazał, że analiza working tree w hooku mogła objąć
+niecommitowane cache innego zadania. Zakres został rozdzielony: ręczny check
+pozostaje filesystem-bound, natomiast pre-push i PR analizują izolowany
+worktree dokładnego `HEAD`. Test potwierdził `analysis_scope=committed_head`
+oraz brak widoczności zmian pozostawionych w głównym checkoutcie.
+
+Rollout do małych stron statycznych wykazał skok documented-code coverage o
+`-0.0179` po dodaniu wyłącznie workflow CI, bez nowych diagnostyk poważnych.
+Coverage blokuje więc materialną regresję tylko dla diffu zawierającego kod
+źródłowy. Config-only spadek jest nadal raportowany do review; zero-tolerance
+dla nowych `blocking` i `review_required` nie uległo zmianie.
+
 ## Inwarianty po naprawie
 
 - dzienny kierunek wynika wyłącznie z ratyfikowanego fundamentu i strategii;
@@ -209,6 +243,10 @@ Anulowanie starszego ticketu nie zmieniło desired state manifestu.
   wycofywany;
 - kierunek dnia nie nadaje authority, grantu ani prawa do wykonania URI;
 - anulowanie ticketu zachowuje audyt i nie zmienia manifestu projektu.
+- przed push i na Pull Request ta sama deterministyczna bramka todo2code
+  odrzuca nowe poważne diagnostyki oraz materialny spadek pokrycia intencji;
+- semantyczny przegląd zmian używa `z-ai/glm-5.2`, a brak credentialu jest
+  jawnym stanem zamiast cichego użycia innego albo droższego modelu;
 - snapshot connectora musi pochodzić z live bindings i obejmować każdy parametr
   bezpieczeństwa emitowany przez builder payloadu;
 - twin deploy nie ma sieci ani credentiali produkcyjnych i nie jest dowodem
