@@ -2,26 +2,46 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.architecture.project-change-analysis-2026-08-04",
-  "version": 2,
+  "version": 3,
   "status": "current",
   "updated": "2026-08-04"
 }
 ---
 
-# Analiza zmian projektu — user guidance, Planfile, todo2code i Konstytucja
+# Analiza zmian projektu — od Konstytucji do ticketu
 
 ## Cel
 
-Project Composer przed materializacją zmian porównuje cztery niezależne źródła:
+Project Composer przed materializacją zmian porównuje źródła wykonawcze z
+hierarchią kierunku organizacji:
 
 1. aktualne wskazanie użytkownika i wynikający z niego deterministyczny szkic;
 2. aktywne oraz planowane tickety Planfile przypisane do `project_id`;
 3. przenośny snapshot rekordów i diagnostyk todo2code;
-4. aktywną, ratyfikowaną Konstytucję Organizacji.
+4. aktywną, ratyfikowaną Konstytucję Organizacji;
+5. ratyfikowany fundament intencji: wizję, misję i strategie organizacji.
 
-Wynik ma kontrakt `subactor.project-change-analysis/v1`. Jest dry-runem:
+Wynik ma kontrakt `subactor.project-change-analysis/v2`. Jest dry-runem:
 nie tworzy ticketów, nie wykonuje URI, nie zmienia authority i nie interpretuje
 propozycji jako akceptacji.
+
+## Łańcuch pochodzenia intencji
+
+Każda intencja projektowa musi dać się prześledzić w kolejności:
+
+```text
+Konstytucja → wizja → misja → strategia → cel projektu → ticket → EQL
+```
+
+Konstytucja pozostaje źródłem authority i invariants. Wizja opisuje pożądany
+przyszły stan. Misja wyjaśnia cel istnienia i tożsamość organizacji. Strategia
+przekłada misję na cele, priorytety, non-goals oraz jawny zakres projektów.
+
+Kontrakt `subactor.organization-intent-foundation/v1` wiąże każdy poziom przez
+niemutowalny `ref` i hash poprzednika. Daty ratyfikacji muszą zachować kolejność,
+a strategia musi obejmować analizowany `project_id` albo zakres `*`. Sam fakt
+pochodzenia nadal nie jest akceptacją Intent Contract, Intent Bindingiem ani
+grantem wykonawczym.
 
 ## Tożsamość i zakres projektu
 
@@ -80,6 +100,19 @@ state: candidate_only
 To jest kandydatura widoczna w dry-runie, nie ukryta mutacja Planfile. Control
 produkcyjny nadal ładuje i waliduje Konstytucję fail-closed przy starcie.
 
+Jeżeli nie ma zatwierdzonego fundamentu intencji, dry-run dodaje trzy zależne
+od siebie kandydatury, których właścicielem jest Founder:
+
+```text
+GOV-VISION-001   — Spisz i ratyfikuj wizję organizacji
+GOV-MISSION-001  — Spisz i ratyfikuj misję organizacji
+GOV-STRATEGY-001 — Spisz i ratyfikuj strategię organizacji
+```
+
+Misja zależy od wizji, a strategia od misji. System nie generuje ich treści za
+Foundera. Jeżeli fundament istnieje, ale żadna strategia nie obejmuje projektu,
+powstaje kandydatura `GOV-PROJECT-STRATEGY-<PROJECT_ID>`.
+
 ## Wynik analizy
 
 Wynik pokazuje:
@@ -87,7 +120,9 @@ Wynik pokazuje:
 - stan źródeł i ich referencje;
 - aktywne i planowane tickety projektu;
 - kandydatury duplikatów wobec nowego szkicu;
-- rekordy todo2code pasujące do wskazania użytkownika;
+- rekordy todo2code pasujące do wskazania użytkownika, jawnie oznaczone jako
+  dowody-kandydaci, a nie autorytatywne intencje;
+- pełny status pochodzenia: Konstytucja, wizja, misja i wybrana strategia;
 - niepokryte diagnostyki;
 - ustalenia blokujące i wymagające review;
 - tickety wymagane oraz rekomendowane jako `candidate_only`.
@@ -106,6 +141,9 @@ Testy regresji obejmują:
 - wykrycie nakładającego się ticketu;
 - pokrycie diagnostyki przez istniejącą kandydaturę;
 - blokadę i ticket Foundera przy braku Konstytucji;
+- sekwencyjne tickety Foundera przy braku wizji, misji i strategii;
+- odrzucenie fundacji z odwróconą kolejnością ratyfikacji;
+- blokadę projektu nieobjętego żadną ratyfikowaną strategią;
 - rekomendację publikacji evidence przy jego braku;
 - odrzucenie traversal i niezgodnego `project_id`;
 - zachowanie bilansu efektów ubocznych równego zero.
