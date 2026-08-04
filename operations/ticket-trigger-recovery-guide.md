@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.operations.ticket-trigger-recovery-guide",
-  "version": 3,
+  "version": 5,
   "status": "current",
   "updated": "2026-08-04"
 }
@@ -105,6 +105,26 @@ trigger recovery dla 401/403, awarii health check i błędów dostępności Ples
 ale nie dla 404 ani błędu konkretnej operacji biznesowej — aktywny connector nie
 dowodzi wtedy usunięcia pierwotnego problemu.
 
+## Governance jako stan
+
+Digital Twin obserwuje również dwa wewnętrzne obiekty SOA:
+
+```text
+soa://subactor/integration/organization-intent-foundation
+soa://subactor/integration/ticket-purpose-integrity
+```
+
+Pierwszy tworzy jeden ticket Foundera, gdy aktywna Konstytucja nie ma jeszcze
+ratyfikowanego fundamentu wizja → misja → strategia. Drugi pozostaje
+`not_configured`, dopóki fundament nie istnieje. Dopiero później publikuje
+`gap_count`, `unbound_count` oraz `partial_count` i może utworzyć osobny ticket
+uzgodnienia strategicznego celu aktywnej pracy.
+
+Oba tickety pozostają ludzką granicą. System może przygotować preview, diff i
+prompt pomocniczy, ale nie ratyfikuje wizji, misji ani strategii za Foundera.
+Nieaktywne lub opcjonalne connectory nie dostają polityki tylko dlatego, że ich
+stan wynosi `unknown` albo `not_configured`.
+
 ## Źródła
 
 - `artifact://subactor/contracts/schemas/ticket-trigger-event.schema.v1.json`
@@ -115,3 +135,4 @@ dowodzi wtedy usunięcia pierwotnego problemu.
 - `artifact://subactor/platform/config/digital-twin/ticket-state-policies.json`
 - `knowledge://subactor/architecture.ticket-trigger-recovery/v3`
 - `knowledge://subactor/architecture.ops-observer-state-dependent-incidents/v1`
+- `knowledge://subactor/architecture.governance-digital-twin-ticket-purpose/v2`
