@@ -2,15 +2,15 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.architecture.intent-orchestration-and-fallbacks",
-  "version": 1,
+  "version": 3,
   "status": "current",
-  "updated": "2026-07-18"
+  "updated": "2026-08-04"
 }
 ---
 
 # Architektura: intent packs, orkiestracja i fallbacki zdolności
 
-**Status:** dokument projektowy (analiza + propozycja + **aktualizacja stanu 2026-07-18**).  
+**Status:** dokument projektowy (analiza + propozycja + **aktualizacja stanu 2026-08-04**).
 Część warstw jest już zaimplementowana — patrz
 [`autonomy-implementation-status.md`](./autonomy-implementation-status.md)
 (CURRENT / TARGET / LEGACY). Ten plik pozostaje SSOT modelu; nie czytać §1/§2 jako
@@ -474,3 +474,21 @@ JS control/agents, Python konektor). Ops (DNS/TLS) = zero nowego kodu językoweg
 cert TLS SAN, addon docroot. Live path docs: intent+recipe dry-run działają;
 apply pada na timeout/transport — to paramiko packaging + timeout + DNS, nie
 nowy planner.
+
+---
+
+## 11. Jawny wybór modelu LLM
+
+Interaktywne powierzchnie, które rzeczywiście wywołują LLM, pokazują listę
+modeli dostawcy: GLM 5.2, Grok 4.5 i Gemini 3.6 Flash. Identyfikator z pola
+`preferred_model` jest przekazywany przez Control, portal i URI connector do
+gatewaya. Gateway pozostaje jedyną bramką autorytatywną: akceptuje tylko model
+obecny w `LLM_MODEL_CANDIDATES`, a nieznany identyfikator odrzuca kodem
+`preferred_model_not_allowed`.
+
+Jawny wybór jest przypięciem do dokładnie jednego modelu, więc gateway nie
+zamienia go po cichu na inny model po awarii. Brak wyboru zachowuje istniejący
+router opóźnień i failover. Klucz cache obejmuje wybrany model, aby odpowiedź
+jednego modelu nie została zwrócona jako wynik innego. Automatyczne procesy bez
+interaktywnego formularza nadal używają przenośnej, wersjonowanej konfiguracji
+`platform/config/env-contract.json`; nie otrzymują fikcyjnej listy UI.
