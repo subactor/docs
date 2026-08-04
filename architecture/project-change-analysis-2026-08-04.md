@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.architecture.project-change-analysis-2026-08-04",
-  "version": 11,
+  "version": 15,
   "status": "current",
   "updated": "2026-08-04"
 }
@@ -199,9 +199,18 @@ Warstwa semantyczna działa tylko dla rzeczywistego diffu. Używa wyłącznie
 `z-ai/glm-5.2` przez OpenRouter i trybu schema-bound todo2code. W trybie `auto`
 brak sekretu powoduje jawne `skipped: credential_unavailable`, a kontrola
 deterministyczna nadal obowiązuje. Tryb `required` fail-closed odrzuca zmianę,
-jeżeli credentialu nie ma. Klucz jest wstrzykiwany z sejfu CI; model, pin
+jeżeli credentialu nie ma, wykonanie modelu się nie powiedzie albo zwrócony
+kontrakt ma nieobsługiwaną wersję. Klucz jest wstrzykiwany z sejfu CI; model, pin
 todo2code i reguły bramki są przenośnym kodem repozytorium, a nie lokalnym
 `.env`.
+
+Pojedynczy wynik GLM ma wyłącznie authority doradcze. Wskazania semantyczne
+otrzymują stan `review`, ponieważ ponowne uruchomienie modelu może zmienić
+liczbę i klasyfikację diagnostyk bez zmiany kodu. Nie mogą samodzielnie
+zablokować PR ani utworzyć ticketu. Raport zachowuje źródłową wagę diagnostyki
+i dołącza maksymalnie 20 dowodów powiązanych ze zmienionymi plikami: identyfikator
+rekordu, ścieżkę, linie, fragment, polaryzację oraz extractor. Twarde odrzucenie
+regresji intencji pochodzi z powtarzalnej warstwy deterministycznej.
 
 Raport `subactor.intent-conformance-report/v1` wiąże projekt, bazę, commit,
 listę zmienionych plików, trend, diagnostyczne delty, model oraz dokładny pin
@@ -214,6 +223,35 @@ krótkotrwały, izolowany worktree dokładnego `HEAD`, porównują go z bazą i 
 zbudowaniu raportu usuwają worktree. Dzięki temu obce zmiany robocze nie
 wchodzą do dowodu dotyczącego wysyłanego commitu, a CI i pre-push mają ten sam
 zakres commit-bound.
+
+Discovery nie zakłada już, że każdy projekt znajduje się w `projekty/*`.
+Obejmuje repozytoria posiadające `project.manifest.json` zarówno w tym katalogu,
+jak i bezpośrednio w workspace. Dzięki temu samodzielne repozytorium
+`subactor-com` podlega tej samej kontroli. `npm run intent:rollout:check`
+sprawdza kompletność workflow, trigger Pull Request, binding sekretu, tryb
+`semantic:auto`, niezmienny pin akcji oraz upload raportu. To polecenie jest
+częścią zbiorczego `intent:check:projects`, a hook wykonuje ten audyt dla
+bieżącego repozytorium przed analizą zmiany.
+
+Lokalny executor nie ufa już dowolnemu `dist/src/cli.js`. Akceptuje wyłącznie
+checkout todo2code, którego `HEAD` jest równy deklarowanemu pinowi. Polecenie
+`npm run intent:todo2code:prepare` buduje tę wersję w osobnym cache użytkownika,
+nie przełącza roboczej gałęzi todo2code i nie modyfikuje projektu. Cache
+ekstraktorów todo2code jest kierowany do prywatnego katalogu tymczasowego
+przebiegu, więc kontrola nie pozostawia `.intent/cache` w analizowanym repo.
+
+Digital Twin portfolio używa tego samego rozszerzonego rejestru manifestów.
+DOQL łączy katalog `projekty/*` z manifestami wynikającymi z
+`registeredProjectManifestFiles()`, rozwiązuje ścieżki rzeczywiste i usuwa
+duplikaty. Reconciliation korzystało już z tego rejestru; zmiana usuwa
+rozbieżność pomiędzy jego obserwacją a agregatem sytuacyjnym DOQL.
+
+Koszt warstwy semantycznej jest ograniczony zakresem dokumentów. todo2code
+wykonuje pełne porównanie deterministyczne, lecz GLM otrzymuje tylko zmienione
+pliki dokumentacyjne. Gdy diff zawiera wyłącznie kod lub konfigurację, używane
+jest pojedyncze `README.md` jako stabilny kontekst; gdy repozytorium go nie ma,
+lista dokumentów jest pusta. Raport zapisuje `semantic.document_scope`, więc
+zakres płatnego przeglądu jest audytowalny.
 
 ## Zachowanie przy brakach
 

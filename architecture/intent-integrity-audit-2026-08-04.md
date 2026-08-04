@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.architecture.intent-integrity-audit-2026-08-04",
-  "version": 11,
+  "version": 15,
   "status": "current",
   "updated": "2026-08-04"
 }
@@ -224,7 +224,7 @@ Rollout do małych stron statycznych wykazał skok documented-code coverage o
 `-0.0179` po dodaniu wyłącznie workflow CI, bez nowych diagnostyk poważnych.
 Coverage blokuje więc materialną regresję tylko dla diffu zawierającego kod
 źródłowy. Config-only spadek jest nadal raportowany do review; zero-tolerance
-dla nowych `blocking` i `review_required` nie uległo zmianie.
+dla nowych deterministycznych `blocking` i `review_required` nie uległo zmianie.
 
 Po rolloutcie sekret `OPENROUTER_API_KEY` został przeniesiony do GitHub
 Organization Secrets z widocznością ograniczoną do 16 objętych repozytoriów;
@@ -233,6 +233,60 @@ wartość nie trafiła do logu ani repozytorium. Rzeczywisty test
 `HEAD~1`, zakończył się `semantic=passed`, modelem `z-ai/glm-5.2` i kodem 0.
 Deterministyczna oraz semantyczna warstwa zgodnie zwróciły `blocking Δ=0` i
 `review_required Δ=0`. Test nie użył modelu zastępczego.
+
+### 9a. Discovery pomijało samodzielny projekt i lokalny pin był tylko deklaracją — naprawione
+
+Kontrola po rolloutcie ujawniła aktywny manifest `subactor-com` bezpośrednio w
+workspace, poza `projekty/*`. Pierwsza wersja discovery nie obejmowała tego
+repozytorium, dlatego raport 12 aktywnych projektów był prawdziwy dla
+`projekty/*`, lecz niepełny dla całego rejestru manifestów. Dodano brakujący
+workflow do `subactor-com`, lokalny hook i zakres sekretu organizacyjnego.
+Audyt rollout potwierdził następnie 17/17 repozytoriów: Platform, Core, Docs,
+13 repozytoriów w `projekty/*` i samodzielne `subactor-com`.
+
+Druga rozbieżność dotyczyła lokalnego runtime todo2code. Raport deklarował pin
+`6116961…`, ale resolver przyjmował istniejący plik `dist/src/cli.js` bez
+sprawdzenia `HEAD`; roboczy checkout był już na `745f740…`. CI budowało pin
+poprawnie, lecz lokalny hook nie miał równoważnego dowodu. Resolver odrzuca
+teraz jawnie nieprzypięty checkout, a instalator przygotowuje osobny build
+cache dokładnego commitu. Robocze repo todo2code pozostało nietknięte.
+
+Test `semantic=required` dla zmiany workflow `subactor-com` przeszedł z
+`z-ai/glm-5.2`, bez nowych diagnostyk `blocking` i `review_required`. Wykryty
+nowy gap oraz spadek documented-code coverage dla config-only diffu pozostały
+jawnymi findingami review, zgodnie z polityką. Dodatkowo usunięto efekt uboczny,
+w którym cache ekstraktorów mógł pojawić się jako `.intent/cache` w projekcie;
+odtąd trafia do krótkotrwałego katalogu raportu.
+
+Ten sam przegląd wykrył, że raport DOQL portfolio nadal czytał wyłącznie
+`projekty/*` i pokazywał 13 obiektów, podczas gdy Artifact Registry zawierał 14
+manifestów. Runtime reconciliation był już poprawnie zabezpieczony przez
+`registeredProjectManifestFiles()` i uwzględniał zewnętrzny manifest z rejestru
+źródeł strony. DOQL został podłączony do tego samego rejestru, z deduplikacją
+realnych ścieżek. Po zmianie Digital Twin raportuje 14 projektów, 14 unikalnych
+domen i pełne pokrycie; test regresyjny wymaga obecności `subactor-com`.
+
+Pierwszy required-run całej Platformy pokazał, że samo użycie taniego modelu
+nie ogranicza kosztu: todo2code próbowało wysłać do ekstrakcji semantycznej cały
+korpus dokumentacji przy niewielkim diffie. Przebieg został zatrzymany przed
+ukończeniem jako test diagnostyczny. Semantic scope obejmuje teraz wyłącznie
+zmienione dokumenty albo pojedynczy `README.md` dla diffu bez dokumentacji.
+Pełna analiza deterministyczna nie została zawężona.
+
+Powtórzony bounded required-run Platformy ujawnił niedeterministyczność samej
+warstwy LLM: dla niezmienionego diffu jeden przebieg raportował wzrost
+`review_required`, a kolejny zmianę `review_required=-1` i `blocking=+2`.
+Oba blokery były fałszywymi konfliktami. Pierwszy odczytał zdanie „cache nie
+zanieczyszcza repozytorium” jednocześnie jako polaryzację dodatnią i ujemną.
+Drugi pomylił istnienie celu Makefile `e2e` z historycznym twierdzeniem, że
+`make up` przestało ten cel uruchamiać.
+
+Granica została uściślona: pojedynczy przebieg GLM 5.2 jest przeglądem
+doradczym i nie może samodzielnie odrzucić PR. Tryb `required` nadal fail-closed
+odrzuca brak credentialu, awarię wykonania i nieobsługiwany kontrakt. Raport
+zawiera bounded dowody tylko dla poważnych diagnostyk połączonych ze zmienionymi
+plikami, dzięki czemu reviewer widzi źródło bez wielostronicowego historycznego
+szumu. Twarda bramka regresji pozostaje deterministyczna i powtarzalna.
 
 ## Inwarianty po naprawie
 
@@ -253,8 +307,9 @@ Deterministyczna oraz semantyczna warstwa zgodnie zwróciły `blocking Δ=0` i
 - anulowanie ticketu zachowuje audyt i nie zmienia manifestu projektu.
 - przed push i na Pull Request ta sama deterministyczna bramka todo2code
   odrzuca nowe poważne diagnostyki oraz materialny spadek pokrycia intencji;
-- semantyczny przegląd zmian używa `z-ai/glm-5.2`, a brak credentialu jest
-  jawnym stanem zamiast cichego użycia innego albo droższego modelu;
+- semantyczny przegląd zmian używa `z-ai/glm-5.2`, ma authority doradcze, a brak
+  credentialu jest jawnym stanem zamiast cichego użycia innego albo droższego
+  modelu;
 - snapshot connectora musi pochodzić z live bindings i obejmować każdy parametr
   bezpieczeństwa emitowany przez builder payloadu;
 - twin deploy nie ma sieci ani credentiali produkcyjnych i nie jest dowodem
