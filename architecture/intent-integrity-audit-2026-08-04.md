@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.architecture.intent-integrity-audit-2026-08-04",
-  "version": 10,
+  "version": 11,
   "status": "current",
   "updated": "2026-08-04"
 }
@@ -225,6 +225,14 @@ Rollout do małych stron statycznych wykazał skok documented-code coverage o
 Coverage blokuje więc materialną regresję tylko dla diffu zawierającego kod
 źródłowy. Config-only spadek jest nadal raportowany do review; zero-tolerance
 dla nowych `blocking` i `review_required` nie uległo zmianie.
+
+Po rolloutcie sekret `OPENROUTER_API_KEY` został przeniesiony do GitHub
+Organization Secrets z widocznością ograniczoną do 16 objętych repozytoriów;
+wartość nie trafiła do logu ani repozytorium. Rzeczywisty test
+`semantic=required` dla `automatyzacjaprocesow-pl`, exact HEAD względem
+`HEAD~1`, zakończył się `semantic=passed`, modelem `z-ai/glm-5.2` i kodem 0.
+Deterministyczna oraz semantyczna warstwa zgodnie zwróciły `blocking Δ=0` i
+`review_required Δ=0`. Test nie użył modelu zastępczego.
 
 ## Inwarianty po naprawie
 
