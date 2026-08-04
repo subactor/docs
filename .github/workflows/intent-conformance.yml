@@ -28,9 +28,17 @@ jobs:
       - name: Fetch exact PR base
         if: github.event_name == 'pull_request'
         run: git fetch --no-tags origin "${{ github.event.pull_request.base.sha }}"
+      - name: Check out pinned private intent action
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: subactor/platform
+          ref: e5360b070ff3601fbc82d2f4a1118477d44f721d
+          path: .intent-platform
+          ssh-key: ${{ secrets.PLATFORM_ACTION_DEPLOY_KEY }}
+          persist-credentials: false
       - name: Check project intent
         id: intent
-        uses: subactor/platform/actions/intent-conformance@e5360b070ff3601fbc82d2f4a1118477d44f721d
+        uses: ./.intent-platform/actions/intent-conformance
         with:
           base-ref: ${{ github.event.pull_request.base.sha || 'origin/main' }}
           semantic: auto
