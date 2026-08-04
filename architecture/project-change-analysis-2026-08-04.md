@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.architecture.project-change-analysis-2026-08-04",
-  "version": 3,
+  "version": 4,
   "status": "current",
   "updated": "2026-08-04"
 }
@@ -42,6 +42,26 @@ niemutowalny `ref` i hash poprzednika. Daty ratyfikacji muszą zachować kolejno
 a strategia musi obejmować analizowany `project_id` albo zakres `*`. Sam fakt
 pochodzenia nadal nie jest akceptacją Intent Contract, Intent Bindingiem ani
 grantem wykonawczym.
+
+## Dzienny kierunek Foundera
+
+Founder może opublikować opcjonalną, projektową dyrektywę na konkretny dzień:
+
+```text
+platform/config/governance/daily-directions/<YYYY-MM-DD>/<project-id>.vN.json
+```
+
+Kontrakt `subactor.founder-daily-direction/v1` zawiera fokus dnia, uporządkowane
+priorytety, sukces dla każdego priorytetu, opcjonalny sprint, milestone’y i
+non-goals. Każda rewizja wiąże hash fundamentu oraz strategii obejmującej
+projekt, jest ratyfikowana przez Foundera i ma maksymalnie 36-godzinne okno
+ważności. Najwyższa rewizja danego dnia wygrywa; wczorajsza dyrektywa nie jest
+niejawnie przenoszona na dziś.
+
+Dyrektywa zmienia uwagę i rekomendowaną kolejność pracy, ale nie authority.
+Nie może naruszyć Konstytucji ani strategii, przyznać grantu, podać exact URI
+lub ogłosić completion. Jej brak jest poprawnym stanem `not_set`, ponieważ jest
+to opcjonalny instrument Foundera.
 
 ## Tożsamość i zakres projektu
 
@@ -144,6 +164,9 @@ Testy regresji obejmują:
 - sekwencyjne tickety Foundera przy braku wizji, misji i strategii;
 - odrzucenie fundacji z odwróconą kolejnością ratyfikacji;
 - blokadę projektu nieobjętego żadną ratyfikowaną strategią;
+- wybór najnowszej rewizji dyrektywy dla bieżącego dnia w Europe/Warsaw;
+- odrzucenie dyrektywy wygasłej albo związanej z inną strategią;
+- rekomendację bounded ticketu, gdy dzisiejszy priorytet nie ma pokrycia;
 - rekomendację publikacji evidence przy jego braku;
 - odrzucenie traversal i niezgodnego `project_id`;
 - zachowanie bilansu efektów ubocznych równego zero.
