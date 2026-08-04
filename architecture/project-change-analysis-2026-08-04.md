@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.architecture.project-change-analysis-2026-08-04",
-  "version": 4,
+  "version": 5,
   "status": "current",
   "updated": "2026-08-04"
 }
@@ -62,6 +62,32 @@ Dyrektywa zmienia uwagę i rekomendowaną kolejność pracy, ale nie authority.
 Nie może naruszyć Konstytucji ani strategii, przyznać grantu, podać exact URI
 lub ogłosić completion. Jej brak jest poprawnym stanem `not_set`, ponieważ jest
 to opcjonalny instrument Foundera.
+
+### Bezpieczne tworzenie i rewizja
+
+Project Composer udostępnia formularz „Ustaw kierunek Foundera na dziś”. Zapis
+jest rozdzielony na dwa jawne kroki:
+
+1. `POST /api/projects/daily-direction/preview` waliduje fundament i strategię,
+   buduje następną rewizję, pokazuje semantyczny diff oraz wylicza dokładny
+   `plan_hash`; bilans efektów ubocznych wynosi zero;
+2. `POST /api/projects/daily-direction/save` przyjmuje dokument z podglądu tylko
+   razem z tym samym `plan_hash`, ponownie sprawdza `direction_hash`, bieżącą
+   rewizję i fundament, po czym atomowo tworzy nowy plik oraz przebudowuje
+   rejestr artefaktów.
+
+Zapis wymaga scope `routing:manage` i włączonego Artifact Workspace. Preview
+wymaga tylko `projects:read` i działa również w trybie read-only. Nie ma operacji
+nadpisania: konflikt z nowszą rewizją zwraca błąd i wymaga nowego podglądu.
+
+Docelowym źródłem jest montowany, wersjonowany workspace Platformy. Katalog
+`CONTROL_DATA_DIR`, lokalny `.env` ani pamięć procesu nie przechowują decyzji.
+Kontener czyta `/app/config`, lecz zapis trafia do odpowiadającego mu trwałego
+`/workspace/platform/config`; oba wskazują ten sam hostowy katalog konfiguracji.
+
+`direction_hash` jest ponownie wyliczany przy preview, save i każdym odczycie.
+Dokument o poprawnym formacie hasha, ale zmienionej treści, jest odrzucany jako
+`founder_daily_direction_hash_mismatch`.
 
 ## Tożsamość i zakres projektu
 
@@ -167,6 +193,13 @@ Testy regresji obejmują:
 - wybór najnowszej rewizji dyrektywy dla bieżącego dnia w Europe/Warsaw;
 - odrzucenie dyrektywy wygasłej albo związanej z inną strategią;
 - rekomendację bounded ticketu, gdy dzisiejszy priorytet nie ma pokrycia;
+- preview bez zapisu i zapis związany z dokładnym `plan_hash`;
+- append-only rewizję oraz optymistyczny konflikt równoległej zmiany;
+- odrzucenie treści zmienionej po wyliczeniu `direction_hash`;
 - rekomendację publikacji evidence przy jego braku;
 - odrzucenie traversal i niezgodnego `project_id`;
 - zachowanie bilansu efektów ubocznych równego zero.
+
+Pełny audyt spójności, wraz z wynikami todo2code i stanem ticketów
+reconciliation, znajduje się w
+[`intent-integrity-audit-2026-08-04.md`](./intent-integrity-audit-2026-08-04.md).
