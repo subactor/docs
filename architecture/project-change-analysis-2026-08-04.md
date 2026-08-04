@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.architecture.project-change-analysis-2026-08-04",
-  "version": 6,
+  "version": 7,
   "status": "current",
   "updated": "2026-08-04"
 }
@@ -46,20 +46,35 @@ grantem wykonawczym.
 ### Bezpieczne spisanie fundamentu przez Foundera
 
 Project Composer zawiera formularz „Spisz fundament intencji organizacji”.
-System nie wypełnia wizji, misji ani strategii za Foundera. Formularz rozdziela
-dwie granice:
+Founder pozostaje autorem i jedynym ratyfikującym. Opcjonalny asystent może
+przygotować szkic zaznaczonych pól z promptu Foundera, bieżącej treści i
+aktywnej Konstytucji. Szkic jest propozycją do edycji w przeglądarce: nie jest
+decyzją organizacji, nie zapisuje pliku i nie tworzy ticketu. Formularz
+rozdziela trzy granice:
 
-1. `POST /api/projects/intent-foundation/preview` sprawdza aktywną Konstytucję,
+1. `POST /api/projects/intent-foundation/generate` wymaga `projects:read` oraz
+   `llm:use`, przyjmuje jawny prompt i allow-listę pól, skanuje wejście oraz
+   wynik pod kątem sekretów i zwraca kontrakt
+   `subactor.organization-intent-foundation-draft/v1` z `review_required=true`;
+2. `POST /api/projects/intent-foundation/preview` sprawdza aktywną Konstytucję,
    buduje następny dokument `organization-intent-foundation.vN.json`, wylicza
    hashe wizji, misji, strategii oraz całej fundacji i pokazuje semantyczny diff;
-2. `POST /api/projects/intent-foundation/save` wymaga scope `routing:manage`,
+3. `POST /api/projects/intent-foundation/save` wymaga scope `routing:manage`,
    dokładnie tego samego `plan_hash`, niezmienionej poprzedniej rewizji i jej
    hasha, po czym tworzy nowy plik oraz przebudowuje Artifact Registry.
 
-Preview ma zero skutków ubocznych. Save nie nadpisuje istniejącej wersji, nie
-tworzy ticketów i nie uruchamia deploymentu. Każda kolejna ratyfikacja trafia do
-nowego pliku `vN`; loader wybiera najwyższą wersję i odrzuca ją fail-closed, gdy
-numer w dokumencie nie zgadza się z nazwą pliku.
+Generate i preview mają zero skutków ubocznych. Model może zwrócić tylko pola ze
+ścisłego JSON Schema, a Control stosuje wyłącznie pola zaznaczone w żądaniu.
+Niedostępny model, brak poprawnej Konstytucji, sekret, nieznane pole lub
+niepoprawny identyfikator projektu kończy się fail-closed bez zmiany formularza.
+Prompt nie trafia do audytu; zapisywany jest jego SHA-256 i lista pól. Każda
+zmiana formularza po preview unieważnia przycisk zapisu oraz wymaga nowego
+`plan_hash`.
+
+Save nie nadpisuje istniejącej wersji, nie tworzy ticketów i nie uruchamia
+deploymentu. Każda kolejna ratyfikacja trafia do nowego pliku `vN`; loader
+wybiera najwyższą wersję i odrzuca ją fail-closed, gdy numer w dokumencie nie
+zgadza się z nazwą pliku.
 
 Hashe `vision.content_hash`, `mission.content_hash`, każdy
 `strategy.content_hash` i `foundation_hash` są przeliczane przy podglądzie,

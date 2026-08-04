@@ -2,7 +2,7 @@
 {
   "schema": "subactor.doc/v1",
   "id": "docs.architecture.intent-integrity-audit-2026-08-04",
-  "version": 5,
+  "version": 6,
   "status": "current",
   "updated": "2026-08-04"
 }
@@ -111,6 +111,21 @@ hashe każdego poziomu, wiąże pochodzenie z Konstytucją i poprzednią rewizj�
 skanuje sekrety, zapisuje atomowo i przebudowuje registry. Brakującą treść może
 nadal podać i ratyfikować wyłącznie Founder.
 
+### 4b. Brakowało kontrolowanego szkicu z promptu — naprawione bez rozszerzenia authority
+
+Founder musiał dotąd przepisywać całą treść ręcznie, mimo że panel posiadał
+centralną bramę LLM. Dodano generowanie wyłącznie jawnie zaznaczonych pól wizji,
+misji i strategii. Control wymaga aktywnej Konstytucji, scope `projects:read`
+oraz `llm:use`, skanuje prompt, kontekst i wynik pod kątem sekretów, a brama LLM
+wymusza ścisły JSON Schema.
+
+Wynik ma status `proposal` i `review_required=true`. Nie zapisuje fundamentu,
+nie ratyfikuje treści, nie tworzy ticketów, nie nadaje authority i nie uruchamia
+deploymentu. Niezaznaczone pola są ignorowane nawet wtedy, gdy model je zwróci.
+Prompt nie jest przechowywany w audycie — pozostaje tylko hash i lista pól.
+Edycja ręczna albo użycie szkicu unieważnia wcześniejszy preview; zapis jest
+możliwy dopiero po ponownym diffie i wyliczeniu nowego exact `plan_hash`.
+
 ### 4a. Loader fundamentu czytał tylko `v1`, a hashe były syntaktyczne — naprawione
 
 Runtime wybiera teraz najwyższą wersję `organization-intent-foundation.vN.json`
@@ -182,6 +197,9 @@ Anulowanie starszego ticketu nie zmieniło desired state manifestu.
 - dzienny kierunek wynika wyłącznie z ratyfikowanego fundamentu i strategii;
 - fundament jest append-only i może być napisany tylko przez jawny formularz
   Foundera z preview/diff przed zapisem;
+- model może przygotować tylko ograniczony, jawnie wybrany szkic; nigdy nie
+  ratyfikuje go ani nie zapisuje;
+- każda edycja pól po preview unieważnia stary plan po stronie interfejsu;
 - każdy poziom fundamentu i cały dokument mają weryfikowany hash treści;
 - preview nie zapisuje pliku, nie tworzy ticketu i nie uruchamia deploymentu;
 - save jest związany z dokładnym planem, treścią, target path i poprzednim hashem;
